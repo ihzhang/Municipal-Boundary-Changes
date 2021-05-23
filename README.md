@@ -3,7 +3,8 @@ Municipal Boundary Changes Code and data
 DISCLAIMER: this is very much still a work in progress. Please do NOT attempt replication based on this repository as it is. Instead, please contact me at ihzhang@stanford.edu if there are questions about getting the data and analyzing it. Please feel free to refer to the draft but plaese do not distribute or cite wthout permission. 
 
 CONTENTS
-Code: follow the 1-2-3 steps implied by the names of the .R filese
+
+Code: follow the 1-2-3 steps implied by the names of the .R files
 
 1. ONE. (type = .R file) contains code used to clean 1990, 2000 and 2010 Census data
 place-level data, which producees lagged 1990-2000 and 2000-2010 place-level variables, and 2000 block-level variables. Run this file to get demographic data
