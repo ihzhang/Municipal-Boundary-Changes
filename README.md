@@ -18,4 +18,4 @@ place-level data, which producees lagged 1990-2000 and 2000-2010 place-level var
 NOT INCLUDED
 
 8. block-level shapefiles (will be made public after figuring out storage, as each file is well over 100mb). 
-9. analysis code to identify contiguous blocks used in 2. They were made in ArcGIS using shapefiles mentioned in 7.
+9. analysis code to identify contiguous blocks used in 2. They were made in ArcGIS using shapefiles mentioned in 8.
