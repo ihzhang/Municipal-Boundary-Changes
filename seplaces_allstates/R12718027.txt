@@ -1,0 +1,119 @@
+--------------------------------------------------------------------------------
+Codebook for Social Explorer report ID: R12718027
+--------------------------------------------------------------------------------
+
+Contents
+    - Table Summary
+    - Data Dictionary
+    - Citation and Use
+
+
+--------------------------------------------------------------------------------
+Table Summary
+--------------------------------------------------------------------------------
+ 
+Survey:           Census 2010
+Dataset:          Social Explorer Tables
+Tables:
+
+      1. Hispanic Or Latino Origin By Race
+         Universe:  Total population
+         Name:      T55
+         Variables:
+            T055_001:   Total population:
+            T055_002:      Not Hispanic or Latino:
+            T055_003:         White alone
+            T055_004:         Black or African American alone
+            T055_005:         American Indian and Alaska Native alone
+            T055_006:         Asian alone
+            T055_007:         Native Hawaiian and Other Pacific Islander alone
+            T055_008:         Some Other Race alone
+            T055_009:         Two or More Races
+            T055_010:      Hispanic or Latino:
+            T055_011:         White alone
+            T055_012:         Black or African American alone
+            T055_013:         American Indian and Alaska Native alone
+            T055_014:         Asian alone
+            T055_015:         Native Hawaiian and Other Pacific Islander alone
+            T055_016:         Some Other Race alone
+            T055_017:         Two or More Races
+
+
+
+
+
+ 
+ 
+ 
+--------------------------------------------------------------------------------
+Data Dictionary
+--------------------------------------------------------------------------------
+ 
+Variables 
+      NAME:           Area Name-Legal/Statistical Area Description
+      QName:          Qualifying Name
+      AREALAND:       Area (Land)
+      AREAWATR:       Area (Water)
+      SUMLEV:         Summary Level
+      GEOCOMP:        Geographic Component
+      REGION:         Region
+      DIVISION:       Division
+      FIPS:           FIPS
+      STATE:          State (FIPS)
+      PLACE:          Place (FIPS)
+      T055_001:       Total population
+      T055_002:       Total population: Not Hispanic or Latino
+      T055_003:       Total population: Not Hispanic or Latino: White alone
+      T055_004:       Total population: Not Hispanic or Latino: Black or African American alone
+      T055_005:       Total population: Not Hispanic or Latino: American Indian and Alaska Native alone
+      T055_006:       Total population: Not Hispanic or Latino: Asian alone
+      T055_007:       Total population: Not Hispanic or Latino: Native Hawaiian and Other Pacific Islander alone
+      T055_008:       Total population: Not Hispanic or Latino: Some Other Race alone
+      T055_009:       Total population: Not Hispanic or Latino: Two or More Races
+      T055_010:       Total population: Hispanic or Latino
+      T055_011:       Total population: Hispanic or Latino: White alone
+      T055_012:       Total population: Hispanic or Latino: Black or African American alone
+      T055_013:       Total population: Hispanic or Latino: American Indian and Alaska Native alone
+      T055_014:       Total population: Hispanic or Latino: Asian alone
+      T055_015:       Total population: Hispanic or Latino: Native Hawaiian and Other Pacific Islander alone
+      T055_016:       Total population: Hispanic or Latino: Some Other Race alone
+      T055_017:       Total population: Hispanic or Latino: Two or More Races
+      PCT_T055_002:   % Total population: Not Hispanic or Latino
+      PCT_T055_003:   % Total population: Not Hispanic or Latino: White alone
+      PCT_T055_004:   % Total population: Not Hispanic or Latino: Black or African American alone
+      PCT_T055_005:   % Total population: Not Hispanic or Latino: American Indian and Alaska Native alone
+      PCT_T055_006:   % Total population: Not Hispanic or Latino: Asian alone
+      PCT_T055_007:   % Total population: Not Hispanic or Latino: Native Hawaiian and Other Pacific Islander alone
+      PCT_T055_008:   % Total population: Not Hispanic or Latino: Some Other Race alone
+      PCT_T055_009:   % Total population: Not Hispanic or Latino: Two or More Races
+      PCT_T055_010:   % Total population: Hispanic or Latino
+      PCT_T055_011:   % Total population: Hispanic or Latino: White alone
+      PCT_T055_012:   % Total population: Hispanic or Latino: Black or African American alone
+      PCT_T055_013:   % Total population: Hispanic or Latino: American Indian and Alaska Native alone
+      PCT_T055_014:   % Total population: Hispanic or Latino: Asian alone
+      PCT_T055_015:   % Total population: Hispanic or Latino: Native Hawaiian and Other Pacific Islander alone
+      PCT_T055_016:   % Total population: Hispanic or Latino: Some Other Race alone
+      PCT_T055_017:   % Total population: Hispanic or Latino: Two or More Races
+
+
+
+
+--------------------------------------------------------------------------------
+Citation and Use of Data
+--------------------------------------------------------------------------------
+ 
+All persons are granted a limited license to use this documentation and the
+accompanying data, subject to the following conditions:
+
+* Publications and research reports employing the data
+  must cite it appropriately. The citation should include the following:
+
+	  www.socialexplorer.com
+	  New York City, NY: Social Explorer 2021
+
+
+* Citations should also include the URL for this report:
+
+    http://www.socialexplorer.com/pub/reportdata/HtmlResults.aspx?reportid=R12718027
+
+If you have any questions contact info@socialexplorer.com

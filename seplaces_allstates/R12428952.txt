@@ -1,0 +1,505 @@
+--------------------------------------------------------------------------------
+Codebook for Social Explorer report ID: R12428952
+--------------------------------------------------------------------------------
+
+Contents
+    - Table Summary
+    - Data Dictionary
+    - Citation and Use
+
+
+--------------------------------------------------------------------------------
+Table Summary
+--------------------------------------------------------------------------------
+ 
+Survey:           Census 2000
+Dataset:          Social Explorer Tables (made from SF1 and SF3)
+Tables:
+
+      1. Total Population
+         Universe:  Total Population
+         Name:      T1
+         Variables:
+            T001_001:   Total Population
+
+
+      2. Population Density (per sq. mile)
+         Universe:  Total Population
+         Name:      T3
+         Variables:
+            T003_002:   Total Population
+            T003_001:   Population Density (per sq. mile)
+            T003_003:   Area (Land)
+
+
+      3. Age (detailed version) - Cumulative (Less)
+         Universe:  Total population
+         Name:      T10A
+         Variables:
+            T010A001:   Total Population:
+            T010A002:      Less than 5 Years
+            T010A003:      Less than 10 Years
+            T010A004:      Less than 15 Years
+            T010A005:      Less than 18 Years
+            T010A006:      Less than 20 Years
+            T010A007:      Less than 21 Years
+            T010A008:      Less than 22 Years
+            T010A009:      Less than 25 Years
+            T010A010:      Less than 30 Years
+            T010A011:      Less than 35 Years
+            T010A012:      Less than 40 Years
+            T010A013:      Less than 45 Years
+            T010A014:      Less than 50 Years
+            T010A015:      Less than 55 Years
+            T010A016:      Less than 60 Years
+            T010A017:      Less than 62 Years
+            T010A018:      Less than 65 Years
+            T010A019:      Less than 67 Years
+            T010A020:      Less than 70 Years
+            T010A021:      Less than 75 Years
+            T010A022:      Less than 80 Years
+            T010A023:      Less than 85 Years
+
+
+      4. Hispanic Or Latino By Race
+         Universe:  Total Population
+         Name:      T15
+         Variables:
+            T015_001:   Total Population
+            T015_002:      Not Hispanic or Latino:
+            T015_003:         White Alone
+            T015_004:         Black or African American Alone
+            T015_005:         American Indian and Alaska Native Alone
+            T015_006:         Asian Alone
+            T015_007:         Native Hawaiian and Other Pacific Islander Alone
+            T015_008:         Some other race Alone
+            T015_009:         Two or more races
+            T015_010:      Hispanic or Latino:
+            T015_011:         White Alone
+            T015_012:         Black or African American Alone
+            T015_013:         American Indian and Alaska Native Alone
+            T015_014:         Asian Alone
+            T015_015:         Native Hawaiian and Other Pacific Islander Alone
+            T015_016:         Some other race Alone
+            T015_017:         Two or more races
+
+
+      5. Labor Force For Population 16 Years And Over
+         Universe:  Population In Labor Force 16 Years And Over
+         Name:      T72
+         Variables:
+            T072_001:   In Labor Force 16 Years And Over:
+            T072_002:      In Armed Forces
+            T072_003:      In Civilian Labor Force
+
+
+      6. Median Household Income In <DollarYear> Dollars
+         Universe:  Households
+         Name:      T93
+         Variables:
+            T093_001:   Median household income In 1999 Dollars
+
+
+      7. Poverty Status In 1999 (Black Or African American Alone)
+         Universe:  Black or African American Alone Population for whom poverty status is determined
+         Name:      T187
+         Variables:
+            T187_001:   Black or African American Alone Population for whom poverty status is determined:
+            T187_002:      Income in 1999 below poverty level
+            T187_003:      Income in 1999 at or above poverty level
+
+
+      8. Nativity By Citizenship Status
+         Universe:  Total Population
+         Name:      T201
+         Variables:
+            T201_001:   Total Population:
+            T201_002:      Native Born
+            T201_003:      Foreign Born:
+            T201_004:         Naturalized Citizen
+            T201_005:         Not a Citizen
+
+
+      9. Year Of Entry For The Foreign-Born Population
+         Universe:  Foreign-born Population
+         Name:      T202
+         Variables:
+            T202_001:   Foreign-born Population:
+            T202_002:      1995 to March 2000
+            T202_003:      1990 to 1994
+            T202_004:      1985 to 1989
+            T202_005:      1980 to 1984
+            T202_006:      1975 to 1979
+            T202_007:      1970 to 1974
+            T202_008:      1965 to 1969
+            T202_009:      Before 1965
+
+
+      10. Place Of Birth For The Foreign-Born Population
+          Universe:  Foreign-born population
+          Name:      T207
+          Variables:
+             T207_001:   Foreign-born population:
+             T207_002:      Europe:
+             T207_003:         Northern Europe:
+             T207_004:            United Kingdom
+             T207_005:            Ireland
+             T207_006:            Sweden
+             T207_007:            Other Northern Europe
+             T207_008:         Western Europe:
+             T207_009:            Austria
+             T207_010:            France
+             T207_011:            Germany
+             T207_012:            Netherlands
+             T207_013:            Other Western Europe
+             T207_014:         Southern Europe:
+             T207_015:            Greece
+             T207_016:            Italy
+             T207_017:            Portugal
+             T207_018:            Spain
+             T207_019:            Other Southern Europe
+             T207_020:         Eastern Europe:
+             T207_021:            Czechoslovakia (includes Czech Republic and Slovakia)
+             T207_022:            Hungary
+             T207_023:            Poland
+             T207_024:            Romania
+             T207_025:            Belarus
+             T207_026:            Russia
+             T207_027:            Ukraine
+             T207_028:            Bosnia and Herzegovina
+             T207_029:            Yugoslavia
+             T207_030:            Other Eastern Europe
+             T207_031:         Europe, n.e.c.
+             T207_032:      Asia:
+             T207_033:         Eastern Asia:
+             T207_034:            China:
+             T207_035:               China, excluding Hong Kong and Taiwan
+             T207_036:               Hong Kong
+             T207_037:               Taiwan
+             T207_038:            Japan
+             T207_039:            Korea
+             T207_040:            Other Eastern Asia
+             T207_041:         South Central Asia:
+             T207_042:            Afghanistan
+             T207_043:            Bangladesh
+             T207_044:            India
+             T207_045:            Iran
+             T207_046:            Pakistan
+             T207_047:            Other South Central Asia
+             T207_048:         South Eastern Asia:
+             T207_049:            Cambodia
+             T207_050:            Indonesia
+             T207_051:            Laos
+             T207_052:            Malaysia
+             T207_053:            Philippines
+             T207_054:            Thailand
+             T207_055:            Vietnam
+             T207_056:            Other South Eastern Asia
+             T207_057:         Western Asia:
+             T207_058:            Iraq
+             T207_059:            Israel
+             T207_060:            Jordan
+             T207_061:            Lebanon
+             T207_062:            Syria
+             T207_063:            Turkey
+             T207_064:            Armenia
+             T207_065:            Other Western Asia
+             T207_066:         Asia, n.e.c.
+             T207_067:      Africa:
+             T207_068:         Eastern Africa:
+             T207_069:            Ethiopia
+             T207_070:            Other Eastern Africa
+             T207_071:         Middle Africa
+             T207_072:         Northern Africa:
+             T207_073:            Egypt
+             T207_074:            Other Northern Africa
+             T207_075:         Southern Africa:
+             T207_076:            South Africa
+             T207_077:            Other Southern Africa
+             T207_078:         Western Africa:
+             T207_079:            Ghana
+             T207_080:            Nigeria
+             T207_081:            Sierra Leone
+             T207_082:            Other Western Africa
+             T207_083:         Africa, n.e.c.
+             T207_084:      Oceania:
+             T207_085:         Australia and New Zealand Subregion:
+             T207_086:            Australia
+             T207_087:            Other Australian and New Zealand Subregion
+             T207_088:         Melanesia
+             T207_089:         Micronesia
+             T207_090:         Polynesia
+             T207_091:         Oceania, n.e.c.
+             T207_092:      Americas:
+             T207_093:         Latin America:
+             T207_094:            Caribbean:
+             T207_095:               Barbados
+             T207_096:               Cuba
+             T207_097:               Dominican Republic
+             T207_098:               Haiti
+             T207_099:               Jamaica
+             T207_100:               Trinidad and Tobago
+             T207_101:               Other Caribbean
+             T207_102:            Central America:
+             T207_103:               Mexico
+             T207_104:               Other Central America:
+             T207_105:                  Costa Rica
+             T207_106:                  El Salvador
+             T207_107:                  Guatemala
+             T207_108:                  Honduras
+             T207_109:                  Nicaragua
+             T207_110:                  Panama
+             T207_111:                  Other Central America
+             T207_112:            South America:
+             T207_113:               Argentina
+             T207_114:               Bolivia
+             T207_115:               Brazil
+             T207_116:               Chile
+             T207_117:               Colombia
+             T207_118:               Ecuador
+             T207_119:               Guyana
+             T207_120:               Peru
+             T207_121:               Venezuela
+             T207_122:               Other South America
+             T207_123:         Northern America:
+             T207_124:            Canada
+             T207_125:            Other Northern America
+             T207_126:      Born at sea
+
+
+
+
+
+ 
+ 
+ 
+--------------------------------------------------------------------------------
+Data Dictionary
+--------------------------------------------------------------------------------
+ 
+Variables 
+      NAME:           Area Name-Legal/Statistical Area Description
+      QName:          Qualifying Name
+      AREALAND:       Area (Land)
+      AREAWATR:       Area (Water)
+      SUMLEV:         Summary Level
+      GEOCOMP:        Geographic Component
+      REGION:         Region
+      DIVISION:       Division
+      FIPS:           FIPS
+      STATE:          State (FIPS)
+      PLACE:          Place (FIPS)
+      T001_001:       Total Population
+      T003_002:       Total Population
+      T003_001:       Population Density (per sq. mile)
+      T003_003:       Area (Land)
+      T010A001:       Total Population
+      T010A002:       Less than 5 Years
+      T010A003:       Less than 10 Years
+      T010A004:       Less than 15 Years
+      T010A005:       Less than 18 Years
+      T010A006:       Less than 20 Years
+      T010A007:       Less than 21 Years
+      T010A008:       Less than 22 Years
+      T010A009:       Less than 25 Years
+      T010A010:       Less than 30 Years
+      T010A011:       Less than 35 Years
+      T010A012:       Less than 40 Years
+      T010A013:       Less than 45 Years
+      T010A014:       Less than 50 Years
+      T010A015:       Less than 55 Years
+      T010A016:       Less than 60 Years
+      T010A017:       Less than 62 Years
+      T010A018:       Less than 65 Years
+      T010A019:       Less than 67 Years
+      T010A020:       Less than 70 Years
+      T010A021:       Less than 75 Years
+      T010A022:       Less than 80 Years
+      T010A023:       Less than 85 Years
+      T015_001:       Total Population
+      T015_002:       Not Hispanic or Latino
+      T015_003:       Not Hispanic or Latino: White Alone
+      T015_004:       Not Hispanic or Latino: Black or African American Alone
+      T015_005:       Not Hispanic or Latino: American Indian and Alaska Native Alone
+      T015_006:       Not Hispanic or Latino: Asian Alone
+      T015_007:       Not Hispanic or Latino: Native Hawaiian and Other Pacific Islander Alone
+      T015_008:       Not Hispanic or Latino: Some other race Alone
+      T015_009:       Not Hispanic or Latino: Two or more races
+      T015_010:       Hispanic or Latino
+      T015_011:       Hispanic or Latino: White Alone
+      T015_012:       Hispanic or Latino: Black or African American Alone
+      T015_013:       Hispanic or Latino: American Indian and Alaska Native Alone
+      T015_014:       Hispanic or Latino: Asian Alone
+      T015_015:       Hispanic or Latino: Native Hawaiian and Other Pacific Islander Alone
+      T015_016:       Hispanic or Latino: Some other race Alone
+      T015_017:       Hispanic or Latino: Two or more races
+      T072_001:       In Labor Force 16 Years And Over
+      T072_002:       In Labor Force 16 Years And Over: In Armed Forces
+      T072_003:       In Labor Force 16 Years And Over: In Civilian Labor Force
+      T093_001:       Median household income In 1999 Dollars
+      T187_001:       Black or African American Alone Population for whom poverty status is determined
+      T187_002:       Black or African American Population for whom poverty status is determined: Income in 1999 below poverty level
+      T187_003:       Black or African American Population for whom poverty status is determined: Income in 1999 at or above poverty level
+      T201_001:       Total Population
+      T201_002:       Native Born
+      T201_003:       Foreign Born
+      T201_004:       Foreign Born: Naturalized Citizen
+      T201_005:       Foreign Born: Not a Citizen
+      T202_001:       Foreign-born Population
+      T202_002:       Year Of Entry For The Foreign-Born Population: 1995 to March 2000
+      T202_003:       Year Of Entry For The Foreign-Born Population: 1990 to 1994
+      T202_004:       Year Of Entry For The Foreign-Born Population: 1985 to 1989
+      T202_005:       Year Of Entry For The Foreign-Born Population: 1980 to 1984
+      T202_006:       Year Of Entry For The Foreign-Born Population: 1975 to 1979
+      T202_007:       Year Of Entry For The Foreign-Born Population: 1970 to 1974
+      T202_008:       Year Of Entry For The Foreign-Born Population: 1965 to 1969
+      T202_009:       Year Of Entry For The Foreign-Born Population: Before 1965
+      T207_001:       Foreign-born population
+      T207_002:       Foreign-born population: Europe
+      T207_003:       Foreign-born population: Europe: Northern Europe
+      T207_004:       Foreign-born population: Europe: Northern Europe: United Kingdom
+      T207_005:       Foreign-born population: Europe: Northern Europe: Ireland
+      T207_006:       Foreign-born population: Europe: Northern Europe: Sweden
+      T207_007:       Foreign-born population: Europe: Northern Europe: Other Northern Europe
+      T207_008:       Foreign-born population: Europe: Western Europe
+      T207_009:       Foreign-born population: Europe: Western Europe: Austria
+      T207_010:       Foreign-born population: Europe: Western Europe: France
+      T207_011:       Foreign-born population: Europe: Western Europe: Germany
+      T207_012:       Foreign-born population: Europe: Western Europe: Netherlands
+      T207_013:       Foreign-born population: Europe: Western Europe: Other Western Europe
+      T207_014:       Foreign-born population: Europe: Southern Europe
+      T207_015:       Foreign-born population: Europe: Southern Europe: Greece
+      T207_016:       Foreign-born population: Europe: Southern Europe: Italy
+      T207_017:       Foreign-born population: Europe: Southern Europe: Portugal
+      T207_018:       Foreign-born population: Europe: Southern Europe: Spain
+      T207_019:       Foreign-born population: Europe: Southern Europe: Other Southern Europe
+      T207_020:       Foreign-born population: Europe: Eastern Europe
+      T207_021:       Foreign-born population: Europe: Eastern Europe: Czechoslovakia (includes Czech Republic and Slovakia)
+      T207_022:       Foreign-born population: Europe: Eastern Europe: Hungary
+      T207_023:       Foreign-born population: Europe: Eastern Europe: Poland
+      T207_024:       Foreign-born population: Europe: Eastern Europe: Romania
+      T207_025:       Foreign-born population: Europe: Eastern Europe: Belarus
+      T207_026:       Foreign-born population: Europe: Eastern Europe: Russia
+      T207_027:       Foreign-born population: Europe: Eastern Europe: Ukraine
+      T207_028:       Foreign-born population: Europe: Eastern Europe: Bosnia and Herzegovina
+      T207_029:       Foreign-born population: Europe: Eastern Europe: Yugoslavia
+      T207_030:       Foreign-born population: Europe: Eastern Europe: Other Eastern Europe
+      T207_031:       Foreign-born population: Europe: Europe, n.e.c.
+      T207_032:       Foreign-born population: Asia
+      T207_033:       Foreign-born population: Asia: Eastern Asia
+      T207_034:       Foreign-born population: Asia: Eastern Asia: China
+      T207_035:       Foreign-born population: Asia: Eastern Asia: China: China, excluding Hong Kong and Taiwan
+      T207_036:       Foreign-born population: Asia: Eastern Asia: China: Hong Kong
+      T207_037:       Foreign-born population: Asia: Eastern Asia: China: Taiwan
+      T207_038:       Foreign-born population: Asia: Eastern Asia: Japan
+      T207_039:       Foreign-born population: Asia: Eastern Asia: Korea
+      T207_040:       Foreign-born population: Asia: Eastern Asia: Other Eastern Asia
+      T207_041:       Foreign-born population: Asia: South Central Asia
+      T207_042:       Foreign-born population: Asia: South Central Asia: Afghanistan
+      T207_043:       Foreign-born population: Asia: South Central Asia: Bangladesh
+      T207_044:       Foreign-born population: Asia: South Central Asia: India
+      T207_045:       Foreign-born population: Asia: South Central Asia: Iran
+      T207_046:       Foreign-born population: Asia: South Central Asia: Pakistan
+      T207_047:       Foreign-born population: Asia: South Central Asia: Other South Central Asia
+      T207_048:       Foreign-born population: Asia: South Eastern Asia
+      T207_049:       Foreign-born population: Asia: South Eastern Asia: Cambodia
+      T207_050:       Foreign-born population: Asia: South Eastern Asia: Indonesia
+      T207_051:       Foreign-born population: Asia: South Eastern Asia: Laos
+      T207_052:       Foreign-born population: Asia: South Eastern Asia: Malaysia
+      T207_053:       Foreign-born population: Asia: South Eastern Asia: Philippines
+      T207_054:       Foreign-born population: Asia: South Eastern Asia: Thailand
+      T207_055:       Foreign-born population: Asia: South Eastern Asia: Vietnam
+      T207_056:       Foreign-born population: Asia: South Eastern Asia: Other South Eastern Asia
+      T207_057:       Foreign-born population: Asia: Western Asia
+      T207_058:       Foreign-born population: Asia: Western Asia: Iraq
+      T207_059:       Foreign-born population: Asia: Western Asia: Israel
+      T207_060:       Foreign-born population: Asia: Western Asia: Jordan
+      T207_061:       Foreign-born population: Asia: Western Asia: Lebanon
+      T207_062:       Foreign-born population: Asia: Western Asia: Syria
+      T207_063:       Foreign-born population: Asia: Western Asia: Turkey
+      T207_064:       Foreign-born population: Asia: Western Asia: Armenia
+      T207_065:       Foreign-born population: Asia: Western Asia: Other Western Asia
+      T207_066:       Foreign-born population: Asia: Asia, n.e.c.
+      T207_067:       Foreign-born population: Africa
+      T207_068:       Foreign-born population: Africa: Eastern Africa
+      T207_069:       Foreign-born population: Africa: Eastern Africa: Ethiopia
+      T207_070:       Foreign-born population: Africa: Eastern Africa: Other Eastern Africa
+      T207_071:       Foreign-born population: Africa: Middle Africa
+      T207_072:       Foreign-born population: Africa: Northern Africa
+      T207_073:       Foreign-born population: Africa: Northern Africa: Egypt
+      T207_074:       Foreign-born population: Africa: Northern Africa: Other Northern Africa
+      T207_075:       Foreign-born population: Africa: Southern Africa
+      T207_076:       Foreign-born population: Africa: Southern Africa: South Africa
+      T207_077:       Foreign-born population: Africa: Southern Africa: Other Southern Africa
+      T207_078:       Foreign-born population: Africa: Western Africa
+      T207_079:       Foreign-born population: Africa: Western Africa: Ghana
+      T207_080:       Foreign-born population: Africa: Western Africa: Nigeria
+      T207_081:       Foreign-born population: Africa: Western Africa: Sierra Leone
+      T207_082:       Foreign-born population: Africa: Western Africa: Other Western Africa
+      T207_083:       Foreign-born population: Africa: Africa, n.e.c.
+      T207_084:       Foreign-born population: Oceania
+      T207_085:       Foreign-born population: Oceania: Australia and New Zealand Subregion
+      T207_086:       Foreign-born population: Oceania: Australia and New Zealand Subregion: Australia
+      T207_087:       Foreign-born population: Oceania: Australia and New Zealand Subregion: Other Australian and New Zealand Subregion
+      T207_088:       Foreign-born population: Oceania: Melanesia
+      T207_089:       Foreign-born population: Oceania: Micronesia
+      T207_090:       Foreign-born population: Oceania: Polynesia
+      T207_091:       Foreign-born population: Oceania: Oceania, n.e.c.
+      T207_092:       Foreign-born population: Americas
+      T207_093:       Foreign-born population: Americas: Latin America
+      T207_094:       Foreign-born population: Americas: Latin America: Caribbean
+      T207_095:       Foreign-born population: Americas: Latin America: Caribbean: Barbados
+      T207_096:       Foreign-born population: Americas: Latin America: Caribbean: Cuba
+      T207_097:       Foreign-born population: Americas: Latin America: Caribbean: Dominican Republic
+      T207_098:       Foreign-born population: Americas: Latin America: Caribbean: Haiti
+      T207_099:       Foreign-born population: Americas: Latin America: Caribbean: Jamaica
+      T207_100:       Foreign-born population: Americas: Latin America: Caribbean: Trinidad and Tobago
+      T207_101:       Foreign-born population: Americas: Latin America: Caribbean: Other Caribbean
+      T207_102:       Foreign-born population: Americas: Latin America: Central America
+      T207_103:       Foreign-born population: Americas: Latin America: Central America: Mexico
+      T207_104:       Foreign-born population: Americas: Latin America: Central America: Other Central America
+      T207_105:       Foreign-born population: Americas: Latin America: Central America: Other Central America: Costa Rica
+      T207_106:       Foreign-born population: Americas: Latin America: Central America: Other Central America: El Salvador
+      T207_107:       Foreign-born population: Americas: Latin America: Central America: Other Central America: Guatemala
+      T207_108:       Foreign-born population: Americas: Latin America: Central America: Other Central America: Honduras
+      T207_109:       Foreign-born population: Americas: Latin America: Central America: Other Central America: Nicaragua
+      T207_110:       Foreign-born population: Americas: Latin America: Central America: Other Central America: Panama
+      T207_111:       Foreign-born population: Americas: Latin America: Central America: Other Central America: Other Central America
+      T207_112:       Foreign-born population: Americas: Latin America: South America
+      T207_113:       Foreign-born population: Americas: Latin America: South America: Argentina
+      T207_114:       Foreign-born population: Americas: Latin America: South America: Bolivia
+      T207_115:       Foreign-born population: Americas: Latin America: South America: Brazil
+      T207_116:       Foreign-born population: Americas: Latin America: South America: Chile
+      T207_117:       Foreign-born population: Americas: Latin America: South America: Colombia
+      T207_118:       Foreign-born population: Americas: Latin America: South America: Ecuador
+      T207_119:       Foreign-born population: Americas: Latin America: South America: Guyana
+      T207_120:       Foreign-born population: Americas: Latin America: South America: Peru
+      T207_121:       Foreign-born population: Americas: Latin America: South America: Venezuela
+      T207_122:       Foreign-born population: Americas: Latin America: South America: Other South America
+      T207_123:       Foreign-born population: Americas: Northern America
+      T207_124:       Foreign-born population: Americas: Northern America: Canada
+      T207_125:       Foreign-born population: Americas: Northern America: Other Northern America
+      T207_126:       Foreign-born population: Born at sea
+
+
+
+
+--------------------------------------------------------------------------------
+Citation and Use of Data
+--------------------------------------------------------------------------------
+ 
+All persons are granted a limited license to use this documentation and the
+accompanying data, subject to the following conditions:
+
+* Publications and research reports employing the data
+  must cite it appropriately. The citation should include the following:
+
+	  www.socialexplorer.com
+	  New York City, NY: Social Explorer 2020
+
+
+* Citations should also include the URL for this report:
+
+    http://www.socialexplorer.com/pub/reportdata/HtmlResults.aspx?reportid=R12428952
+
+If you have any questions contact info@socialexplorer.com
