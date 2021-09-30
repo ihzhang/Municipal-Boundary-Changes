@@ -2,18 +2,17 @@
 # Purpose of this script is to create necessary variables of interest #######
 # for place90, place00, block00 and block10 datasets before doing ###########
 # analysis outlined in BAS0010. This is script step ONE. ####################
+
+
 rm(list = ls())
 setwd("~/Google Drive/Stanford/QE2")
 
-library("stringr")
-library("dplyr")
-library("stargazer")
 library("tidyverse")
-library("tidycensus")
-library("data.table")
+library("readr")
+library("stargazer")
 
 # block 00 ####
-blocks2000 <- read.csv(file = "ipumsblocks_allstates/2000blocks/nhgis0012_ds147_2000_block.csv", sep = ",", header = T, na = "")
+blocks2000 <- read_csv(file = "ipumsblocks_allstates/2000blocks/nhgis0012_ds147_2000_block.csv")
 blocks2000 <- blocks2000[-1,]
 
 # 1. rename variables
@@ -53,8 +52,8 @@ blocks2000 <-
          pctowneroccupied = (ownerocc/hu)*100)
 
 blocks2000 <- 
-  blocks2000 %>% select(
-    GISJOIN, STATEA, PLACEA, pop00b, nhblack00b, nhwhite00b, h00b, min00b, pctnhblack00b, pctnhwhite00b, pcth00b, pctmin00b, dependencyratio00b, pctowneroccupied
+  blocks2000 %>% dplyr::select(
+    GISJOIN, STATEA, COUNTYA, TRACTA, BLOCKA, PLACEA, pop00b, nhblack00b, nhwhite00b, h00b, min00b, pctnhblack00b, pctnhwhite00b, pcth00b, pctmin00b, dependencyratio00b, pctowneroccupied, hu
   )
 
 write_csv(blocks2000, "blocks2000_var.csv")
@@ -184,6 +183,58 @@ pl9000 <-
 write_csv(pl9000, "pl9000_var.csv")
 rm(places1990, places2000, names1990, names2000)
 
+pl9000_var <- read_csv("pl9000_var.csv")
+
+# get vap data for places in 2000 ####
+vap2000 <- read_csv("vap/places_2000.csv")
+vap2000 <- vap2000 %>%
+  mutate(vap = SF1_P006001,
+         hispvap = SF1_P006002,
+         nhwvap = SF1_P006005,
+         nhbvap = SF1_P006006,
+         minorityvap = vap - nhwvap,
+         plid = paste0(Geo_STATE, Geo_PLACE)) %>%
+  select(plid, vap, hispvap, nhwvap, nhbvap, minorityvap) %>%
+  mutate(hispvap00p = (hispvap/vap)*100,
+         nhwvap00p = (nhwvap/vap)*100,
+         nhbvap00p = (nhbvap/vap)*100,
+         minorityvap00p = (minorityvap/vap)*100) %>%
+  select(plid, hispvap00p, nhwvap00p, nhbvap00p, minorityvap00p)
+
+write_csv(vap2000, "vap2000.csv")
+
+pl9000_var <- pl9000_var %>% 
+  mutate(Geo_STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+         Geo_PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"),
+         plid2 = paste0(Geo_STATE, Geo_PLACE)) %>%
+  left_join(vap2000 %>% rename(plid2 = plid), by = "plid2")
+
+# if in BAS, annex = 1, 
+pl9000_var <- pl9000_var %>%
+  mutate(annexing = ifelse(plid2 %in% bas_states_places$plid, 1, 0))
+
+write_csv(pl9000_var, "pl9000_var.csv")
+
+# 2000 block ####
+vap2000block <- read_csv("vap/blocks_2000.csv")
+
+vap2000block <- vap2000block %>%
+  mutate(vap = FX4001,
+         hispvap = FX9001,
+         nhwvap = FYB001,
+         nhbvap = FYB002,
+         minorityvap = vap - nhwvap) %>%
+  dplyr::select(STATEA, COUNTYA, TRACTA, BLOCKA, vap, hispvap, nhwvap, nhbvap, minorityvap) %>%
+  mutate(hispvap00b = (hispvap/vap)*100,
+         nhwvap00b = (nhwvap/vap)*100,
+         nhbvap00b = (nhbvap/vap)*100,
+         minorityvap00b = (minorityvap/vap)*100,
+         blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
+                        str_pad(TRACTA, 6, side = "left", pad = "0"), sprintf("%04.0f", BLOCKA))) %>%
+  dplyr::select(blkid, hispvap00b, nhwvap00b, nhbvap00b, minorityvap00b)
+
+write_csv(vap2000block, "vap2000block.csv")
+
 # create the 2000-2010 white dataset ####
 pl2010 <- read_csv("seplaces_allstates/2010places.csv")
 pl2010 <- pl2010 %>%
@@ -200,89 +251,6 @@ pl9000 <- pl9000 %>%
 
 nhwhite9010 <- left_join(pl2010 %>% select(plid, pctnhwhite10:pctmin10),
                          pl9000 %>% select(plid, pctnhwhite00p, nhwhite00p, nhwhitegrowth, pcth00p, h00p, hgrowth, pctmin00p, min00p, mingrowth, pctnhblack00p, nhblack00p, nhblackgrowth, Geo_STATE))
+
 write_csv(nhwhite9010, "nhwhite9010.csv")
-
-# if in BAS, annex = 1, 
-rm(list = ls())
-
-# get seg indices? 
-blocks2000 <- read_csv("blocks2000_var.csv")
-
-blocks2000 <- blocks2000 %>% 
-  mutate(plid2 = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), 
-                       str_pad(PLACEA, 5, side = "left", pad = "0")))
-
-pldat<- blocks2000 %>% 
-  filter(PLACEA != 99999 | !is.na(PLACEA)) %>% 
-  group_by(plid2) %>%
-  summarise(pl_total = sum(pop00b), 
-            pl_wht = sum(nhwhite00b), 
-            pl_blk = sum(nhblack00b), 
-            pl_min = sum(min00b), 
-            pl_hisp = sum(h00b))
-
-seg00 <- left_join(blocks2000, pldat, by = "plid2")
-
-pl.dis <- seg00 %>%
-  mutate(d.wb = abs((nhwhite00b/pl_wht) - (nhblack00b/pl_blk)),
-         d.wmin = abs((nhwhite00b/pl_wht) - (min00b/pl_min)),
-         d.wh = abs((nhwhite00b/pl_wht) - (h00b/pl_hisp))) %>%
-  group_by(plid2) %>%
-  summarise(wb.dissim00 = .5*sum(d.wb, na.rm=T),
-            wmin.dissim00 = .5*sum(d.wmin, na.rm = T),
-            wh.dissim00 = .5*sum(d.wh, na.rm = T))
-
-pl.int <- seg00 %>%
-  mutate(int.wb = (nhblack00b/pl_blk * nhwhite00b/pop00b),
-         int.wmin = (min00b/pl_min * nhwhite00b/pop00b),
-         int.wh = (h00b/pl_hisp * nhwhite00b/pop00b)) %>%
-  group_by(plid2) %>%
-  summarise(wb.int00 = sum(int.wb, na.rm=T),
-            wmin.int00 = sum(int.wmin, na.rm = T),
-            wh.int00 = sum(int.wh, na.rm = T))
-
-#block 10 ####
-blocks2010 <- read_csv("ipumsblocks_allstates/2010blocks/nhgis0013_ds172_2010_block.csv")
-blocks2010 <- blocks2010 %>%
-  select(1:56)
-
-# 1. rename variables
-names2010 <- c("pop", "nhtotal", "nhwhite", "nhblack", "nhaian", "nhasian", "nhpi",
-               "nhother", "nh2p", "htotal", "hwhite", "hblack", "haian", "hasian",
-               "hhpi", "hother", "h2p")
-names(blocks2010)[40:56] <- names2010
-
-blocks2010 <- 
-  mutate(blocks2010, 
-         min10b = rowSums(blocks2010[, c(43:49)]),
-         plid2 = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), 
-                         str_pad(PLACEA, 5, side = "left", pad = "0")))
-
-pldat<- blocks2010 %>% 
-  filter(PLACEA != 99999 | !is.na(PLACEA)) %>% 
-  group_by(plid2) %>%
-  summarise(pl_total = sum(pop), 
-            pl_wht = sum(nhwhite), 
-            pl_blk = sum(nhblack), 
-            pl_min = sum(min10b), 
-            pl_hisp = sum(htotal))
-
-seg10 <- left_join(blocks2010, pldat, by = "plid2")
-
-pl.dis10 <- seg10 %>%
-  mutate(d.wb = abs((nhwhite/pl_wht) - (nhblack/pl_blk)),
-         d.wmin = abs((nhwhite/pl_wht) - (min10b/pl_min)),
-         d.wh = abs((nhwhite/pl_wht) - (htotal/pl_hisp))) %>%
-  group_by(plid2) %>%
-  summarise(wb.dissim10 = .5*sum(d.wb, na.rm=T),
-            wmin.dissim10 = .5*sum(d.wmin, na.rm = T),
-            wh.dissim10 = .5*sum(d.wh, na.rm = T))
-
-pl.int10 <- seg10 %>%
-  mutate(int.wb = (nhblack/pl_blk * nhwhite/pop),
-         int.wmin = (min10b/pl_min * nhwhite/pop),
-         int.wh = (htotal/pl_hisp * nhwhite/pop)) %>%
-  group_by(plid2) %>%
-  summarise(wb.int10 = sum(int.wb, na.rm=T),
-            wmin.int10 = sum(int.wmin, na.rm = T),
-            wh.int10 = sum(int.wh, na.rm = T))
+rm(vap2000)
