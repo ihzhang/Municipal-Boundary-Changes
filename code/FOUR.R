@@ -439,6 +439,6 @@ white (scaled)") +
 
 nhwplot2  
 ggsave("nhwplot_total.png",
-       plot = nhwplot,
+       plot = nhwplot2,
        width = 9.5,
        height = 4.5)
