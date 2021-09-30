@@ -1,6 +1,6 @@
 Municipal Boundary Changes Code and data 
 
-DISCLAIMER: this is very much still a work in progress. Please do NOT attempt replication based on this repository as it is. Instead, please contact me at ihzhang@stanford.edu if there are questions about getting the data and analyzing it. Please feel free to refer to the draft but plaese do not distribute or cite wthout permission. 
+DISCLAIMER: Please contact me at ihzhang@stanford.edu if there are questions about getting the data and analyzing it. Please do not distribute or cite wthout permission. 
 
 CONTENTS
 
