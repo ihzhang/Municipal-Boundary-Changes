@@ -8,16 +8,35 @@ library(sjPlot)
 library(stargazer)
 
 setwd("~/Google Drive/Stanford/QE2")
-aa <- read_csv("annexedblocks0010dem_pl00_newsample.csv")
+aa <- read_csv("annexedblocks0010dem_pl00_newsample_unincorp.csv")
 names(aa)
 
+
 # excluded 41,028 obs
-length(unique(aa$plid)) #2,105
-table(aa$annexed) #24,646 vs. 418,996
+length(unique(aa$plid)) #2,094
+table(aa$annexed) #24,646 vs. 60051
+
+aa <- aa %>%
+  filter(!is.na(pop00b) & !is.na(pctnhwhite00b) & !is.na(dependencyratio00b) & !is.na(pctnhblack00b) & 
+          !is.na(pctowneroccupied) & !is.na(pcth00b) & !is.na(nhblack00b) & !is.na(h00b) & !is.na(nhwhite00b) &
+          !is.na(min00b) & !is.na(nhwhite00p) & !is.na(nhblack00p) & !is.na(h00p) & !is.na(popgrowth) & 
+         !is.na(pctmin00b) & !is.na(pctnhwhite00p) & !is.na(pcth00p) & !is.na(pctnhblack00p) & !is.na(pctmin00p) & 
+          !is.na(blackpov00p) & !is.na(popdensitypl00) & !is.na(hinc00p) & !is.na(recimmgrowth) & 
+           is.finite(recimmgrowth) & !is.na(nhwhitegrowth) & is.finite(nhwhitegrowth) & !is.na(hpov00p) & !is.na(minpov00p) & 
+         !is.na(nhwhitepov00p) & !is.na(hispvap00p) & is.finite(hispvap00p) & !is.na(nhwvap00p) & is.finite(nhwvap00p) & 
+           !is.na(minorityvap00p) & is.finite(minorityvap00p) & !is.na(hispvap00b) & is.finite(hispvap00b) & 
+           !is.na(nhwvap00b) & is.finite(nhwvap00b) & !is.na(minorityvap00b) & is.finite(minorityvap00b) & 
+           !is.na(nhbvap00b) & is.finite(nhbvap00b) & is.finite(mingrowth) & is.finite(hgrowth) & is.finite(nhblackgrowth)) 
+summary(aa)
+
+aa <- aa %>%
+  group_by(plid) %>%
+  mutate(n_annexed = sum(annexed==1),
+         n = n()) %>%
+  filter(n_annexed < n)
 
 # descriptives ####
 # blocks--annexed vs. not annexed 
-names(aa)
 
 vars <- c("pop00b", "nhblack00b", "nhwhite00b", "h00b", "min00b",
           "pctnhblack00b", "pctnhwhite00b", "pcth00b", "pctmin00b",
@@ -49,13 +68,9 @@ write.csv(sample, "sample_descriptives_block.csv", row.name = T)
 plids <- unique(aa$plid)
 pl9000 <- read_csv("pl9000_var.csv")
 
-# there's a repeat for plid 516880
 pl9000 <- pl9000 %>%
   filter(plid2 %in% plids)
 length(unique(pl9000$plid2))
-pl9000 %>% group_by(plid2) %>% tally() %>% arrange(desc(n))
-
-pl9000 <- pl9000 %>% distinct(plid2, .keep_all = TRUE)
 
 vars <- c("nhblack00p", "nhwhite00p", "h00p", "min00p",
           "pctnhblack00p", "pctnhwhite00p", "pcth00p", "pctmin00p",
@@ -85,10 +100,12 @@ varsc <- c("pop00b", "pctnhwhite00b", "dependencyratio00b",
 
 varsc <- setNames(varsc, str_c(varsc, "_c"))
 
-aa <- aa %>% 
-  mutate_at(varsc, ~(as.numeric(scale(.))))
-summary(aa) # double-check no weird values
+aa <- aa %>%
+  ungroup() %>%
+  mutate_at(varsc, ~base::scale(.))
 
+summary(aa)
+names(aa)
 
 # hypotheses proceed like this ####
 # 1a. probability of being annexed ~ black/white 
@@ -140,15 +157,35 @@ anova(m3c_nhb, m2)
 # my models ####
 #nhb ####
 m3c_nhb <- glmer(annexed ~ popdensitypl00_c + logpop00p_c + popgrowth_c + hinc00p_c + blackpov00p_c +
-                   nhbvap00b_c*recimmgrowth_c + nhbvap00b_c*nhwvap00p_c + 
-                   pctowneroccupied_c + dependencyratio00b_c + 
+                   nhbvap00b_c*recimmgrowth_c + nhbvap00b_c*nhwhitegrowth_c +
+                   pctowneroccupied_c + dependencyratio00b_c +
                    (1 | plid), data = aa, family = "binomial")
 tab_model(m3c_nhb)
 nhbimm <- plot_model(m3c_nhb, type = "int")[[1]]
-nhbnhw <- plot_model(m3c_nhb, type = "int")[[2]] 
+nhbnhw <- plot_model(m3c_nhb, type = "int")[[2]]
+# 
+# m3c_nhb3 <- glmer(annexed ~ popdensitypl00_c + logpop00p_c + popgrowth_c + hinc00p_c + blackpov00p_c +
+#                    hpov00p_c + nhwhitepov00p_c + nhbvap00b_c*recimmgrowth_c + hispvap00b_c*recimmgrowth_c + 
+#                     nhwvap00b_c*recimmgrowth_c + nhbvap00b_c*pctnhwhite00p_c + hispvap00b_c*pctnhwhite00p_c + 
+#                     nhwvap00b_c*pctnhwhite00p_c + pctowneroccupied_c + dependencyratio00b_c + 
+#                    (1 | plid), data = aa, family = "binomial")
+# tab_model(m3c_nhb3)
+# p1 <- plot_model(m3c_nhb3, type = "int")[[1]]
+# p2 <- plot_model(m3c_nhb3, type = "int")[[2]] 
+# p3 <- plot_model(m3c_nhb3, type = "int")[[3]]
+# p4 <- plot_model(m3c_nhb3, type = "int")[[4]] 
+# p5 <- plot_model(m3c_nhb3, type = "int")[[5]]
+# p6 <- plot_model(m3c_nhb3, type = "int")[[6]] 
+# 
+# p1
+# p2
+# p3
+# p4
+# p5
+# p6
 
 m3c_nhb2 <- glmer(annexed ~ popdensitypl00_c + logpop00p_c + popgrowth_c + hinc00p_c + blackpov00p_c +
-                   pctnhblack00b_c*recimmgrowth_c + pctnhblack00b_c*pctnhwhite00p_c + 
+                   pctnhblack00b_c*recimmgrowth_c + pctnhblack00b_c*nhwhitegrowth_c + 
                    pctowneroccupied_c + dependencyratio00b_c + 
                    (1 | plid), data = aa, family = "binomial")
 nhbimm2 <- plot_model(m3c_nhb2, type = "int")[[1]]
@@ -156,7 +193,7 @@ nhbnhw2 <- plot_model(m3c_nhb2, type = "int")[[2]] # hold
 
 #h ####
 m3c_h <-glmer(annexed ~ popdensitypl00_c + logpop00p_c + popgrowth_c + hinc00p_c + hpov00p_c +
-                hispvap00b_c*recimmgrowth_c + hispvap00b_c*nhwvap00p_c + 
+                hispvap00b_c*recimmgrowth_c + hispvap00b_c*nhwhitegrowth_c + 
                 pctowneroccupied_c + dependencyratio00b_c + 
                 (1 | plid), data = aa, family = "binomial")
 tab_model(m3c_h)
@@ -164,7 +201,7 @@ hispimm <- plot_model(m3c_h, type = "int")[[1]]
 hispnhw <- plot_model(m3c_h, type = "int")[[2]] 
 
 m3c_h2 <-glmer(annexed ~ popdensitypl00_c + logpop00p_c + popgrowth_c + hinc00p_c + hpov00p_c +
-                pcth00b_c*recimmgrowth_c + pcth00b_c*pctnhwhite00p_c + 
+                pcth00b_c*recimmgrowth_c + pcth00b_c*nhwhitegrowth_c + 
                 pctowneroccupied_c + dependencyratio00b_c + 
                 (1 | plid), data = aa, family = "binomial")
 hispimm2 <- plot_model(m3c_h2, type = "int")[[1]]
@@ -172,7 +209,7 @@ hispnhw2 <- plot_model(m3c_h2, type = "int")[[2]]
 
 #min ####
 m3c_min <- glmer(annexed ~ popdensitypl00_c + logpop00p_c + popgrowth_c + hinc00p_c + minpov00p_c +
-                   minorityvap00b_c*recimmgrowth_c + minorityvap00b_c*nhwvap00p_c + 
+                   minorityvap00b_c*recimmgrowth_c + minorityvap00b_c*nhwhitegrowth_c + 
                    pctowneroccupied_c + dependencyratio00b_c + 
                    (1 | plid), data = aa, family = "binomial")
 tab_model(m3c_min)
@@ -180,7 +217,7 @@ minimm <- plot_model(m3c_min, type = "int")[[1]]
 minnhw <- plot_model(m3c_min, type = "int")[[2]]
 
 m3c_min2 <- glmer(annexed ~ popdensitypl00_c + logpop00p_c + popgrowth_c + hinc00p_c + minpov00p_c +
-                   pctmin00b_c*recimmgrowth_c + pctmin00b_c*pctnhwhite00p_c + 
+                   pctmin00b_c*recimmgrowth_c + pctmin00b_c*nhwhitegrowth_c + 
                    pctowneroccupied_c + dependencyratio00b_c + 
                    (1 | plid), data = aa, family = "binomial")
 minimm2 <- plot_model(m3c_min2, type = "int")[[1]]
@@ -188,7 +225,7 @@ minnhw2 <- plot_model(m3c_min2, type = "int")[[2]]
 
 #nhwhite ####
 m3c_nhw <- glmer(annexed ~ popdensitypl00_c + logpop00p_c + popgrowth_c + hinc00p_c + nhwhitepov00p_c +
-                   nhwvap00b_c*recimmgrowth_c + nhwvap00b_c*nhwvap00p_c + 
+                   nhwvap00b_c*recimmgrowth_c + nhwvap00b_c*nhwhitegrowth_c + 
                    pctowneroccupied_c + dependencyratio00b_c + 
                    (1 | plid), data = aa, family = "binomial")
 tab_model(m3c_nhw)
@@ -197,12 +234,13 @@ nhwimm <- plot_model(m3c_nhw, type = "int")[[1]]
 nhwnhw <- plot_model(m3c_nhw, type = "int")[[2]]
 
 m3c_nhw2 <- glmer(annexed ~ popdensitypl00_c + logpop00p_c + popgrowth_c + hinc00p_c + nhwhitepov00p_c +
-                   pctnhwhite00b_c*recimmgrowth_c + pctnhwhite00b_c*pctnhwhite00p_c + 
+                   pctnhwhite00b_c*recimmgrowth_c + pctnhwhite00b_c*nhwhitegrowth_c + 
                    pctowneroccupied_c + dependencyratio00b_c + 
                    (1 | plid), data = aa, family = "binomial")
 nhwimm2 <- plot_model(m3c_nhw2, type = "int")[[1]]
 nhwnhw2 <- plot_model(m3c_nhw2, type = "int")[[2]]
 
+tab_model(m3c_nhb, m3c_h, m3c_min, m3c_nhw)
 tab_model(m3c_nhb2, m3c_h2, m3c_min2, m3c_nhw2)
 
 

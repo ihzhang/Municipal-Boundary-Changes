@@ -4,6 +4,9 @@
 # Created by: Iris Zhang, Sept 27, 2021 ###################
 
 # updates log ----
+# 10/1: note that various files have references to "contiguity" that are 
+# outdated from prior analytical attempts relying on contiguity to define 
+# annexable. Future versions of code will correct the naming convention. 
 
 library("rgeos")
 library("sf")
@@ -14,14 +17,35 @@ setwd("~/Google Drive/Stanford/QE2")
 # find all blocks within 400-m buffer of every place in 2000 
 # this forms universe of "annexable" blocks 
 # I will use alabama as test, then use a loop for the remaining states 
-al_contig <- st_read("Shapefiles_archived/Shapefiles_to_merge/AL_01/AL_block_2000.shp")
+al_contig <- st_read("Shapefiles_contig/AL_01/AL_block_2000.shp")
 al_contig <- st_transform(al_contig, 3488) # Albers for flattening to get meters
+
+al_contig <- al_contig %>%
+  mutate(FIPSSTCO = as.character(FIPSSTCO),
+         TRACT2000 = as.character(TRACT2000),
+         BLOCK2000 = as.character(BLOCK2000),
+         blkid = paste0(str_pad(FIPSSTCO, 5, side = "left", pad = "0"), 
+                        str_pad(TRACT2000, 6, side = "left", pad = "0"),
+                        str_pad(BLOCK2000, 4, side = "left", pad = "0")))
+  
+# should only retain those not already part of a place
+blocks2000 <- read_csv("blocks2000_var.csv")
+
+blocks2000 <- blocks2000 %>%
+  mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
+                        str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0")))
+
+al_contig <- al_contig %>%
+  left_join(blocks2000 %>% dplyr::select(blkid, PLACEA), 
+            by = "blkid") %>% 
+  filter(is.na(PLACEA) | PLACEA=="99999")
 
 al_places <- st_read("pl/AL_01/tl_2010_01_place00.shp")
 al_places <- st_transform(al_places, 3488)
 al_places <- al_places %>% 
   mutate(PLACEFP00 = as.character(PLACEFP00),
-         STATEFP00 = as.character(STATEFP00)) %>%
+         STATEFP00 = as.character(STATEFP00),
+         PLCIDFP00 = as.character(PLCIDFP00)) %>%
   filter(!is.na(PLACEFP00) & PLACEFP00 != "99999") 
 
 p1 <- al_places[1,]
@@ -29,12 +53,12 @@ p1buffer <- st_buffer(p1, 400)
 p1buffer_intersects <- st_intersects(p1buffer, al_contig)
 test <- al_contig[p1buffer_intersects[[1]],]
 
-for (i in 1:length(unique(al_places$PLACEFP00))) { # run a loop for every place in AL 
+for (i in 1:length(unique(al_places$PLCIDFP00))) { # run a loop for every place in AL 
   p1 <- al_places[i,]
   p1buffer <- st_buffer(p1, 400)
   p1buffer_intersects <- st_intersects(p1buffer, al_contig)
   test <- as.data.frame(al_contig[p1buffer_intersects[[1]],])
-  test$contigplace <- unique(al_places$PLACEFP00)[i]
+  test$contigplace <- unique(al_places$PLCIDFP00)[i]
   if (i == 1) {
     al <- test
   } else {
@@ -49,8 +73,21 @@ al <- al %>% dplyr::select(
 write_csv(al, "Shapefiles_contig/AL_01/AL_contig.csv")
 
 get_buffers <- function(state_code) {
-  blocks <- st_read(paste0("Shapefiles_archived/Shapefiles_to_merge/", state_code, "/", substr(state_code, 1, 2), "_block_2000.shp"))
+  blocks <- st_read(paste0("Shapefiles_contig/", state_code, "/", substr(state_code, 1, 2), "_block_2000.shp"))
   blocks <- st_transform(blocks, 3488)
+  blocks <- blocks %>%
+    mutate(FIPSSTCO = as.character(FIPSSTCO),
+           TRACT2000 = as.character(TRACT2000),
+           BLOCK2000 = as.character(BLOCK2000),
+           blkid = paste0(str_pad(FIPSSTCO, 5, side = "left", pad = "0"), 
+                          str_pad(TRACT2000, 6, side = "left", pad = "0"),
+                          str_pad(BLOCK2000, 4, side = "left", pad = "0")))
+  
+  # should only retain those not already part of a place
+  blocks <- blocks %>%
+    left_join(blocks2000 %>% dplyr::select(blkid, PLACEA), 
+              by = "blkid") %>% 
+    filter(is.na(PLACEA) | PLACEA=="99999")
   
   places <- st_read(paste0("pl/", state_code, "/tl_2010_", substr(state_code, 4, 5), "_place00.shp"))
   places <- st_transform(places, 3488)
@@ -58,16 +95,20 @@ get_buffers <- function(state_code) {
     mutate(PLACEFP00 = as.character(PLACEFP00)) %>%
     filter(!is.na(PLACEFP00) & PLACEFP00 != "99999")
   
-  for (i in 1:length(unique(places$PLACEFP00))) {
+  for (i in 1:length(unique(places$PLCIDFP00))) {
     p1 <- places[i,]
     p1buffer <- st_buffer(p1, 400)
     p1buffer_intersects <- st_intersects(p1buffer, blocks)
-    test <- as.data.frame(blocks[p1buffer_intersects[[1]],])
-    test$contigplace <- unique(places$PLACEFP00)[i]
-    if (i == 1) {
-      al <- test
+    if(nrow(as.data.frame(blocks[p1buffer_intersects[[1]],])) < 1) {
+      next
     } else {
-      al <- base::rbind(al, test)
+      test <- as.data.frame(blocks[p1buffer_intersects[[1]],])
+      test$contigplace <- unique(places$PLCIDFP00)[i]
+      if (i == 1) {
+        al <- test
+      } else {
+        al <- base::rbind(al, test)
+      }
     }
   }
   

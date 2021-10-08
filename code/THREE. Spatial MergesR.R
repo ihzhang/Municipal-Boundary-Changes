@@ -18,23 +18,6 @@ bas <-
 #save only States that are identified
 bas <- bas[!is.na(bas$State), ]
 
-#create unique ids for each annexing place
-bas$plid <- paste0(sprintf("%02.0f", bas$State), sprintf("%05.0f", bas$Place))
-bas %>%
-  filter(Action == "Annexation") %>%
-  group_by(plid) 
-
-length(unique(bas$plid))
-7943/25376
-
-# states for analysis ####
-bas_states <- bas[bas$State==1 | bas$State==5 | bas$State==13 | bas$State==22 | bas$State==28 | bas$State==37 | bas$State==45 |
-                    bas$State==51 | bas$State==24 | bas$State==38 | bas$State==46 | bas$State==47 | bas$State==21 | bas$State==10,]
-bas_states_places <- as.data.frame(unique(bas_states$plid))
-names(bas_states_places) <- "plid"
-bas_states_places$plid <- as.character(bas_states_places$plid)
-rm(bas_states)
-
 astate <- bas %>% 
   filter(Action == "Annexation") %>%
   group_by(State) %>%
@@ -100,7 +83,7 @@ annexedblocks$annexed <- 1
 
 # save this file: all places in 2000 that annexed, the annexed blocks and their corresponding places annexed to between 2000 and 2010
 write_csv(annexedblocks, file = "annexedblocks0010.csv")
-aa <- read_csv("annexedblocks0010.csv")
+annexedblocks <- read_csv("annexedblocks0010.csv")
 
 # contiguous blocks ####
 al_contig <- read.csv(file = "Shapefiles_contig/AL_01/AL_contig.csv", sep = ",", header = T, na = "")
@@ -133,9 +116,9 @@ va_contig <- read.csv(file = "Shapefiles_contig/VA_51/VA_contig.csv", sep = ",",
 va_contig$State <- "51"
 
 contigall2000 <- base::rbind(al_contig, ar_contig, de_contig, ga_contig, ky_contig, la_contig, md_contig,
-                       ms_contig, nc_contig, nd_contig, nd_contig, sc_contig, sd_contig, tn_contig, va_contig)
+                       ms_contig, nc_contig, nd_contig, sc_contig, sd_contig, tn_contig, va_contig)
 rm(al_contig, ar_contig, de_contig, ga_contig, ky_contig, la_contig, md_contig,
-   ms_contig, nc_contig, nd_contig, nd_contig, sc_contig, sd_contig, tn_contig, va_contig)
+   ms_contig, nc_contig, nd_contig, sc_contig, sd_contig, tn_contig, va_contig)
 
 contigall2000$GISJOIN <- as.character(contigall2000$GISJOIN)
 write_csv(contigall2000, file = "allcontigblocks.csv")
@@ -143,9 +126,8 @@ write_csv(contigall2000, file = "allcontigblocks.csv")
 # identify contiguous blocks and actually annexed blocks in the all-block file ####
 contigall2000 <- read_csv("allcontigblocks.csv")
 contigall2000 <- contigall2000 %>%
-  filter(contigplace!="0" | contigplace!="99999" | !is.na(contigplace)) %>%
   mutate(blkid = paste0(sprintf("%05.0f", FIPSSTCO), sprintf("%06.0f", TRACT2000), sprintf("%04.0f", BLOCK2000)),
-         plid = paste0(State, sprintf("%05.0f", contigplace))) %>%
+         plid = str_pad(contigplace, 7, side = "left", pad = "0")) %>%
   dplyr::select(blkid, plid)
 
 # annexing analytical file "aa"
@@ -166,11 +148,11 @@ no_annex <- aa %>%
 aa <- aa %>%
   filter(!plid %in% no_annex$plid)
 
-write_csv(aa, "annexedblocks0010_base.csv")
+write_csv(aa, "annexedblocks0010_base_unincorp.csv")
 
 #clean up and get ready for Census data ####
 rm(list = ls())
-aa <- read_csv("annexedblocks0010_base.csv")
+aa <- read_csv("annexedblocks0010_base_unincorp.csv")
 aa <- aa %>% distinct(blkid, annexed, .keep_all = TRUE)
 
 # 2000 block data 
@@ -223,7 +205,7 @@ aa <- aa %>%
            !is.na(hispvap00p) & !is.na(nhwvap00p) & !is.na(minorityvap00p) & 
            !is.na(hispvap00b) & !is.na(nhwvap00b) & !is.na(minorityvap00b)) 
 
-write_csv(aa, "annexedblocks0010dem_pl00_newsample.csv") # 443,642
+write_csv(aa, "annexedblocks0010dem_pl00_newsample_unincorp.csv") # 84,697
 
 
 
