@@ -11,10 +11,8 @@ setwd("~/Google Drive/Stanford/QE2")
 aa <- read_csv("annexedblocks0010dem_pl00_newsample_unincorp.csv")
 names(aa)
 
-
-# excluded 41,028 obs
-length(unique(aa$plid)) #2,094
-table(aa$annexed) #24,646 vs. 60051
+length(unique(aa$plid)) #1792
+table(aa$annexed) #22,548 vs. 57640
 
 aa <- aa %>%
   filter(!is.na(pop00b) & !is.na(pctnhwhite00b) & !is.na(dependencyratio00b) & !is.na(pctnhblack00b) & 
@@ -384,8 +382,8 @@ nhw$Race <- factor(nhw$Race, levels = c("Non-Hispanic Black",
 nhwplot <- ggplot(nhw,
                   aes(x, predicted, linetype = Group)) +
   geom_line() +
-  labs(linetype = "Place % non-Hispanic 
-white, VAP (scaled)") +
+  labs(linetype = "Place Non-Hispanic 
+white growth rate, VAP (scaled)") +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.3) +
   facet_wrap(~Race, scales = "free") +
   scale_color_grey() +
@@ -466,8 +464,8 @@ nhw2$Race <- factor(nhw2$Race, levels = c("Non-Hispanic Black",
 nhwplot2 <- ggplot(nhw2,
                   aes(x, predicted, linetype = Group)) +
   geom_line() +
-  labs(linetype = "Place % non-Hispanic 
-white (scaled)") +
+  labs(linetype = "Place Non-Hispanic 
+white growth rate (scaled)") +
   geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.3) +
   facet_wrap(~Race, scales = "free") +
   scale_color_grey() +
