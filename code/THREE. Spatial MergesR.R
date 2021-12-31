@@ -9,26 +9,11 @@ library("stargazer")
 library("tidyverse")
 library("tidycensus")
 library("lme4")
-
-#IF DATA IS TO BE REPLICATED, START HERE ####
-#BAS from Census, 2000-2010 
-bas <- 
-  read.delim(file = "BAS0010.txt", header = T, na = "")
-
-#save only States that are identified
-bas <- bas[!is.na(bas$State), ]
-
-astate <- bas %>% 
-  filter(Action == "Annexation") %>%
-  group_by(State) %>%
-  tally()
-View(astate)
-# some states have way more annexations than others 
-hist(astate$n)
+library("readr")
 
 # create annexed blocks file ####
 # create a file of annexed blocks between 2000 and 2010, defined as: 
-# a) blocks in 2010 places that were not in those places in 2000 
+# a) blocks in 2010 places that were not in those places in 2000, on 2010 boundaries
 # b) blocks that were previously not part of any place and are now in 2010 places 
 # this is done place by place; first isolate the place in 2000 and 2010, then compare the blocks in each list
 blocks2000 <- read_csv("blocks2000_var.csv")
@@ -39,6 +24,13 @@ blocks2000$STATEA <- as.character(blocks2000$STATEA)
 blocks2000$STATEA <- str_pad(blocks2000$STATEA, 2, side = "left", pad = "0")
 blocks2000$PLACEA <- str_pad(blocks2000$PLACEA, 5, side = "left", pad = "0")
 blocks2000$plid <- paste0(blocks2000$STATEA, blocks2000$PLACEA)
+
+# get 2010 block boundaries 
+cw <- read_csv("cw/2000-to-2010/nhgis_blk2000_blk2010_gj.csv")
+cw <- cw %>%
+  select(GJOIN2000, GJOIN2010)
+blocks2000 <- left_join(blocks2000, cw, 
+                        by = c("GISJOIN" = "GJOIN2000"))
 
 blocks2010$PLACEA <- as.character(blocks2010$PLACEA)
 blocks2010$STATEA <- as.character(blocks2010$STATEA)
