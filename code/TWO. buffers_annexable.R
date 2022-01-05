@@ -33,7 +33,7 @@ blocks2000 <- blocks2000 %>%
                         str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0")))
 
 al_contig <- al_contig %>%
-  left_join(blocks2000 %>% dplyr::select(blkid, PLACEA), 
+  left_join(blocks2000 %>% dplyr::select(GISJOIN, blkid, PLACEA), 
             by = "blkid") %>% 
   filter(is.na(PLACEA) | PLACEA=="99999") 
 
@@ -55,19 +55,26 @@ p1buffer <- st_buffer(p1, 400)
 p1buffer_intersects <- st_intersects(p1buffer, al_contig)
 test <- al_contig[p1buffer_intersects[[1]],]
 
+datalist <- list()
 for (i in 1:length(unique(al_places$PLCIDFP00))) { # run a loop for every place in AL 
   p1 <- al_places[i,]
   p1buffer <- st_buffer(p1, 400)
   p1buffer_intersects <- st_intersects(p1buffer, al_contig)
-  
+  if(nrow(as.data.frame(al_contig[p1buffer_intersects[[1]],])) < 1) {
+    next
+  } else {
   test <- as.data.frame(al_contig[p1buffer_intersects[[1]],])
   test$contigplace <- unique(al_places$PLCIDFP00)[i]
-  if (i == 1) {
-    al <- test
-  } else {
-    al <- base::rbind(al, test)
+  datalist[[i]] <- test %>% 
+    select(STATEFP00, COUNTYFP00, TRACTCE00, BLOCKCE00, blkid, GISJOIN, contigplace)
   }
 }
+
+non.null.list <- lapply(datalist, Filter, f = Negate(is.null))
+rm(datalist)
+contig <- rbind.fill(lapply(non.null.list, as.data.frame))
+write_csv(contig, file = paste0("SHP_blk_0010/2000/TX_48/TX_contig.csv"))
+rm(non.null.list)
 
 get_buffers <- function(state_code) {
   blocks <- st_read(paste0("SHP_blk_0010/2000/", state_code, "/tl_2010_", substr(state_code, 4, 5), "_tabblock00.shp"))
@@ -87,6 +94,7 @@ get_buffers <- function(state_code) {
     mutate(PLACEFP00 = as.character(PLACEFP00)) %>%
     filter(!is.na(PLACEFP00) & PLACEFP00 != "99999")
   
+  datalist <- list()
   for (i in 1:length(unique(places$PLCIDFP00))) {
     p1 <- places[i,]
     p1buffer <- st_buffer(p1, 400)
@@ -96,19 +104,15 @@ get_buffers <- function(state_code) {
     } else {
       test <- as.data.frame(blocks[p1buffer_intersects[[1]],])
       test$contigplace <- unique(places$PLCIDFP00)[i]
-      if (i == 1) {
-        al <- test
-      } else {
-        al <- base::rbind(al, test)
-      }
+      datalist[[i]] <- test %>% 
+        select(STATEFP00, COUNTYFP00, TRACTCE00, BLOCKCE00, blkid, GISJOIN, contigplace)
     }
   }
   
-  al <- al %>% dplyr::select(
-    STATEFP00, COUNTYFP00, TRACTCE00, BLOCKCE00, blkid, GISJOIN, contigplace
-  )
-  
-  write_csv(al, file = paste0("SHP_blk_0010/2000/", state_code, "/", substr(state_code, 1, 2), "_contig.csv"))
+  non.null.list <- lapply(datalist, Filter, f = Negate(is.null))
+  rm(datalist)
+  contig <- rbind.fill(lapply(non.null.list, as.data.frame))
+  write_csv(contig, file = paste0("SHP_blk_0010/2000/", state_code, "/", substr(state_code, 1, 2), "_contig.csv"))
 }
 
 state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09", 
@@ -120,10 +124,6 @@ state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09",
                  "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VT_50", "VA_51",
                  "WA_53", "WV_54", "WI_55", "WY_56"
                  )
-
-state_codes <- c("UT_49", "VT_50", "VA_51",
-                 "WA_53", "WV_54", "WI_55", "WY_56"
-)
 
 # missing PA, TX, DC
 for (state_code in state_codes) {
