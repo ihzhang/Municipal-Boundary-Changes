@@ -140,7 +140,11 @@ places2000 <-
          blackpov00p = PCT_SE_T187_002,
          hpov00p = PCT_SE_T193_002, 
          nhwhitepov00p = PCT_SE_T194_002, 
-         minpov00p = ((SE_T187_002 + SE_T188_002 + SE_T189_002 + SE_T190_002 + SE_T191_002 + SE_T192_002 + SE_T193_002)/(SE_T187_001 + SE_T188_001 + SE_T189_001 + SE_T190_001 + SE_T191_001 + SE_T192_001 + SE_T193_001))*100)
+         minpov00p = ((SE_T187_002 + SE_T188_002 + SE_T189_002 + SE_T190_002 + SE_T191_002 + SE_T192_002 + SE_T193_002)/(SE_T187_001 + SE_T188_001 + SE_T189_001 + SE_T190_001 + SE_T191_001 + SE_T192_001 + SE_T193_001))*100,
+         nhwhitevap00p = ,
+         nhblackvap00p = ,
+         hispvap00p = ,
+         minvap00p = ,)
 
 rm(poverty00)
 
@@ -186,7 +190,11 @@ places1990 <- places1990 %>%
          hinc90pinf = SE_T043_001*cpi, 
          whitepov90p = (SE_T099_009)/(SE_T099_003 + SE_T099_009)*100,
          blackpov90p = (SE_T099_010/(SE_T099_004 + SE_T099_010))*100,
-         minpov90p = ((SE_T099_008 - SE_T099_009)/((SE_T099_002-SE_T099_003) + (SE_T099_008 - SE_T099_009)))*100)
+         minpov90p = ((SE_T099_008 - SE_T099_009)/((SE_T099_002-SE_T099_003) + (SE_T099_008 - SE_T099_009)))*100,
+         nhwhitevap90p = , 
+         nhblackvap90p = , 
+         hispvap90p = ,
+         minvap90p = )
 
 pl9000 <- 
   left_join(
@@ -211,7 +219,11 @@ pl9000 <-
          incomegrowth = ((hinc00p - hinc90pinf)/hinc00p)*100, 
          blackpovgrowth = (blackpov00p - blackpov90p),
          whitepovgrowth = (nhwhitepov00p - whitepov90p),
-         minpovgrowth = (minpov00p - minpov90p))
+         minpovgrowth = (minpov00p - minpov90p), 
+         nhwhitevapgrowth = ,
+         nhblackvapgrowth = ,
+         hispvapgrowth = ,
+         minvapgrowth = )
 
 write_csv(pl9000, "pl9000_var.csv")
 rm(places1990, places2000, names1990, names2000)
@@ -261,6 +273,8 @@ vap2000block <- vap2000block %>%
   dplyr::select(blkid, hispvap00b, nhwvap00b, nhbvap00b, minorityvap00b)
 
 write_csv(vap2000block, "vap2000block.csv")
+
+
 
 # # create the 2000-2010 white dataset ####
 # pl2010 <- read_csv("seplaces_allstates/2010places.csv")

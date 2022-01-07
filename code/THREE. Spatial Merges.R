@@ -17,59 +17,54 @@ library("data.table")
 # a) blocks in 2010 places that were not in those places in 2000, on 2010 boundaries
 # b) blocks that were previously not part of any place and are now in 2010 places 
 # this is done place by place; first isolate the place in 2000 and 2010, then compare the blocks in each list
-blocks2000 <- fread("ipumsblocks_allstates/2000blocks/nhgis0032_ds147_2000_block.csv",
-                    select = c("PLACEA", "STATEA", "GISJOIN"))
+blocks2000 <- read_csv("blocks2000_var.csv")
 blocks2010 <- fread("ipumsblocks_allstates/2010blocks/nhgis0033_ds172_2010_block.csv",
-                       select = c("PLACEA", "STATEA", "GISJOIN"))
+                       select = c("PLACEA", "STATEA", "GISJOIN", "COUNTYA", "TRACTA", "BLOCKA"))
 
-blocks2000$PLACEA <- as.character(blocks2000$PLACEA)
-blocks2000$STATEA <- as.character(blocks2000$STATEA)
-blocks2000$STATEA <- str_pad(blocks2000$STATEA, 2, side = "left", pad = "0")
-blocks2000$PLACEA <- str_pad(blocks2000$PLACEA, 5, side = "left", pad = "0")
-blocks2000$plid <- paste0(blocks2000$STATEA, blocks2000$PLACEA)
+# 2000 block data 
+# we need to generate unique place IDs (e.g., place 6238 exists in both state 1 and 2, so we need to differentiate those places)
+blocks2000 <- blocks2000 %>%
+  mutate(PLACEA = as.character(PLACEA),
+         STATEA = as.character(STATEA), 
+         STATEA = str_pad(STATEA, 2, side = "left", pad = "0"),
+         PLACEA = str_pad(PLACEA, 5, side = "left", pad = "0"),
+         plid = paste0(STATEA, PLACEA) # this 7-digit number is the unique place ID for each Census place 
+)
 
-# get 2010 block boundaries 
-cw <- read_csv("cw/2000-to-2010/nhgis_blk2000_blk2010_gj.csv")
-cw <- cw %>%
-  select(GJOIN2000, GJOIN2010)
-blocks2000 <- left_join(blocks2000, cw, 
-                        by = c("GISJOIN" = "GJOIN2000"))
-
-blocks2010$PLACEA <- as.character(blocks2010$PLACEA)
-blocks2010$STATEA <- as.character(blocks2010$STATEA)
-blocks2010$STATEA <- str_pad(blocks2010$STATEA, 2, side = "left", pad = "0")
-blocks2010$PLACEA <- str_pad(blocks2010$PLACEA, 5, side = "left", pad = "0")
-blocks2010$plid <- paste0(blocks2010$STATEA, blocks2010$PLACEA)
-
+# 2010 block data 
+# we repeat this process for 2010 data
 blocks2010 <- blocks2010 %>%
+  mutate(PLACEA = as.character(PLACEA),
+         STATEA = as.character(STATEA), 
+         STATEA = str_pad(STATEA, 2, side = "left", pad = "0"),
+         PLACEA = str_pad(PLACEA, 5, side = "left", pad = "0"),
+         plid = paste0(STATEA, PLACEA)
+  )
+
+blocks2010 <- blocks2010 %>% # we don't want to bother with null places in 2010; also, 0199999 is not a unique place ID, for e.g.
   filter(PLACEA!="99999" & !is.na(PLACEA))
 
+# get list of all annexed blocks to a place ####
+# 1. first, for each place, we get a list of their blocks in 2000 and 2010 
+# 2. then, we only retain the blocks that weren't part of that place in 2000 
+# @RA: Would love your thoughts on how to make this process faster
 annexedblocks <- data.frame()
 plids <- unique(blocks2010$plid)
 for (i in 1:length(plids)) {
-  block00 <- blocks2000[blocks2000$plid==plids[i], ]
-  block10 <- blocks2010[blocks2010$plid==plids[i],]
-  block <- block10[!block10$GISJOIN %in% block00$GISJOIN,]
-  annexedblocks <- rbind(annexedblocks, block)
+  block00 <- blocks2000 %>% filter(plid==plids[i])
+  block10 <- blocks2010 %>% filter(plid==plids[i])
+  block <- block10 %>% filter(!GISJOIN %in% block00$GISJOIN) # which blocks part of 2010 places were not part of those places in 2000?
+  annexedblocks <- base::rbind(annexedblocks, block)
 }
 
 write_csv(annexedblocks, "aa_baseline_full.csv")
 
-# if annexed, annex = 1
-pl9000_var <- pl9000_var %>%
-  mutate(annexing = ifelse(plid2 %in% bas_states_places$plid, 1, 0))
-
-write_csv(pl9000_var, "pl9000_var.csv")
-
-rm(block, block00, block10, blocks2000, blocks2010, plids)
+rm(block, block00, block10, blocks2010, plids, i)
 length(unique(annexedblocks$GISJOIN))
 length(unique(annexedblocks$plid))
 
-annexedblocks <- read_csv("aa_baseline.csv")
-
+# clean up analytical blocks 
 table(is.na(annexedblocks$PLACEA))
-annexedblocks <- annexedblocks[annexedblocks$totalr > 0, ]
-
 annexedblocks <- annexedblocks %>%
   mutate(blkid = paste0(STATEA, sprintf("%03.0f", COUNTYA), sprintf("%06.0f", TRACTA), sprintf("%04.0f", BLOCKA)))
 
@@ -91,46 +86,32 @@ annexedblocks$annexed <- 1
 write_csv(annexedblocks, file = "annexedblocks0010.csv")
 annexedblocks <- read_csv("annexedblocks0010.csv")
 
-# contiguous blocks ####
-al_contig <- read.csv(file = "Shapefiles_contig/AL_01/AL_contig.csv", sep = ",", header = T, na = "")
-al_contig$State <- "01"
-ar_contig <- read.csv(file = "Shapefiles_contig/AR_05/AR_contig.csv", sep = ",", header = T, na = "")
-ar_contig$State <- "05"
-de_contig <- read.csv(file = "Shapefiles_contig/DE_10/DE_contig.csv", sep = ",", header = T, na = "")
-de_contig$State <- "10"
-ga_contig <- read.csv(file = "Shapefiles_contig/GA_13/GA_contig.csv", sep = ",", header = T, na = "")
-ga_contig$State <- "13"
-ky_contig <- read.csv(file = "Shapefiles_contig/KY_21/KY_contig.csv", sep = ",", header = T, na = "")
-ky_contig$State <- "21"
-la_contig <- read.csv(file = "Shapefiles_contig/LA_22/LA_contig.csv", sep = ",", header = T, na = "")
-la_contig$State <- "22"
-md_contig <- read.csv(file = "Shapefiles_contig/MD_24/MD_contig.csv", sep = ",", header = T, na = "")
-md_contig$State <- "24"
-ms_contig <- read.csv(file = "Shapefiles_contig/MS_28/MS_contig.csv", sep = ",", header = T, na = "")
-ms_contig$State <- "28"
-nc_contig <- read.csv(file = "Shapefiles_contig/NC_37/NC_contig.csv", sep = ",", header = T, na = "")
-nc_contig$State <- "37"
-nd_contig <- read.csv(file = "Shapefiles_contig/ND_38/ND_contig.csv", sep = ",", header = T, na = "")
-nd_contig$State <- "38"
-sc_contig <- read.csv(file = "Shapefiles_contig/SC_45/SC_contig.csv", sep = ",", header = T, na = "")
-sc_contig$State <- "45"
-sd_contig <- read.csv(file = "Shapefiles_contig/SD_46/SD_contig.csv", sep = ",", header = T, na = "")
-sd_contig$State <- "46"
-tn_contig <- read.csv(file = "Shapefiles_contig/TN_47/TN_contig.csv", sep = ",", header = T, na = "")
-tn_contig$State <- "47"
-va_contig <- read.csv(file = "Shapefiles_contig/VA_51/VA_contig.csv", sep = ",", header = T, na = "")
-va_contig$State <- "51"
+# if annexed, annex = 1
+pl9000_var <- read_csv("pl9000_var.csv")
 
-contigall2000 <- base::rbind(al_contig, ar_contig, de_contig, ga_contig, ky_contig, la_contig, md_contig,
-                       ms_contig, nc_contig, nd_contig, sc_contig, sd_contig, tn_contig, va_contig)
-rm(al_contig, ar_contig, de_contig, ga_contig, ky_contig, la_contig, md_contig,
-   ms_contig, nc_contig, nd_contig, sc_contig, sd_contig, tn_contig, va_contig)
+pl9000_var <- pl9000_var %>%
+  mutate(plid = paste0(str_pad(Geo_STATE, 2, side = "left", pad = "0"), str_pad(Geo_PLACE, 5, side = "left", pad = "0")),
+         annexing_places = ifelse(plid %in% annexedblocks$plid, 1, 0))
+table(pl9000_var$annexing_places)
+
+write_csv(pl9000_var, "pl9000_var.csv")
+
+# contiguous blocks ####
+state_list <- list.files("SHP_blk_0010/2000/", all.files = FALSE, full.names = FALSE)
+contig_list <- list()
+for (i in 1:length(state_list)) {
+contig_list[[i]] <- read_csv(file = paste0("SHP_blk_0010/2000/", state_list[[i]], "/", substr(state_list[[i]], 1, 2), "_contig.csv")) %>%
+  mutate(State = substr(state_list[[i]], 4, 5))
+} 
+
+names(contig_list) <- state_list
+contigall2000 <- rbindlist(contig_list, use.names = TRUE)
+rm(contig_list, state_list)
 
 contigall2000$GISJOIN <- as.character(contigall2000$GISJOIN)
 write_csv(contigall2000, file = "allcontigblocks.csv")
 
 # identify contiguous blocks and actually annexed blocks in the all-block file ####
-contigall2000 <- read_csv("allcontigblocks.csv")
 contigall2000 <- contigall2000 %>%
   mutate(blkid = paste0(sprintf("%05.0f", FIPSSTCO), sprintf("%06.0f", TRACT2000), sprintf("%04.0f", BLOCK2000)),
          plid = str_pad(contigplace, 7, side = "left", pad = "0")) %>%
