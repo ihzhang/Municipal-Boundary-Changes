@@ -10,14 +10,17 @@ library("tidyverse")
 library("tidycensus")
 library("lme4")
 library("readr")
+library("data.table")
 
 # create annexed blocks file ####
 # create a file of annexed blocks between 2000 and 2010, defined as: 
 # a) blocks in 2010 places that were not in those places in 2000, on 2010 boundaries
 # b) blocks that were previously not part of any place and are now in 2010 places 
 # this is done place by place; first isolate the place in 2000 and 2010, then compare the blocks in each list
-blocks2000 <- read_csv("blocks2000_var.csv")
-blocks2010 <- read_csv("2010blocks_converted.csv")
+blocks2000 <- fread("ipumsblocks_allstates/2000blocks/nhgis0032_ds147_2000_block.csv",
+                    select = c("PLACEA", "STATEA", "GISJOIN"))
+blocks2010 <- fread("ipumsblocks_allstates/2010blocks/nhgis0033_ds172_2010_block.csv",
+                       select = c("PLACEA", "STATEA", "GISJOIN"))
 
 blocks2000$PLACEA <- as.character(blocks2000$PLACEA)
 blocks2000$STATEA <- as.character(blocks2000$STATEA)
@@ -50,7 +53,18 @@ for (i in 1:length(plids)) {
   annexedblocks <- rbind(annexedblocks, block)
 }
 
-write_csv(annexedblocks, "aa_baseline.csv")
+write_csv(annexedblocks, "aa_baseline_full.csv")
+
+# if annexed, annex = 1
+pl9000_var <- pl9000_var %>%
+  mutate(annexing = ifelse(plid2 %in% bas_states_places$plid, 1, 0))
+
+write_csv(pl9000_var, "pl9000_var.csv")
+
+rm(block, block00, block10, blocks2000, blocks2010, plids)
+length(unique(annexedblocks$GISJOIN))
+length(unique(annexedblocks$plid))
+
 annexedblocks <- read_csv("aa_baseline.csv")
 
 table(is.na(annexedblocks$PLACEA))
