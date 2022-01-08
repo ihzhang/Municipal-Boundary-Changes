@@ -5,45 +5,59 @@
 
 
 rm(list = ls())
-setwd("~/Google Drive/Stanford/QE2")
+setwd("~/Google Drive/Stanford/QE2") # use setwd() to set your home directory 
 
-library("tidyverse")
-library("readr")
-library("stargazer")
-library("foreach")
-library("data.table")
+# you likely won't have some of these packages yet. To get them, you'll have to do install.packages("PACKAGENAME")
+# luckily you only need to do this step once. You will have to call library("PACKAGENAME") each time, however.
+# coding convention is to list all packages needed loaded for using the script.
 
-# block 00 ####
+library("tidyverse") # recall that we use this package to get the dplyr language 
+library("readr") # for write_csv and read_csv functions
+library("stargazer") # this is a handy package that produces regression tables and more
+library("foreach") # for %do% function
+library("data.table") # package for handling large datasets 
+
+# 2000 block-level data ####
 blocks2000 <- read_csv(file = "ipumsblocks_allstates/2000blocks/nhgis0032_ds147_2000_block.csv")
-blocks2000 <- blocks2000[-1,]
+blocks2000 <- blocks2000[-1,] # for some reason the first row of this df is irrelevant so we remove it.
 
 # 1. rename variables
-names2000 <- c("nhwhite", "nhblack", "nhaian", "nhasian", "nhpi",
-               "nhother", "nh2p", "hwhite", "hblack", "haian", "hasian",
-               "hpi", "hother", "h2p",
-               "m5", "m5to9", "m10to14", "m15to17", "m18to19", "m20", "m21",
-               "m22to24", "m25to29", "m30to34", "m35to39", "m40to44", "m45to49", 
-               "m50to54", "m55to59", "m60to61", "m62to64", "m65to66", "m67to69",
-               "m70to74", "m75to79", "m80to84", "m85p",
-               "f5", "f5to9", "f10to14", "f15to17", "f18to19", "f20", "f21",
-               "f22to24", "f25to29", "f30to34", "f35to39", "f40to44", "f45to49", 
-               "f50to54", "f55to59", "f60to61", "f62to64", "f65to66", "f67to69",
-               "f70to74", "f75to79", "f80to84", "f85p",
-               "hu", "ownerocc", "renterocc")
-names(blocks2000)[14:76] <- names2000 # we can use the names() -- it returns a vector, which we index with [] notation, to rename variables
+# names2000 <- c("nhwhite", "nhblack", "nhaian", "nhasian", "nhpi",
+#                "nhother", "nh2p", "hwhite", "hblack", "haian", "hasian",
+#                "hpi", "hother", "h2p",
+#                "m5", "m5to9", "m10to14", "m15to17", "m18to19", "m20", "m21",
+#                "m22to24", "m25to29", "m30to34", "m35to39", "m40to44", "m45to49", 
+#                "m50to54", "m55to59", "m60to61", "m62to64", "m65to66", "m67to69",
+#                "m70to74", "m75to79", "m80to84", "m85p",
+#                "f5", "f5to9", "f10to14", "f15to17", "f18to19", "f20", "f21",
+#                "f22to24", "f25to29", "f30to34", "f35to39", "f40to44", "f45to49", 
+#                "f50to54", "f55to59", "f60to61", "f62to64", "f65to66", "f67to69",
+#                "f70to74", "f75to79", "f80to84", "f85p",
+#                "hu", "ownerocc", "renterocc")
 
-# 2. convert factorized numerical variables back to numerical
-thesecolumns <- c(14:76)
+# names(blocks2000)[14:76] <- names2000 
+# ^ we can use the names() -- it returns a vector, which we index with [] notation, and an assignment to rename variables
+# this is old code, however. Since I have the codebook, I decided to skip the renaming process, which is very tedious, and 
+# use the mutate option instead to conduct operations on the variables. 
+
+# 2. convert factorized numerical variables back to numerical, but the file is very large, so we need 
+# to split it into manageable chunks (stored in a list object) and run the analysis on each chunk separately. 
+# The data is so large in part because there are >8 mil. blocks and 80 variables. However, we don't need 
+# each variable. You can look at the codebook for the data too to get a sense of why we don't need each variable 
+# in the analytical sample, but we DO need most of the variables to construct actual variables of use.
+
+thesecolumns <- c(14:76) # these are the column indexes for variables that need to be convereted from char to num.
 
 f <- rep(seq_len(ceiling(nrow(blocks2000) / 100000)), each = 100000, length.out = nrow(blocks2000))
 dat_use <- split(blocks2000, f = f)
 rm(blocks2000)
 rm(f)
 
-# 
+# here's where we do processing on each chunk of the data 
 foreach (i = 1:length(dat_use)) %do% {
   dat_use[[i]] <- dat_use[[i]] %>%
-    mutate_at(thesecolumns, ~as.numeric(as.character(.))) %>%
+    mutate_at(thesecolumns, ~as.numeric(as.character(.))) %>% # mutate_at is a version of mutate that allows us to 
+    #operate on multipe variables at the same time. 
       mutate( 
              pop00b = rowSums(across(14:27), na.rm = T),
              nhblack00b = nhblack,
@@ -58,25 +72,24 @@ foreach (i = 1:length(dat_use)) %do% {
              workingage00b = rowSums(across(c(32:44, 55:67), na.rm = T)), 
              dependencyratio00b = dependants00b/workingage00b,
              pctowneroccupied = (ownerocc/hu)*100) %>% 
-    dplyr::select(
+    dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
                GISJOIN, STATEA, COUNTYA, TRACTA, BLOCKA, PLACEA, pop00b, nhblack00b, nhwhite00b, h00b, min00b, pctnhblack00b, pctnhwhite00b, pcth00b, pctmin00b, dependencyratio00b, pctowneroccupied, hu)
   return(NULL)
 }
+# by selecting the variables we need, we significantly reduce the file size of the data. 
 
-blocks2000 <- dat_use[[1]]
-foreach (i = 2:length(dat_use)) %do% {
-  blocks2000 <- bind_rows(blocks2000, 
-                   dat_use[[i]])
-  return(NULL)
-}
+# turn list into dataframe 
 blocks2000 <- rbindlist(dat_use, use.names = TRUE)
 rm(dat_use)
 
+# here we save the new file we've made
 write_csv(blocks2000, "blocks2000_var.csv")
 
-# place 00 ####
-places2000 <- read_csv(file = "seplaces_allstates/2000places.csv")
+# 2000 place-level data ####
+places2000 <- read_csv(file = "seplaces_allstates/2000places.csv") # notice that place-level data is much smaller
 poverty00 <- read_csv("seplaces_allstates/povt00.csv")
+vap2000 <- read_csv("seplaces_allstates/vap2000.csv") 
+# vap stands for voting-age population. 
 
 names(places2000)
 #names(places2000)[12:216]
@@ -110,20 +123,43 @@ names(places2000)
                # "norampl00", "canpl00", "othernorpl00", "bornatseapl00")
 
 # names(places2000)[12:202] <- names2000 
-places2000 <- places2000 %>%
-  left_join(poverty00 %>% select(Geo_QName, SE_T187_001:PCT_SE_T194_003), by = "Geo_QName")
 
-# cdp00 <- places2000 %>%
-#   filter(str_detect(Geo_QName, "CDP")) %>%
-#   select(c(Geo_QName, Geo_STATE, Geo_PLACE)) %>%
-#   mutate(STATEA = sprintf("%02.0f", Geo_STATE), 
-#          PLACEA = sprintf("%05.0f", Geo_PLACE),
-#          plid = paste0(STATEA, PLACEA))
+# left_join is how we merge datasets together. 
+?left_join #? + the command name is how you get more information on the command. 
+# here, you'll find documentation on how left_join and right_join etc. are different from each other. 
+# when joining data, you want to specify the by-variable. i.e. how are the two datasets matched to each other?
+# there are other tricks/issues with using left_join but we won't address them here. the main one is 
+# avoiding having duplicate variables across datasets. That's why I use select to only keep variables 
+# I know don't repeat, and keep only the by-variable across both. You can also match by more than one variable, 
+# it would look like by = c("A", "B", "C")
+# here, we're joining place dataset A to place dataset B to place dataset C, so we are joining by the place identifier. 
+# we need a unique ID for each place, i.e. plid, which is a 7-digit number generated 
+# from State (2-digit) and Place (5-digit) IDs 
+# we use string pad because we need the ids to be 7-digits for maximum uniqueness 
+# but sometimes the data is formatted such that state 01 shows up as 1, so we need a leading 0 in those cases
+
+places2000 <- places2000 %>%
+  mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+         PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
+         plid = paste0(STATE, PLACE))
+
+poverty00 <- poverty00 %>%
+  mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+         PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
+         plid = paste0(STATE, PLACE))
+
+vap2000 <- vap2000 %>%
+  mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+         PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
+         plid = paste0(STATE, PLACE))
+
+places2000 <- places2000 %>%
+  left_join(poverty00 %>% select(plid, SE_T187_001:PCT_SE_T194_003), by = "plid") %>%
+  left_join(vap2000 %>% select(plid, SF1_P006001:SF1_P006073), by = "plid")
 
 # 2. create variables needed 
-places2000 <- 
-  mutate(places2000, 
-         pop00p = SE_T001_001, 
+places2000 <- places2000 %>%
+  mutate(pop00p = SE_T001_001, 
          pcturb00p = (SE_T002_002/pop00p)*100, 
          pctrur00p = 100-pcturb00p,
          popdensity00p = SE_T003_001,
@@ -141,20 +177,40 @@ places2000 <-
          hpov00p = PCT_SE_T193_002, 
          nhwhitepov00p = PCT_SE_T194_002, 
          minpov00p = ((SE_T187_002 + SE_T188_002 + SE_T189_002 + SE_T190_002 + SE_T191_002 + SE_T192_002 + SE_T193_002)/(SE_T187_001 + SE_T188_001 + SE_T189_001 + SE_T190_001 + SE_T191_001 + SE_T192_001 + SE_T193_001))*100,
-         nhwhitevap00p = ,
-         nhblackvap00p = ,
-         hispvap00p = ,
-         minvap00p = ,)
+         nhwhitevap00p = (SF1_P006005/SF1_P006001)*100, #nh stands for non-Hispanic
+         nhblackvap00p = (SF1_P006006/SF1_P006001)*100,
+         hispvap00p = (SF1_P006002/SF1_P006001)*100,
+         minvap00p = ((SF1_P006001 - SF1_P006005)/SF1_P006001)*100) %>%
+  select(Geo_QName, plid, pop00p:minvap00p)
 
-rm(poverty00)
+rm(poverty00, vap2000)
 
 # place 90 ####
-places1990 <- read.csv(file = "seplaces_allstates/1990places.csv", sep = ",", header = T, na = "")
-places1990$Geo_QName <- as.character(places1990$Geo_QName)
-places2000$Geo_QName <- as.character(places2000$Geo_QName)
+places1990 <- read_csv(file = "seplaces_allstates/1990places.csv")
+vap1990 <- read_csv(file = "seplaces_allstates/vap1990.csv")
 
-# we only want places that existed in 1990 otherwise we cannot make time-lagged variables 
-places1990 <- places1990[places1990$Geo_QName %in% places2000$Geo_QName, ]
+places1990 <- places1990 %>%
+  mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+         PLACE = str_pad(Geo_PLACECE, 5, side = "left", pad = "0"), 
+         plid = paste0(STATE, PLACE))
+
+vap1990 <- vap1990 %>%
+  mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+         PLACE = str_pad(Geo_PLACECE, 5, side = "left", pad = "0"), 
+         plid = paste0(STATE, PLACE))
+
+places1990 <- places1990 %>%
+  left_join(vap1990 %>% select(plid, STF3_P014_001:STF3_P015_065), by = "plid")
+
+# we only want places that existed in both 1990 and 2000 otherwise we cannot make time-lagged variables 
+# but we can't join 1990 to 2000 by plid because place IDs changed between 1990-2000. Place name is a better bet. 
+places1990 <- places1990 %>%
+  rename("plid90" = "plid") %>%
+  filter(Geo_QName %in% places2000$Geo_QName)
+
+# places1990 <- places1990[places1990$plid %in% places2000$plid, ] # just to let you know how 
+# doing this would look like in base r--as you can see, it can get very annoying with more variables 
+# and more operations, because you always have to type df$ to refer to each variable
 
 # 1. get names 
 # names1990 <- c("Geo_Name", "Geo_QName", "Geo_SUMLEV90", "Geo_GEOCOMP90", "Geo_REGION90", "Geo_DIVISION90", "Geo_FIPS90", "Geo_STATE", "Geo_PLACECE", 
@@ -170,11 +226,10 @@ places1990 <- places1990[places1990$Geo_QName %in% places2000$Geo_QName, ]
 # names(places1990) <- names1990
 
 # 2. make variables 
-cpi <- 1.36 #1990$ in 2000$ value 
+cpi <- 1.36 #1990$ in 2000$ value. cpi is the inflation coefficient. 
 
 places1990 <- places1990 %>%
-  mutate(places1990, 
-         pop90p = SE_T001_001, 
+  mutate(pop90p = SE_T001_001, 
          pcturb90p = (SE_T004_002/pop90p)*100, 
          pctrur90p = 100-pcturb90p,
          popdensity90p = SE_T002_001,
@@ -191,18 +246,32 @@ places1990 <- places1990 %>%
          whitepov90p = (SE_T099_009)/(SE_T099_003 + SE_T099_009)*100,
          blackpov90p = (SE_T099_010/(SE_T099_004 + SE_T099_010))*100,
          minpov90p = ((SE_T099_008 - SE_T099_009)/((SE_T099_002-SE_T099_003) + (SE_T099_008 - SE_T099_009)))*100,
-         nhwhitevap90p = , 
-         nhblackvap90p = , 
-         hispvap90p = ,
-         minvap90p = )
+         popover18 = rowSums(across(c(STF3_P014_016:STF3_P014_034, STF3_P014_048:STF3_P014_066, 
+                                      STF3_P014_081:STF3_P014_099, STF3_P014_113:STF3_P014_131,
+                                      STF3_P014_146:STF3_P014_164, STF3_P014_178:STF3_P014_196,
+                                      STF3_P014_211:STF3_P014_229, STF3_P014_243:STF3_P014_261,
+                                      STF3_P014_276:STF3_P014_294, STF3_P014_308:STF3_P014_326))),
+         nhwhitevap90p = (rowSums(across(c(STF3_P014_016:STF3_P014_034, STF3_P014_048:STF3_P014_066)))/popover18)*100, 
+         nhblackvap90p = (rowSums(across(c(STF3_P014_081:STF3_P014_099, STF3_P014_113:STF3_P014_131)))/popover18)*100, 
+         hispvap90p = (rowSums(across(c(STF3_P015_015:STF3_P015_033, STF3_P015_047:STF3_P015_065)))/popover18)*100,
+         minvap90p = ((popover18-rowSums(across(c(STF3_P014_016:STF3_P014_034, STF3_P014_048:STF3_P014_066))))/popover18)*100)
 
 pl9000 <- 
   left_join(
     places1990 %>% select(
-  c(Geo_QName, pop90p:minpov90p)), 
+  c(Geo_QName, plid90, pop90p:minvap90p)), 
   places2000 %>% select(
-  c(Geo_QName, Geo_STATE, Geo_PLACE, popdensity00p, pop00p:minpov00p)), 
+  c(Geo_QName, plid, popdensity00p, pop00p:minvap00p)), 
   by = "Geo_QName")
+
+# have to remove duplicates--this is an issue I can't get around. There are duplicated places in the 1990 data
+# see:
+nrow(places1990) #22551
+length(unique(places1990$Geo_QName)) #22526 
+
+# those duplicated places are not analyzable because they don't have a stable unique place ID 
+pl9000 <- pl9000 %>%
+  filter(!duplicated(Geo_QName))
 
 # make change variables 
 pl9000 <- 
@@ -220,78 +289,10 @@ pl9000 <-
          blackpovgrowth = (blackpov00p - blackpov90p),
          whitepovgrowth = (nhwhitepov00p - whitepov90p),
          minpovgrowth = (minpov00p - minpov90p), 
-         nhwhitevapgrowth = ,
-         nhblackvapgrowth = ,
-         hispvapgrowth = ,
-         minvapgrowth = )
+         nhwhitevapgrowth = nhwhitevap00p - nhwhitevap90p,
+         nhblackvapgrowth = nhblackvap00p - nhblackvap90p,
+         hispvapgrowth = hispvap00p - hispvap90p,
+         minvapgrowth = minvap00p - minvap90p)
 
 write_csv(pl9000, "pl9000_var.csv")
-rm(places1990, places2000, names1990, names2000)
-
-pl9000_var <- read_csv("pl9000_var.csv")
-
-# get vap data for places in 2000 ####
-vap2000 <- read_csv("vap/places_2000.csv")
-vap2000 <- vap2000 %>%
-  mutate(vap = SF1_P006001,
-         hispvap = SF1_P006002,
-         nhwvap = SF1_P006005,
-         nhbvap = SF1_P006006,
-         minorityvap = vap - nhwvap,
-         plid = paste0(Geo_STATE, Geo_PLACE)) %>%
-  select(plid, vap, hispvap, nhwvap, nhbvap, minorityvap) %>%
-  mutate(hispvap00p = (hispvap/vap)*100,
-         nhwvap00p = (nhwvap/vap)*100,
-         nhbvap00p = (nhbvap/vap)*100,
-         minorityvap00p = (minorityvap/vap)*100) %>%
-  select(plid, hispvap00p, nhwvap00p, nhbvap00p, minorityvap00p)
-
-write_csv(vap2000, "vap2000.csv")
-
-pl9000_var <- pl9000_var %>% 
-  mutate(Geo_STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
-         Geo_PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"),
-         plid2 = paste0(Geo_STATE, Geo_PLACE)) %>%
-  left_join(vap2000, by = c("plid2" = "plid"))
-
-# 2000 block ####
-vap2000block <- read_csv("vap/blocks_2000.csv")
-
-vap2000block <- vap2000block %>%
-  mutate(vap = FX4001,
-         hispvap = FX9001,
-         nhwvap = FYB001,
-         nhbvap = FYB002,
-         minorityvap = vap - nhwvap) %>%
-  dplyr::select(STATEA, COUNTYA, TRACTA, BLOCKA, vap, hispvap, nhwvap, nhbvap, minorityvap) %>%
-  mutate(hispvap00b = (hispvap/vap)*100,
-         nhwvap00b = (nhwvap/vap)*100,
-         nhbvap00b = (nhbvap/vap)*100,
-         minorityvap00b = (minorityvap/vap)*100,
-         blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
-                        str_pad(TRACTA, 6, side = "left", pad = "0"), sprintf("%04.0f", BLOCKA))) %>%
-  dplyr::select(blkid, hispvap00b, nhwvap00b, nhbvap00b, minorityvap00b)
-
-write_csv(vap2000block, "vap2000block.csv")
-
-
-
-# # create the 2000-2010 white dataset ####
-# pl2010 <- read_csv("seplaces_allstates/2010places.csv")
-# pl2010 <- pl2010 %>%
-#   mutate(pctnhwhite10 = PCT_SE_T055_003,
-#          pctnhblack10 = PCT_SE_T055_004,
-#          pcth10 = PCT_SE_T055_010,
-#          pctmin10 = ((SE_T055_004 + SE_T055_005 + SE_T055_006 + SE_T055_007 + SE_T055_008 + SE_T055_009 + SE_T055_010)/SE_T055_001) * 100,
-#          plid = paste0(Geo_STATE, Geo_PLACE))
-# 
-# pl9000 <- read_csv("pl9000_var.csv")
-# pl9000 <- pl9000 %>%
-#   mutate(plid = paste0(sprintf("%02.0f", Geo_STATE),
-#                        sprintf("%05.0f", Geo_PLACE)))
-# 
-# nhwhite9010 <- left_join(pl2010 %>% select(plid, pctnhwhite10:pctmin10),
-#                          pl9000 %>% select(plid, pctnhwhite00p, nhwhite00p, nhwhitegrowth, pcth00p, h00p, hgrowth, pctmin00p, min00p, mingrowth, pctnhblack00p, nhblack00p, nhblackgrowth, Geo_STATE))
-# 
-# write_csv(nhwhite9010, "nhwhite9010.csv")
-# rm(vap2000)
+rm(places1990, places2000, pl9000, vap1990)

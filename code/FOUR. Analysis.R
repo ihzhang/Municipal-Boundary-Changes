@@ -11,6 +11,8 @@ setwd("~/Google Drive/Stanford/QE2")
 aa <- read_csv("annexedblocks0010dem_pl00_newsample_unincorp.csv")
 names(aa)
 
+
+
 length(unique(aa$plid)) #1792
 table(aa$annexed) #22,548 vs. 57640
 

@@ -40,6 +40,7 @@ al_contig <- al_contig %>%
 al_places <- st_read("SHP_pl/TX_48/tl_2010_48_place00.shp")
 al_places <- st_transform(al_places, 3488)
 
+# @RA: this shows an overlay of place-level shapefiles onto block-level ones
 ggplot() + 
   geom_sf(data = al_contig, fill = "grey", color = "grey") +
   geom_sf(data = al_places, fill = "black", color = "black") 
@@ -55,26 +56,26 @@ p1buffer <- st_buffer(p1, 400)
 p1buffer_intersects <- st_intersects(p1buffer, al_contig)
 test <- al_contig[p1buffer_intersects[[1]],]
 
-datalist <- list()
-for (i in 1:length(unique(al_places$PLCIDFP00))) { # run a loop for every place in AL 
-  p1 <- al_places[i,]
-  p1buffer <- st_buffer(p1, 400)
-  p1buffer_intersects <- st_intersects(p1buffer, al_contig)
-  if(nrow(as.data.frame(al_contig[p1buffer_intersects[[1]],])) < 1) {
-    next
-  } else {
-  test <- as.data.frame(al_contig[p1buffer_intersects[[1]],])
-  test$contigplace <- unique(al_places$PLCIDFP00)[i]
-  datalist[[i]] <- test %>% 
-    select(STATEFP00, COUNTYFP00, TRACTCE00, BLOCKCE00, blkid, GISJOIN, contigplace)
-  }
-}
-
-non.null.list <- lapply(datalist, Filter, f = Negate(is.null))
-rm(datalist)
-contig <- rbind.fill(lapply(non.null.list, as.data.frame))
-write_csv(contig, file = paste0("SHP_blk_0010/2000/TX_48/TX_contig.csv"))
-rm(non.null.list)
+# datalist <- list()
+# for (i in 1:length(unique(al_places$PLCIDFP00))) { # run a loop for every place in AL 
+#   p1 <- al_places[i,]
+#   p1buffer <- st_buffer(p1, 400)
+#   p1buffer_intersects <- st_intersects(p1buffer, al_contig)
+#   if(nrow(as.data.frame(al_contig[p1buffer_intersects[[1]],])) < 1) {
+#     next
+#   } else {
+#   test <- as.data.frame(al_contig[p1buffer_intersects[[1]],])
+#   test$contigplace <- unique(al_places$PLCIDFP00)[i]
+#   datalist[[i]] <- test %>% 
+#     select(STATEFP00, COUNTYFP00, TRACTCE00, BLOCKCE00, blkid, GISJOIN, contigplace)
+#   }
+# }
+# 
+# non.null.list <- lapply(datalist, Filter, f = Negate(is.null))
+# rm(datalist)
+# contig <- rbind.fill(lapply(non.null.list, as.data.frame))
+# write_csv(contig, file = paste0("SHP_blk_0010/2000/TX_48/TX_contig.csv"))
+# rm(non.null.list)
 
 get_buffers <- function(state_code) {
   blocks <- st_read(paste0("SHP_blk_0010/2000/", state_code, "/tl_2010_", substr(state_code, 4, 5), "_tabblock00.shp"))
@@ -125,7 +126,6 @@ state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09",
                  "WA_53", "WV_54", "WI_55", "WY_56"
                  )
 
-# missing PA, TX, DC
 for (state_code in state_codes) {
   get_buffers(state_code)
   print(state_code)
