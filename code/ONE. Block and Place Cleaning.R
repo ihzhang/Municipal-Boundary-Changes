@@ -18,7 +18,7 @@ library("foreach") # for %do% function
 library("data.table") # package for handling large datasets 
 
 # 2000 block-level data ####
-blocks2000 <- read_csv(file = "ipumsblocks_allstates/2010blocks/nhgis0032_ds147_2000_block.csv")
+blocks2000 <- read_csv(file = "ipumsblocks_allstates/2000blocks/nhgis0032_ds147_2000_block.csv")
 blocks2000 <- blocks2000[-1,] # for some reason the first row of this df is irrelevant so we remove it.
 
 # 1. rename variables
@@ -60,9 +60,9 @@ foreach (i = 1:length(dat_use)) %do% {
     #operate on multipe variables at the same time. 
       mutate( 
              pop00b = rowSums(across(14:27), na.rm = T),
-             nhblack00b = SE_FYF002,
-             nhwhite00b = SE_FYF001, 
-             h00b = rowSums(across(c(SE_FYF008:SE_FYF014)), na.rm = T),
+             nhblack00b = FYF002,
+             nhwhite00b = FYF001, 
+             h00b = rowSums(across(c(FYF008:FYF014)), na.rm = T),
              min00b = rowSums(across(15:27), na.rm = T),
              pctnhblack00b = (nhblack00b/pop00b)*100,
              pctnhwhite00b = (nhwhite00b/pop00b)*100, 
@@ -71,11 +71,16 @@ foreach (i = 1:length(dat_use)) %do% {
              dependants00b = rowSums(across(c(28:31, 51:54, 45:50, 68:73), na.rm = T)),
              workingage00b = rowSums(across(c(32:44, 55:67), na.rm = T)), 
              dependencyratio00b = dependants00b/workingage00b,
-             pctowneroccupied = (ownerocc/hu)*100) %>% 
+             pctowneroccupied00b = (FWA001/(FWA001 + FWA002))*100,
+             vacancy00b = ((FV5001 - (FWA001 + FWA002))/FV5001)*100,
+             blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
+                            str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0"))) %>%
     dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
-               GISJOIN, STATEA, COUNTYA, TRACTA, BLOCKA, PLACEA, pop00b, nhblack00b, nhwhite00b, h00b, min00b, pctnhblack00b, pctnhwhite00b, pcth00b, pctmin00b, dependencyratio00b, pctowneroccupied, hu)
+               GISJOIN, STATEA, COUNTYA, TRACTA, BLOCKA, PLACEA, blkid, pop00b:vacancy00b)
   return(NULL)
 }
+
+vap2000block <- read_csv("ipumsblocks_allstates/2000blocks/vap2000_block.csv")
 
 vap2000block <- vap2000block %>%
   mutate(vap = FX4001,
@@ -98,6 +103,8 @@ blocks2000 <- rbindlist(dat_use, use.names = TRUE)
 rm(dat_use)
 
 # here we save the new file we've made
+blocks2000 <- blocks2000 %>%
+  left_join(vap2000block, by = "blkid")
 write_csv(blocks2000, "blocks2000_var.csv")
 
 # 2010 block-level data ####
@@ -374,12 +381,12 @@ vap2010 <- vap2010 %>%
          plid = paste0(STATE, PLACE))
 
 places2010 <- places2010 %>%
-  left_join(vap2010 %>% select(plid, SE_P0110001:SE_P0110073), by = "plid")
+  left_join(vap2010 %>% select(plid, SF1_P0110001:SF1_P0110073), by = "plid")
 
 # 2. make variables 
-cpi <- 1.36 #1990$ in 2000$ value. cpi is the inflation coefficient. 
+cpi <- 1.38
 
-places2010 <- place2010 %>%
+places2010 <- places2010 %>%
   mutate(pop10p = SE_A00001_001, 
          pcturb10p = NA,
          pctrur10p = NA,
@@ -396,7 +403,7 @@ places2010 <- place2010 %>%
          hinc10p = SE_A14006_001, 
          whitepov10p = (SE_A13001I_002/SE_A13001I_001)*100,
          blackpov10p = (SE_A13001B_002/SE_A13001B_001)*100,
-         hpov10p = (SE_A13001H_002/A13001H_001)*100,
+         hpov10p = (SE_A13001H_002/SE_A13001H_001)*100,
          minpov10p =  ((hpov10p + blackpov10p + SE_A13001G_002 + SE_A13001F_002 + SE_A13001E_002 + SE_A13001D_002 + SE_A13001C_002)/(SE_A13001B_001 + SE_A13001B_001 + SE_A13001G_001 + SE_A13001F_001 + SE_A13001E_001 + SE_A13001D_001 + SE_A13001C_001))*100,
          popover18 = SF1_P0110001,
          nhwhitevap10p = (SF1_P0110005/popover18)*100,
@@ -404,13 +411,18 @@ places2010 <- place2010 %>%
          hispvap10p = (SF1_P0110002/popover18)*100,
          minvap10p = ((popover18-SF1_P0110005)/popover18)*100)
 
+length(unique(places2000$plid))
+length(unique(places2010$plid))
+
+table(unique(places2000$plid) %in% unique(places2010$plid))
+
 pl0010 <- 
   left_join(
     places2000 %>% select(
-      c(Geo_QName, plid, pop0p:minvap00p)), 
+      c(plid, pop00p:minvap00p)), 
     places2010 %>% select(
-      c(Geo_QName, plid, Geo_COUNTY, pop10p:minvap10p)), 
-    by = "Geo_QName")
+      c(plid, Geo_COUNTY, pop10p:minvap10p)), 
+    by = "plid")
 
 pl0010 <- 
   mutate(pl0010, 
@@ -421,9 +433,9 @@ pl0010 <-
          hgrowth = ((h10p-h00p)/h00p) * 100,
          mingrowth = ((min10p-min00p)/min00p) * 100,
          recimmgrowth = (pctrecimm10p - pctrecimm00p),
-         incomegrowth = ((hinc10p - hinc00*cpi)/hinc10p)*100, 
+         incomegrowth = ((hinc10p - hinc00p*cpi)/hinc10p)*100, 
          blackpovgrowth = (blackpov10p - blackpov00p),
-         whitepovgrowth = (nhwhitepov10p - whitepov00p),
+         whitepovgrowth = (whitepov10p - nhwhitepov00p),
          hpovgrowth = (hpov10p - hpov00p),
          minpovgrowth = (minpov10p - minpov00p), 
          nhwhitevapgrowth = nhwhitevap10p - nhwhitevap00p,

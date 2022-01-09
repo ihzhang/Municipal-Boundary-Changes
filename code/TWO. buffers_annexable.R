@@ -24,7 +24,7 @@ setwd("~/Google Drive/Stanford/QE2")
 blocks_list <- list()
 blocks_list[[1]] <- fread("ipumsblocks_allstates/2000blocks/nhgis0032_ds147_2000_block.csv", select = 
                       c("GISJOIN", "STATEA", "COUNTYA", "TRACTA", "BLOCKA", "PLACEA"))
-blocks_list[[1]] <- blocks2_list[[1]][-1, ]
+blocks_list[[1]] <- blocks_list[[1]][-1, ]
 
 blocks_list[[2]] <- fread("ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv", select = 
                             c("GISJOIN", "STATEA", "COUNTYA", "TRACTA", "BLOCKA", "PLACEA"))
@@ -37,10 +37,14 @@ blocks_list[[i]] <- blocks_list[[i]] %>%
 }
 
 get_buffers <- function(state_code, year) {
-  blocks <- st_read(paste0("SHP_blk_0010/", year, "/", state_code, "/tl_2010_", substr(state_code, 4, 5), "_tabblock00.shp"))
+  blocks <- st_read(paste0("SHP_blk_0010/", year, "/", state_code, "/tl_2010_", substr(state_code, 4, 5), "_tabblock", substr(year, 3, 4), ".shp"))
   blocks <- st_transform(blocks, 3488)
-  blocks <- blocks %>%
-    mutate(blkid = as.character(BLKIDFP00))
+  if (year == 2010) {
+    
+  } else {
+    blocks <- blocks %>%
+      mutate(blkid = as.character(BLKIDFP00))
+  }
   
   # should only retain those not already part of a place
   blocks <- blocks %>%
@@ -48,14 +52,14 @@ get_buffers <- function(state_code, year) {
               by = "blkid") %>% 
     filter(is.na(PLACEA) | PLACEA=="99999") 
   
-  places <- st_read(paste0("SHP_pl/", year, "/", state_code, "/tl_2010_", substr(state_code, 4, 5), "_place00.shp"))
+  places <- st_read(paste0("SHP_pl/", year, "/", state_code, "/tl_2010_", substr(state_code, 4, 5), "_place", substr(year, 3, 4), ".shp"))
   places <- st_transform(places, 3488)
   places <- places %>% 
-    mutate(PLACEFP00 = as.character(PLACEFP00)) %>%
-    filter(!is.na(PLACEFP00) & PLACEFP00 != "99999")
+    mutate(PLACE = as.character(as.factor(.[, 2]))) %>%
+    filter(!is.na(PLACE) & PLACE != "99999")
   
   datalist <- list()
-  for (i in 1:length(unique(places$PLCIDFP00))) {
+  for (i in 1:length(unique(places$PLACE))) {
     p1 <- places[i,]
     p1buffer <- st_buffer(p1, 400)
     p1buffer_intersects <- st_intersects(p1buffer, blocks)
@@ -63,9 +67,9 @@ get_buffers <- function(state_code, year) {
       next
     } else {
       test <- as.data.frame(blocks[p1buffer_intersects[[1]],])
-      test$contigplace <- unique(places$PLCIDFP00)[i]
+      test$contigplace <- unique(places$PLACE)[i]
       datalist[[i]] <- test %>% 
-        select(STATEFP00, COUNTYFP00, TRACTCE00, BLOCKCE00, blkid, GISJOIN, contigplace)
+        select(c(1:4), blkid, GISJOIN, contigplace)
     }
   }
   

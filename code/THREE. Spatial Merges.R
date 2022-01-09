@@ -112,7 +112,7 @@ length(unique(annexedblocks$GISJOIN)) # check that every entry is unique
 length(unique(annexedblocks$plid)) # how many places does this cover?
 
 # repeat for 2000 to 2020 
-blocks2000 <- fread("ipumsblocks_allstates/2010blocks/nhgis0032_ds147_2000_block.csv", 
+blocks2000 <- fread("ipumsblocks_allstates/2000blocks/nhgis0032_ds147_2000_block.csv", 
                     select = c("PLACEA", "STATEA", "GISJOIN", "COUNTYA", "TRACTA", "BLOCKA"))
 blocks2020 <- fread("ipumsblocks_allstates/2020blocks/nhgis0031_ds248_2020_block.csv",
                     select = c("PLACEA", "STATEA", "GISJOIN", "COUNTYA", "TRACTA", "BLOCKA"))
@@ -155,7 +155,15 @@ for (i in 1:length(plids)) {
 
 write_csv(annexedblocks, "aa_baseline_full_0020.csv")
 
-# we only want to keep blocks that existed in 2000 
+# deal with 0020 first ####
+annexedblocks <- read_csv("aa_baseline_full_0020.csv")
+blocks2000 <- blocks2000 %>%
+  mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
+                        str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0")))
+annexedblocks <- annexedblocks %>%
+  mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
+                        str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0")))
+
 annexedblocks <- annexedblocks[annexedblocks$blkid %in% blocks2000$blkid,] # filter out newly created blockss
 
 # we just need the blockids of blocks that are annexed
@@ -165,7 +173,7 @@ names(annexedblocks) <- c("blkid", "plid_annexed")
 annexedblocks$annexed <- 1
 
 # save this file: all places in 2000 that annexed, the annexed blocks and their corresponding places annexed to between 2000 and 2010
-write_csv(annexedblocks, file = "annexedblocks0010.csv")
+write_csv(annexedblocks, file = "annexedblocks0020.csv")
 
 # if annexed, annex = 1
 pl9000_var <- read_csv("pl9000_var.csv")
@@ -211,18 +219,18 @@ no_annex <- aa %>%
   group_by(plid) %>%
   summarize(n = sum(annexed==1)) %>%
   filter(n==0) %>%
-  dplyr::select(plid) #11421. this would leave us with 
-length(unique(aa$plid)) - nrow(no_annex) #13915 places 
+  dplyr::select(plid) #13561. this would leave us with 
+length(unique(aa$plid)) - nrow(no_annex) #11968 places 
 
 aa <- aa %>%
   filter(!plid %in% no_annex$plid)
 length(unique(aa$plid))
 
-write_csv(aa, "annexedblocks0010_base_unincorp.csv")
+write_csv(aa, "annexedblocks0020_base_unincorp.csv")
 
 #clean up and get ready for Census data ####
 rm(list = ls())
-aa <- read_csv("annexedblocks0010_base_unincorp.csv")
+aa <- read_csv("annexedblocks0020_base_unincorp.csv")
 # aa <- aa %>% distinct(blkid, annexed, .keep_all = TRUE)
 
 # 2000 block data 
@@ -240,46 +248,40 @@ aa <- aa %>%
 
 # drop if pop = 0 or hu = 0 
 aa <- aa %>% 
-  filter(pop00b > 0 & hu > 0)
+  filter(pop00b > 0)
 
 # do filtering of non-annexing places again 
 no_annex <- aa %>% 
   group_by(plid) %>%
   summarize(n = sum(annexed==1)) %>%
   filter(n==0) %>%
-  dplyr::select(plid) #11421. this would leave us with 
-length(unique(aa$plid)) - nrow(no_annex) #12632 places 
+  dplyr::select(plid) #948. this would leave us with 
+length(unique(aa$plid)) - nrow(no_annex) #10728 places 
 
 aa <- aa %>%
   filter(!plid %in% no_annex$plid)
 length(unique(aa$plid))
 rm(no_annex)
 
-# merge in block-level vap data 
-vapblock <- read_csv("vap2000block.csv")
-aa <- aa %>% 
-  left_join(vapblock, by = "blkid")
-rm(blocks2000, vapblock)
-
 # merge in place data for 2000, as well as 1990-2000 trends 
 pl9000 <- read_csv("pl9000_var.csv")
 
-table(aa$plid %in% pl9000$plid) #24385 not
+table(aa$plid %in% pl9000$plid) #21237 not
 aa <- aa %>% 
   filter(plid %in% pl9000$plid)
   
 aa <- aa %>%
   left_join(pl9000, by = "plid")
 
-# filter out places with no pop, no hu, no black/white/hisp/min population 
+# filter out places with no pop, no black/white/hisp/min population 
 
 aa <- aa %>%
   filter(pop00p > 0 & nhblack00p > 0 & nhwhite00p > 0 & h00p > 0 & min00p > 0) %>%
   dplyr::select(-annexing_places)
 
 aa <- aa %>%
-  filter(!is.na(pop00b) & !is.na(pctnhwhite00b) & !is.na(dependencyratio00b) & !is.na(pctowneroccupied) & 
-           is.finite(pop00b) & is.finite(pctnhwhite00b) & is.finite(dependencyratio00b) & is.finite(pctowneroccupied) & 
+  filter(!is.na(pop00b) & !is.na(pctnhwhite00b) & !is.na(dependencyratio00b) & !is.na(pctowneroccupied00b) & 
+           is.finite(pop00b) & is.finite(pctnhwhite00b) & is.finite(dependencyratio00b) & is.finite(pctowneroccupied00b) & 
            !is.na(pcth00b) & !is.na(pctmin00b) & !is.na(pctnhwhite00p) & !is.na(pctmin00p) & !is.na(pcth00p) & !is.na(popgrowth) & 
            !is.na(hpov00p) & !is.na(blackpov00p) & !is.na(minpov00p) & !is.na(nhwhitepov00p) &
            !is.na(recimmgrowth) & !is.na(blackpov00p) & !is.na(hinc00p) & 
@@ -295,15 +297,15 @@ no_annex <- aa %>%
   group_by(plid) %>%
   summarize(n = sum(annexed==1)) %>%
   filter(n==0) %>%
-  dplyr::select(plid) #32. this would leave us with 
-length(unique(aa$plid)) - nrow(no_annex) #5934 places 
+  dplyr::select(plid) #83. this would leave us with 
+length(unique(aa$plid)) - nrow(no_annex) #4770 places 
 
 aa <- aa %>%
   filter(!plid %in% no_annex$plid)
 length(unique(aa$plid))
 rm(no_annex)
 
-write_csv(aa, "annexedblocks0010dem_pl00_newsample_unincorp.csv") # 242,350
+write_csv(aa, "annexedblocks0020dem_pl00_newsample_unincorp.csv") # 207043
 
 
 

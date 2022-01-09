@@ -7,7 +7,7 @@ setwd("~/Google Drive/Stanford/QE2") # @RA you should modify this file path as n
 # compare annexed to non-annexed blocks on these variables, or more
 
 # using:  
-aa <- read_csv("annexedblocks0010dem_pl00_newsample_unincorp.csv")
+aa <- read_csv("annexedblocks0020dem_pl00_newsample_unincorp.csv")
 
 # you could try this code below to see a fast way to generate a table that shows summary statistics 
 vars <- c("pop00b", "nhblack00b", "nhwhite00b", "h00b", "min00b",
