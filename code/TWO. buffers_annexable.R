@@ -40,7 +40,9 @@ get_buffers <- function(state_code, year) {
   blocks <- st_read(paste0("SHP_blk_0010/", year, "/", state_code, "/tl_2010_", substr(state_code, 4, 5), "_tabblock", substr(year, 3, 4), ".shp"))
   blocks <- st_transform(blocks, 3488)
   if (year == 2010) {
-    
+    blocks <- blocks %>%
+      mutate(blkid = paste0(str_pad(as.character(STATEFP10), 2, side = "left", pad = "0"), str_pad(as.character(COUNTYFP10), 3, side = "left", pad = "0"),
+                            str_pad(as.character(TRACTCE10), 6, side = "left", pad = "0"), str_pad(as.character(BLOCKCE10), 4, side = "left", pad = "0")))
   } else {
     blocks <- blocks %>%
       mutate(blkid = as.character(BLKIDFP00))
@@ -55,11 +57,12 @@ get_buffers <- function(state_code, year) {
   places <- st_read(paste0("SHP_pl/", year, "/", state_code, "/tl_2010_", substr(state_code, 4, 5), "_place", substr(year, 3, 4), ".shp"))
   places <- st_transform(places, 3488)
   places <- places %>% 
-    mutate(PLACE = as.character(as.factor(.[, 2]))) %>%
-    filter(!is.na(PLACE) & PLACE != "99999")
+    mutate(PLACE = as.character(.[[2]])) %>%
+    filter(!is.na(PLACE) & PLACE != "99999" & PLACE != "999") %>%
+    mutate(plid = paste0(str_pad(as.character(.[[1]]), 2, side = "left", pad = "0"), str_pad(as.character(.[[2]]), 5, side = "left", pad = "0")))
   
   datalist <- list()
-  for (i in 1:length(unique(places$PLACE))) {
+  for (i in 1:length(unique(places$plid))) {
     p1 <- places[i,]
     p1buffer <- st_buffer(p1, 400)
     p1buffer_intersects <- st_intersects(p1buffer, blocks)
@@ -67,9 +70,9 @@ get_buffers <- function(state_code, year) {
       next
     } else {
       test <- as.data.frame(blocks[p1buffer_intersects[[1]],])
-      test$contigplace <- unique(places$PLACE)[i]
+      test$contigplace <- unique(places$plid)[i]
       datalist[[i]] <- test %>% 
-        select(c(1:4), blkid, GISJOIN, contigplace)
+        select(c(1:4), blkid, contigplace)
     }
   }
   
