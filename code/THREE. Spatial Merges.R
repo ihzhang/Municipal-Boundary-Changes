@@ -57,23 +57,103 @@ for (i in 1:length(plids)) {
   annexedblocks <- base::rbind(annexedblocks, block)
 }
 
-write_csv(annexedblocks, "aa_baseline_full.csv")
+write_csv(annexedblocks, "aa_baseline_full_0010.csv")
 
 rm(block, block00, block10, blocks2010, plids, i)
 length(unique(annexedblocks$GISJOIN)) # check that every entry is unique
 length(unique(annexedblocks$plid)) # how many places does this cover?
 
-# clean up analytical blocks 
-table(is.na(annexedblocks$PLACEA))
-annexedblocks <- annexedblocks %>%
-  mutate(blkid = paste0(STATEA, sprintf("%03.0f", COUNTYA), sprintf("%06.0f", TRACTA), sprintf("%04.0f", BLOCKA)))
+# repeat for 2010-2020 
+blocks2010 <- fread("ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv", 
+                    select = c("PLACEA", "STATEA", "GISJOIN", "COUNTYA", "TRACTA", "BLOCKA"))
+blocks2020 <- fread("ipumsblocks_allstates/2020blocks/nhgis0031_ds248_2020_block.csv",
+                    select = c("PLACEA", "STATEA", "GISJOIN", "COUNTYA", "TRACTA", "BLOCKA"))
 
+# 2010 block data 
+# we need to generate unique place IDs (e.g., place 6238 exists in both state 1 and 2, so we need to differentiate those places)
+blocks2010 <- blocks2010 %>%
+  mutate(PLACEA = as.character(PLACEA),
+         STATEA = as.character(STATEA), 
+         STATEA = str_pad(STATEA, 2, side = "left", pad = "0"),
+         PLACEA = str_pad(PLACEA, 5, side = "left", pad = "0"),
+         plid = paste0(STATEA, PLACEA) # this 7-digit number is the unique place ID for each Census place 
+  )
+
+# 2020 block data 
+# we repeat this process for 2020 data
+blocks2020 <- blocks2020 %>%
+  mutate(PLACEA = as.character(PLACEA),
+         STATEA = as.character(STATEA), 
+         STATEA = str_pad(STATEA, 2, side = "left", pad = "0"),
+         PLACEA = str_pad(PLACEA, 5, side = "left", pad = "0"),
+         plid = paste0(STATEA, PLACEA)
+  )
+
+blocks2020 <- blocks2020 %>% # we don't want to bother with null places in 2020; also, 0199999 is not a unique place ID, for e.g.
+  filter(PLACEA!="99999" & !is.na(PLACEA))
+
+# get list of all annexed blocks to a place ####
+# 1. first, for each place, we get a list of their blocks in 2010 and 2020 
+# 2. then, we only retain the blocks that weren't part of that place in 2010 
+# @RA: Would love your thoughts on how to make this process faster
+annexedblocks <- data.frame()
+plids <- unique(blocks2020$plid)
+for (i in 1:length(plids)) {
+  block10 <- blocks2010 %>% filter(plid==plids[i])
+  block20 <- blocks2020 %>% filter(plid==plids[i])
+  block <- block20 %>% filter(!GISJOIN %in% block10$GISJOIN) # which blocks part of 2010 places were not part of those places in 2000?
+  annexedblocks <- base::rbind(annexedblocks, block)
+}
+
+write_csv(annexedblocks, "aa_baseline_full_1020.csv")
+
+rm(block, block10, block20, blocks2020, plids, i)
+length(unique(annexedblocks$GISJOIN)) # check that every entry is unique
+length(unique(annexedblocks$plid)) # how many places does this cover?
+
+# repeat for 2000 to 2020 
+blocks2000 <- fread("ipumsblocks_allstates/2010blocks/nhgis0032_ds147_2000_block.csv", 
+                    select = c("PLACEA", "STATEA", "GISJOIN", "COUNTYA", "TRACTA", "BLOCKA"))
+blocks2020 <- fread("ipumsblocks_allstates/2020blocks/nhgis0031_ds248_2020_block.csv",
+                    select = c("PLACEA", "STATEA", "GISJOIN", "COUNTYA", "TRACTA", "BLOCKA"))
+
+# 2010 block data 
+# we need to generate unique place IDs (e.g., place 6238 exists in both state 1 and 2, so we need to differentiate those places)
 blocks2000 <- blocks2000 %>%
-  mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
-                        str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0")))
-# do the block formats match? 
-head(annexedblocks$blkid) 
-head(blocks2000$blkid)
+  mutate(PLACEA = as.character(PLACEA),
+         STATEA = as.character(STATEA), 
+         STATEA = str_pad(STATEA, 2, side = "left", pad = "0"),
+         PLACEA = str_pad(PLACEA, 5, side = "left", pad = "0"),
+         plid = paste0(STATEA, PLACEA) # this 7-digit number is the unique place ID for each Census place 
+  )
+
+# 2020 block data 
+# we repeat this process for 2020 data
+blocks2020 <- blocks2020 %>%
+  mutate(PLACEA = as.character(PLACEA),
+         STATEA = as.character(STATEA), 
+         STATEA = str_pad(STATEA, 2, side = "left", pad = "0"),
+         PLACEA = str_pad(PLACEA, 5, side = "left", pad = "0"),
+         plid = paste0(STATEA, PLACEA)
+  )
+
+blocks2020 <- blocks2020 %>% # we don't want to bother with null places in 2020; also, 0199999 is not a unique place ID, for e.g.
+  filter(PLACEA!="99999" & !is.na(PLACEA))
+
+# get list of all annexed blocks to a place ####
+# 1. first, for each place, we get a list of their blocks in 2010 and 2020 
+# 2. then, we only retain the blocks that weren't part of that place in 2010 
+# @RA: Would love your thoughts on how to make this process faster
+annexedblocks <- data.frame()
+plids <- unique(blocks2020$plid)
+for (i in 1:length(plids)) {
+  block00 <- blocks2000 %>% filter(plid==plids[i])
+  block20 <- blocks2020 %>% filter(plid==plids[i])
+  block <- block20 %>% filter(!GISJOIN %in% block00$GISJOIN) # which blocks part of 2010 places were not part of those places in 2000?
+  annexedblocks <- base::rbind(annexedblocks, block)
+}
+
+write_csv(annexedblocks, "aa_baseline_full_0020.csv")
 
 # we only want to keep blocks that existed in 2000 
 annexedblocks <- annexedblocks[annexedblocks$blkid %in% blocks2000$blkid,] # filter out newly created blockss

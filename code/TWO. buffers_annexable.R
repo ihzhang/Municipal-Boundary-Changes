@@ -14,82 +14,41 @@ library("data.table")
 
 setwd("~/Google Drive/Stanford/QE2")
 
-# first need to collapse block file to show places 
+# 1. 2000 blocks contiguous to 2000 places 
+# 2. 2010 blocks contiguous to 2010 places 
+
+# 1. 
 # find all blocks within 400-m buffer of every place in 2000 
 # this forms universe of "annexable" blocks 
 # I will use alabama as test, then use a loop for the remaining states 
-al_contig <- st_read("SHP_blk_0010/2000/TX_48/tl_2010_48_tabblock00.shp")
-al_contig <- st_transform(al_contig, 3488) # Albers for flattening to get meters
-
-al_contig <- al_contig %>%
-  mutate(blkid = as.character(BLKIDFP00))
-  
-# should only retain those not already part of a place
-blocks2000 <- fread("ipumsblocks_allstates/2000blocks/nhgis0032_csv/nhgis0032_ds147_2000_block.csv", select = 
+blocks_list <- list()
+blocks_list[[1]] <- fread("ipumsblocks_allstates/2000blocks/nhgis0032_ds147_2000_block.csv", select = 
                       c("GISJOIN", "STATEA", "COUNTYA", "TRACTA", "BLOCKA", "PLACEA"))
-blocks2000 <- blocks2000[-1, ]
-blocks2000 <- blocks2000 %>%
+blocks_list[[1]] <- blocks2_list[[1]][-1, ]
+
+blocks_list[[2]] <- fread("ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv", select = 
+                            c("GISJOIN", "STATEA", "COUNTYA", "TRACTA", "BLOCKA", "PLACEA"))
+years <- c("2000", "2010")
+
+for(i in 1:length(years)) {
+blocks_list[[i]] <- blocks_list[[i]] %>%
   mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
                         str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0")))
+}
 
-al_contig <- al_contig %>%
-  left_join(blocks2000 %>% dplyr::select(GISJOIN, blkid, PLACEA), 
-            by = "blkid") %>% 
-  filter(is.na(PLACEA) | PLACEA=="99999") 
-
-al_places <- st_read("SHP_pl/TX_48/tl_2010_48_place00.shp")
-al_places <- st_transform(al_places, 3488)
-
-# @RA: this shows an overlay of place-level shapefiles onto block-level ones
-ggplot() + 
-  geom_sf(data = al_contig, fill = "grey", color = "grey") +
-  geom_sf(data = al_places, fill = "black", color = "black") 
-
-al_places <- al_places %>% 
-  mutate(PLACEFP00 = as.character(PLACEFP00),
-         STATEFP00 = as.character(STATEFP00),
-         PLCIDFP00 = as.character(PLCIDFP00)) %>%
-  filter(!is.na(PLACEFP00) & PLACEFP00 != "99999") 
-
-p1 <- al_places[100,]
-p1buffer <- st_buffer(p1, 400)
-p1buffer_intersects <- st_intersects(p1buffer, al_contig)
-test <- al_contig[p1buffer_intersects[[1]],]
-
-# datalist <- list()
-# for (i in 1:length(unique(al_places$PLCIDFP00))) { # run a loop for every place in AL 
-#   p1 <- al_places[i,]
-#   p1buffer <- st_buffer(p1, 400)
-#   p1buffer_intersects <- st_intersects(p1buffer, al_contig)
-#   if(nrow(as.data.frame(al_contig[p1buffer_intersects[[1]],])) < 1) {
-#     next
-#   } else {
-#   test <- as.data.frame(al_contig[p1buffer_intersects[[1]],])
-#   test$contigplace <- unique(al_places$PLCIDFP00)[i]
-#   datalist[[i]] <- test %>% 
-#     select(STATEFP00, COUNTYFP00, TRACTCE00, BLOCKCE00, blkid, GISJOIN, contigplace)
-#   }
-# }
-# 
-# non.null.list <- lapply(datalist, Filter, f = Negate(is.null))
-# rm(datalist)
-# contig <- rbind.fill(lapply(non.null.list, as.data.frame))
-# write_csv(contig, file = paste0("SHP_blk_0010/2000/TX_48/TX_contig.csv"))
-# rm(non.null.list)
-
-get_buffers <- function(state_code) {
-  blocks <- st_read(paste0("SHP_blk_0010/2000/", state_code, "/tl_2010_", substr(state_code, 4, 5), "_tabblock00.shp"))
+get_buffers <- function(state_code, year) {
+  blocks <- st_read(paste0("SHP_blk_0010/", year, "/", state_code, "/tl_2010_", substr(state_code, 4, 5), "_tabblock00.shp"))
   blocks <- st_transform(blocks, 3488)
   blocks <- blocks %>%
     mutate(blkid = as.character(BLKIDFP00))
   
   # should only retain those not already part of a place
   blocks <- blocks %>%
-    left_join(blocks2000 %>% dplyr::select(blkid, PLACEA, GISJOIN), 
+    left_join(blocks_list[[which(years==year)]] %>% dplyr::select(blkid, PLACEA, GISJOIN), 
               by = "blkid") %>% 
     filter(is.na(PLACEA) | PLACEA=="99999") 
   
-  places <- st_read(paste0("SHP_pl/", state_code, "/tl_2010_", substr(state_code, 4, 5), "_place00.shp"))
+  places <- st_read(paste0("SHP_pl/", year, "/", state_code, "/tl_2010_", substr(state_code, 4, 5), "_place00.shp"))
   places <- st_transform(places, 3488)
   places <- places %>% 
     mutate(PLACEFP00 = as.character(PLACEFP00)) %>%
@@ -113,7 +72,7 @@ get_buffers <- function(state_code) {
   non.null.list <- lapply(datalist, Filter, f = Negate(is.null))
   rm(datalist)
   contig <- rbind.fill(lapply(non.null.list, as.data.frame))
-  write_csv(contig, file = paste0("SHP_blk_0010/2000/", state_code, "/", substr(state_code, 1, 2), "_contig.csv"))
+  write_csv(contig, file = paste0("SHP_blk_0010/", year, "/", state_code, "/", substr(state_code, 1, 2), "_contig.csv"))
 }
 
 state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09", 
@@ -127,6 +86,13 @@ state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09",
                  )
 
 for (state_code in state_codes) {
-  get_buffers(state_code)
+  get_buffers(state_code, 2000)
   print(state_code)
 }
+
+# 2. 2010-2020 
+for (state_code in state_codes) {
+  get_buffers(state_code, 2010)
+  print(state_code)
+}
+

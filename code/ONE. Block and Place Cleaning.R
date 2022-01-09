@@ -18,7 +18,7 @@ library("foreach") # for %do% function
 library("data.table") # package for handling large datasets 
 
 # 2000 block-level data ####
-blocks2000 <- read_csv(file = "ipumsblocks_allstates/2000blocks/nhgis0032_ds147_2000_block.csv")
+blocks2000 <- read_csv(file = "ipumsblocks_allstates/2010blocks/nhgis0032_ds147_2000_block.csv")
 blocks2000 <- blocks2000[-1,] # for some reason the first row of this df is irrelevant so we remove it.
 
 # 1. rename variables
@@ -74,6 +74,74 @@ foreach (i = 1:length(dat_use)) %do% {
              pctowneroccupied = (ownerocc/hu)*100) %>% 
     dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
                GISJOIN, STATEA, COUNTYA, TRACTA, BLOCKA, PLACEA, pop00b, nhblack00b, nhwhite00b, h00b, min00b, pctnhblack00b, pctnhwhite00b, pcth00b, pctmin00b, dependencyratio00b, pctowneroccupied, hu)
+  return(NULL)
+}
+# by selecting the variables we need, we significantly reduce the file size of the data. 
+
+# turn list into dataframe 
+blocks2000 <- rbindlist(dat_use, use.names = TRUE)
+rm(dat_use)
+
+# here we save the new file we've made
+write_csv(blocks2000, "blocks2000_var.csv")
+
+# 2010 block-level data ####
+blocks2000 <- read_csv(file = "ipumsblocks_allstates/2010blocks/nhgis0032_ds147_2000_block.csv")
+blocks2000 <- blocks2000[-1,] # for some reason the first row of this df is irrelevant so we remove it.
+
+# 1. rename variables
+# names2000 <- c("nhwhite", "nhblack", "nhaian", "nhasian", "nhpi",
+#                "nhother", "nh2p", "hwhite", "hblack", "haian", "hasian",
+#                "hpi", "hother", "h2p",
+#                "m5", "m5to9", "m10to14", "m15to17", "m18to19", "m20", "m21",
+#                "m22to24", "m25to29", "m30to34", "m35to39", "m40to44", "m45to49", 
+#                "m50to54", "m55to59", "m60to61", "m62to64", "m65to66", "m67to69",
+#                "m70to74", "m75to79", "m80to84", "m85p",
+#                "f5", "f5to9", "f10to14", "f15to17", "f18to19", "f20", "f21",
+#                "f22to24", "f25to29", "f30to34", "f35to39", "f40to44", "f45to49", 
+#                "f50to54", "f55to59", "f60to61", "f62to64", "f65to66", "f67to69",
+#                "f70to74", "f75to79", "f80to84", "f85p",
+#                "hu", "ownerocc", "renterocc")
+
+# names(blocks2000)[14:76] <- names2000 
+# ^ we can use the names() -- it returns a vector, which we index with [] notation, and an assignment to rename variables
+# this is old code, however. Since I have the codebook, I decided to skip the renaming process, which is very tedious, and 
+# use the mutate option instead to conduct operations on the variables. 
+
+# 2. convert factorized numerical variables back to numerical, but the file is very large, so we need 
+# to split it into manageable chunks (stored in a list object) and run the analysis on each chunk separately. 
+# The data is so large in part because there are >8 mil. blocks and 80 variables. However, we don't need 
+# each variable. You can look at the codebook for the data too to get a sense of why we don't need each variable 
+# in the analytical sample, but we DO need most of the variables to construct actual variables of use.
+
+thesecolumns <- c(14:76) # these are the column indexes for variables that need to be convereted from char to num.
+
+f <- rep(seq_len(ceiling(nrow(blocks2000) / 100000)), each = 100000, length.out = nrow(blocks2000))
+dat_use <- split(blocks2000, f = f)
+rm(blocks2000)
+rm(f)
+
+# here's where we do processing on each chunk of the data 
+foreach (i = 1:length(dat_use)) %do% {
+  dat_use[[i]] <- dat_use[[i]] %>%
+    mutate_at(thesecolumns, ~as.numeric(as.character(.))) %>% # mutate_at is a version of mutate that allows us to 
+    #operate on multipe variables at the same time. 
+    mutate( 
+      pop00b = rowSums(across(14:27), na.rm = T),
+      nhblack00b = nhblack,
+      nhwhite00b = nhwhite, 
+      h00b = rowSums(across(21:27), na.rm = T),
+      min00b = rowSums(across(15:27), na.rm = T),
+      pctnhblack00b = (nhblack00b/pop00b)*100,
+      pctnhwhite00b = (nhwhite00b/pop00b)*100, 
+      pcth00b = (h00b/pop00b)*100, 
+      pctmin00b = (min00b/pop00b)*100, 
+      dependants00b = rowSums(across(c(28:31, 51:54, 45:50, 68:73), na.rm = T)),
+      workingage00b = rowSums(across(c(32:44, 55:67), na.rm = T)), 
+      dependencyratio00b = dependants00b/workingage00b,
+      pctowneroccupied = (ownerocc/hu)*100) %>% 
+    dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
+      GISJOIN, STATEA, COUNTYA, TRACTA, BLOCKA, PLACEA, pop00b, nhblack00b, nhwhite00b, h00b, min00b, pctnhblack00b, pctnhwhite00b, pcth00b, pctmin00b, dependencyratio00b, pctowneroccupied, hu)
   return(NULL)
 }
 # by selecting the variables we need, we significantly reduce the file size of the data. 
