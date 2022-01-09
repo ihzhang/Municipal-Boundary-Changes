@@ -30,7 +30,6 @@ cali <- aa %>%
 #let's see what cities we have 
 table(cali$Geo_QName)
 
-
 as.data.frame(cali %>%
                 filter(Geo_QName == "Bakersfield city, California") %>% # use == for characters, = for numbers only 
                 group_by(annexed) %>%
@@ -42,6 +41,8 @@ as.data.frame(cali %>%
 
 # next, what can you tell me about Bakersfield as a place? (00p data)
 # here's a nifty trick to get all the 2000 place-level variable names 
+# remember, you can always use ?grepl to find out more about the command
+
 placevars <- c(names(aa)[which(grepl("00p", names(aa))=="TRUE")], names(aa)[which(grepl("growth", names(aa))=="TRUE")])
 
 cali %>% 
