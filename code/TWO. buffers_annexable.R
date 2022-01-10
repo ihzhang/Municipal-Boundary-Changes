@@ -78,7 +78,7 @@ get_buffers <- function(state_code, year) {
   
   non.null.list <- lapply(datalist, Filter, f = Negate(is.null))
   rm(datalist)
-  contig <- rbind.fill(lapply(non.null.list, as.data.frame))
+  contig <- plyr::rbind.fill(lapply(non.null.list, as.data.frame))
   write_csv(contig, file = paste0("SHP_blk_0010/", year, "/", state_code, "/", substr(state_code, 1, 2), "_contig.csv"))
 }
 
