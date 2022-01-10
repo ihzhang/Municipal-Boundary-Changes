@@ -23,7 +23,7 @@ descriptives <- as.data.frame(aa %>%
                                  t())
 
 # however, I want to start with some "interesting" places
-cali <- aa %>% 
+cali <- aa %>% #california is a nice one to pick because there are pockets of republican places even though it's very diverse
   filter(STATEA=="06") # state code for california is 06 
 # more codes (we call them "FIPS") here: https://transition.fcc.gov/oet/info/maps/census/fips/fips.txt
 
