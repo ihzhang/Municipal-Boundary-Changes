@@ -44,7 +44,7 @@ blocks2010 <- blocks2010 %>%
 blocks2010 <- blocks2010 %>% # we don't want to bother with null places in 2010; also, 0199999 is not a unique place ID, for e.g.
   filter(PLACEA!="99999" & !is.na(PLACEA))
 
-# get list of all annexed blocks to a place ####
+# get list of all annexed blocks to a place from 2000-2010 ####
 # 1. first, for each place, we get a list of their blocks in 2000 and 2010 
 # 2. then, we only retain the blocks that weren't part of that place in 2000 
 # @RA: Would love your thoughts on how to make this process faster
@@ -63,7 +63,7 @@ rm(block, block00, block10, blocks2010, plids, i)
 length(unique(annexedblocks$GISJOIN)) # check that every entry is unique
 length(unique(annexedblocks$plid)) # how many places does this cover?
 
-# repeat for 2010-2020 
+# repeat for 2010-2020 ####
 blocks2010 <- fread("ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv", 
                     select = c("PLACEA", "STATEA", "GISJOIN", "COUNTYA", "TRACTA", "BLOCKA"))
 blocks2020 <- fread("ipumsblocks_allstates/2020blocks/nhgis0031_ds248_2020_block.csv",
@@ -92,7 +92,6 @@ blocks2020 <- blocks2020 %>%
 blocks2020 <- blocks2020 %>% # we don't want to bother with null places in 2020; also, 0199999 is not a unique place ID, for e.g.
   filter(PLACEA!="99999" & !is.na(PLACEA))
 
-# get list of all annexed blocks to a place ####
 # 1. first, for each place, we get a list of their blocks in 2010 and 2020 
 # 2. then, we only retain the blocks that weren't part of that place in 2010 
 # @RA: Would love your thoughts on how to make this process faster
@@ -111,7 +110,7 @@ rm(block, block10, block20, blocks2020, plids, i)
 length(unique(annexedblocks$GISJOIN)) # check that every entry is unique
 length(unique(annexedblocks$plid)) # how many places does this cover?
 
-# repeat for 2000 to 2020 
+# repeat for 2000 to 2020 #### 
 blocks2000 <- fread("ipumsblocks_allstates/2000blocks/nhgis0032_ds147_2000_block.csv", 
                     select = c("PLACEA", "STATEA", "GISJOIN", "COUNTYA", "TRACTA", "BLOCKA"))
 blocks2020 <- fread("ipumsblocks_allstates/2020blocks/nhgis0031_ds248_2020_block.csv",
@@ -140,7 +139,6 @@ blocks2020 <- blocks2020 %>%
 blocks2020 <- blocks2020 %>% # we don't want to bother with null places in 2020; also, 0199999 is not a unique place ID, for e.g.
   filter(PLACEA!="99999" & !is.na(PLACEA))
 
-# get list of all annexed blocks to a place ####
 # 1. first, for each place, we get a list of their blocks in 2010 and 2020 
 # 2. then, we only retain the blocks that weren't part of that place in 2010 
 # @RA: Would love your thoughts on how to make this process faster
@@ -155,7 +153,7 @@ for (i in 1:length(plids)) {
 
 write_csv(annexedblocks, "aa_baseline_full_0020.csv")
 
-# deal with 0020 first ####
+# clean 0020 for first-stage analysis ####
 annexedblocks <- read_csv("aa_baseline_full_0020.csv")
 blocks2000 <- blocks2000 %>%
   mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
@@ -184,7 +182,7 @@ table(pl9000_var$annexing_places)
 
 write_csv(pl9000_var, "pl9000_var.csv")
 
-# contiguous blocks ####
+# contiguous blocks 
 state_list <- list.files("SHP_blk_0010/2000/", all.files = FALSE, full.names = FALSE)
 contig_list <- list()
 for (i in 1:length(state_list)) {
@@ -228,7 +226,7 @@ length(unique(aa$plid))
 
 write_csv(aa, "annexedblocks0020_base_unincorp.csv")
 
-#clean up and get ready for Census data ####
+#clean up and get ready for Census data 
 rm(list = ls())
 aa <- read_csv("annexedblocks0020_base_unincorp.csv")
 # aa <- aa %>% distinct(blkid, annexed, .keep_all = TRUE)
@@ -307,7 +305,10 @@ rm(no_annex)
 
 write_csv(aa, "annexedblocks0020dem_pl00_newsample_unincorp.csv") # 207043
 
-
+# at place-level from 2000-2013, and 2013-2020 ####
+# first need to clean 2010-2020 annexation data compared to BAS 
+# next, if a place annexed from 2000-2013, they are given a 0 for time, and 1 otherwise 
+# calculate outcomes 
 
 
 
