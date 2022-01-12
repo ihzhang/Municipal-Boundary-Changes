@@ -253,8 +253,9 @@ places2000 <- places2000 %>%
   select(Geo_QName, plid, pop00p:minvap00p)
 
 rm(poverty00, vap2000)
+write_csv(places2000, "pl2000_cleaned.csv")
 
-# place 90 ####
+# 1990 place-level data ####
 places1990 <- read_csv(file = "seplaces_allstates/1990places.csv")
 vap1990 <- read_csv(file = "seplaces_allstates/vap1990.csv")
 
@@ -366,7 +367,7 @@ pl9000 <-
 write_csv(pl9000, "pl9000_var.csv")
 rm(places1990, places2000, pl9000, vap1990)
 
-# 2010 places 
+# 2010 places ####
 places2010 <- read_csv(file = "seplaces_allstates/2010places.csv")
 vap2010 <- read_csv(file = "seplaces_allstates/2010_vap.csv")
 
@@ -445,3 +446,56 @@ pl0010 <-
 
 write_csv(pl0010, "pl0010_var.csv")
 rm(list = ls())
+
+# 2013 ACS ####
+acs13 <- read_csv("seplaces_allstates/2013places.csv")
+acs13 %<>%
+    rename("nhwhite13p" = "PCT_SE_A04001_003",
+           "nhblack13p" = "PCT_SE_A04001_004",
+           "h13p" = "PCT_SE_A04001_010") %>%
+    mutate(min13p = 100-nhwhite13p,
+           STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+           PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
+           plid = paste0(STATE, PLACE)) %>%
+    select(c(plid, Geo_QName, contains("13p")))
+
+
+# 2020 census ####
+places2020 <- read_csv("seplaces_allstates/2020places.csv")
+places2020 %<>% 
+    rename("Geo_QName" = "Geo_QNAME") %>%
+    mutate(pop20p = SE_T003_001, 
+           nhwhite20p = SE_T004_003,
+           nhblack20p = SE_T004_005,
+           h20p = SE_T004_017,
+           min20p = 100-nhwhite20p,
+           STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+           PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
+           plid = paste0(STATE, PLACE)) %>%
+    select(c(plid, Geo_QName, contains("20p")))
+
+write_csv(places2020, "places2020_var.csv")
+
+# now do 2000-2013 and 2013-2020 ####
+length(unique(acs13$plid))
+length(unique(places2020$plid))
+
+places2020 <- places2020 %>%
+    select(-pop20p) 
+
+vars <- c("nhwhite", "nhblack", "h", "min")
+names(places2020)[3:6] <- vars
+names(acs13)[3:6] <- vars
+
+acs13 <- acs13 %>%
+    mutate(Year = "2013", 
+           Time = 0) %>% 
+    filter(plid %in% unique(places2020$plid))
+
+places2020 <- places2020 %>% 
+    mutate(Year = "2020", 
+           Time = 0) %>%
+    filter(plid %in% unique(acs13$plid))
+
+panel1320 <- base::rbind(acs13, places2020)
+write_csv(panel1320, "panel1320_did.csv")
