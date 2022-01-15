@@ -205,7 +205,7 @@ aa <- aa %>%
 length(unique(aa$plid))
 rm(no_annex)
 
-write_csv(aa, "annexedblocks0020dem_pl00_newsample_unincorp.csv") # 207043
+write_csv(aa, "annexedblocks0010dem_pl00_newsample_unincorp.csv") # 207043
 
 # repeat for 2010-2020 ####
 blocks2010 <- fread("ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv", 
