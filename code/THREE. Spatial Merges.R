@@ -139,8 +139,8 @@ blocks2000 %<>%
                           str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0")))
 head(aa$blkid)
 head(blocks2000$blkid)
-# check they seem to be in comparable formats
 
+# check they seem to be in comparable formats
 aa %<>%
     left_join(blocks2000, by = "blkid")
 
@@ -155,44 +155,6 @@ no_annex <- aa %>%
     filter(n==0) %>%
     dplyr::select(plid) #965. this would leave us with 
 length(unique(aa$plid)) - nrow(no_annex) #12635 places 
-
-aa %<>%
-    filter(!plid %in% no_annex$plid)
-length(unique(aa$plid))
-rm(no_annex)
-
-# merge in place data for 2000, as well as 1990-2000 trends 
-pl0010 <- read_csv("pl0010_var.csv")
-
-table(aa$plid %in% pl0010$plid) #8183 not
-aa %<>% 
-    filter(plid %in% pl0010$plid)
-
-aa %<>%
-    left_join(pl0010, by = "plid")
-
-# filter out places with no pop, no black/white/hisp/min population 
-
-aa %<>%
-    filter(pop00p > 0 & nhblack00p > 0 & nhwhite00p > 0 & h00p > 0 & min00p > 0) %>%
-    dplyr::select(-annexing_places)
-
-aa %<>%
-    filter(!is.na(pop00b) & !is.na(pctnhwhite00b) & !is.na(dependencyratio00b) & !is.na(pctowneroccupied00b) & 
-               is.finite(pop00b) & is.finite(dependencyratio00b) & is.finite(pctowneroccupied00b) & 
-               !is.na(pcth00b) & !is.na(pctmin00b) & !is.na(pctnhwhite00p) & !is.na(pctmin00p) & !is.na(pcth00p) & !is.na(popgrowth) & 
-               !is.na(hpov00p) & !is.na(blackpov00p) & !is.na(minpov00p) & !is.na(nhwhitepov00p) &
-               !is.na(recimmgrowth) & !is.na(blackpov00p) & !is.na(hinc00p) & 
-               !is.na(hispvap00p) & !is.na(nhwhitevap00p) & !is.na(minvap00p) & 
-               !is.na(hispvap00b) & !is.na(nhwvap00b) & !is.na(minorityvap00b)) 
-
-# last check of non-annexing places 
-no_annex <- aa %>% 
-    group_by(plid) %>%
-    summarize(n = sum(annexed==1)) %>%
-    filter(n==0) %>%
-    dplyr::select(plid) #39. this would leave us with 
-length(unique(aa$plid)) - nrow(no_annex) #6289 places 
 
 aa %<>%
     filter(!plid %in% no_annex$plid)
@@ -305,31 +267,11 @@ length(unique(aa$plid))
 
 write_csv(aa, "annexedblocks1020_base_unincorp.csv")
 
-# find annexations 2010-2013 
-year_list <- c(11:21)
-bas_list <- list()
-for (i in 1:length(year_list)) {
-    bas_list[[i]] <- read.delim(file = paste0("BAS/US_bas", year_list[i], ".txt"), 
-                                header = TRUE, na = "") 
-} 
-
-bas <- rbindlist(bas_list, use.names = T, fill = T)
-rm(bas_list, contigall2010, no_annex, annexedblocks)
-
-bas %<>% 
-    filter(Action=="Annexation" & (!is.na(Place.Name.and.LSAD) & !is.na(FIPS.Place.Code)) & !is.na(State)) %>%
-    mutate(State = str_pad(State, 2, side = "left", pad = "0"),
-           FIPS.Place.Code = str_pad(FIPS.Place.Code, 5, side = "left", pad = "0"),
-           plid = paste0(State, FIPS.Place.Code),
-           st_pln = paste0(State, Place.Name.and.LSAD),
-           ann_date = lubridate::mdy(Effective.Date)) %>%
-    filter(ann_date >= as.Date("2010-01-01") & ann_date <= as.Date("2020-12-31"))
-
 #clean up and get ready for Census data 
 # 2013 block data 
-blocks2010 <- read_csv("blocks2000_var.csv")
+blocks2010 <- read_csv("blocks2010_var.csv")
 
-blocks2000 %<>%
+blocks2010 %<>%
     mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
                           str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0")))
 head(aa$blkid)
@@ -337,7 +279,7 @@ head(blocks2000$blkid)
 # check they seem to be in comparable formats
 
 aa %<>%
-    left_join(blocks2000, by = "blkid")
+    left_join(blocks2010, by = "blkid")
 
 # drop if pop = 0 or hu = 0 
 aa %<>% 
@@ -357,29 +299,21 @@ length(unique(aa$plid))
 rm(no_annex)
 
 # merge in place data for 2000, as well as 1990-2000 trends 
-pl0010 <- read_csv("pl0010_var.csv")
+pl0010 <- read_csv("pl1020_var.csv")
 
-table(aa$plid %in% pl0010$plid) #8183 not
+table(aa$plid %in% pl1020$plid) #8183 not
 aa %<>% 
-    filter(plid %in% pl0010$plid)
+    filter(plid %in% pl1020$plid)
 
 aa %<>%
-    left_join(pl0010, by = "plid")
+    left_join(pl1020, by = "plid")
 
 # filter out places with no pop, no black/white/hisp/min population 
 
 aa %<>%
-    filter(pop00p > 0 & nhblack00p > 0 & nhwhite00p > 0 & h00p > 0 & min00p > 0) %>%
-    dplyr::select(-annexing_places)
-
-aa %<>%
-    filter(!is.na(pop00b) & !is.na(pctnhwhite00b) & !is.na(dependencyratio00b) & !is.na(pctowneroccupied00b) & 
-               is.finite(pop00b) & is.finite(dependencyratio00b) & is.finite(pctowneroccupied00b) & 
-               !is.na(pcth00b) & !is.na(pctmin00b) & !is.na(pctnhwhite00p) & !is.na(pctmin00p) & !is.na(pcth00p) & !is.na(popgrowth) & 
-               !is.na(hpov00p) & !is.na(blackpov00p) & !is.na(minpov00p) & !is.na(nhwhitepov00p) &
-               !is.na(recimmgrowth) & !is.na(blackpov00p) & !is.na(hinc00p) & 
-               !is.na(hispvap00p) & !is.na(nhwhitevap00p) & !is.na(minvap00p) & 
-               !is.na(hispvap00b) & !is.na(nhwvap00b) & !is.na(minorityvap00b)) 
+    filter(!is.na(pop10b) & !is.na(pctnhwhite10b) & !is.na(dependencyratio10b) & !is.na(pctowneroccupied10b) & 
+               is.finite(pop10b) & is.finite(dependencyratio10b) & is.finite(pctowneroccupied10b) & 
+               !is.na(pcth10b) & !is.na(pctmin10b)) 
 
 # last check of non-annexing places 
 no_annex <- aa %>% 
@@ -395,13 +329,14 @@ length(unique(aa$plid))
 rm(no_annex)
 
 write_csv(aa, "annexedblocks0010dem_pl00_newsample_unincorp.csv") # 251103
+
 # repeat for 2000 to 2020 #### 
 blocks2000 <- fread("ipumsblocks_allstates/2000blocks/nhgis0032_ds147_2000_block.csv", 
                     select = c("PLACEA", "STATEA", "GISJOIN", "COUNTYA", "TRACTA", "BLOCKA"))
 blocks2020 <- fread("ipumsblocks_allstates/2020blocks/nhgis0031_ds248_2020_block.csv",
                     select = c("PLACEA", "STATEA", "GISJOIN", "COUNTYA", "TRACTA", "BLOCKA"))
 
-# 2010 block data 
+# 2000 block data 
 # we need to generate unique place IDs (e.g., place 6238 exists in both state 1 and 2, so we need to differentiate those places)
 blocks2000 <- blocks2000 %>%
   mutate(PLACEA = as.character(PLACEA),
@@ -591,6 +526,10 @@ rm(no_annex)
 write_csv(aa, "annexedblocks0020dem_pl00_newsample_unincorp.csv") # 207043
 
 # at place-level from 2000-2013, and 2013-2020 ####
+# 1. get plid for annexations to 2000-2010 and 2010-2013 
+### filter out 2010-2013 annexations 
+# 2. for the did panel, make outcome of annexed-annexable at 2013 and 2020 
+
 # first need to clean 2010-2020 annexation data compared to BAS 
 # next, if a place annexed from 2000-2013, they are given a 0 for time, and 1 otherwise 
 # calculate outcomes 
@@ -600,5 +539,84 @@ write_csv(aa, "annexedblocks0020dem_pl00_newsample_unincorp.csv") # 207043
 annexed0010 <- read_csv("annexedblocks0010dem_pl00_newsample_unincorp.csv")
 
 # load in VRA data 
+# find annexations 2010-2013 
+aa <- read_csv("annexedblocks1020_base_unincorp.csv")
+year_list <- c(11:21)
+bas_list <- list()
+for (i in 1:length(year_list)) {
+    bas_list[[i]] <- read.delim(file = paste0("BAS/US_bas", year_list[i], ".txt"), 
+                                header = TRUE, na = "") 
+} 
 
+bas <- rbindlist(bas_list, use.names = T, fill = T)
+rm(bas_list, contigall2010, no_annex, annexedblocks)
+
+bas %<>% 
+    filter(Action=="Annexation" & (!is.na(Place.Name.and.LSAD) & !is.na(FIPS.Place.Code)) & !is.na(State)) %>%
+    mutate(State = str_pad(State, 2, side = "left", pad = "0"),
+           FIPS.Place.Code = str_pad(FIPS.Place.Code, 5, side = "left", pad = "0"),
+           plid = paste0(State, FIPS.Place.Code),
+           st_pln = paste0(State, Place.Name.and.LSAD),
+           ann_date = lubridate::mdy(Effective.Date)) %>%
+    filter(ann_date >= as.Date("2010-01-01") & ann_date <= as.Date("2020-12-31"))
+
+ann_prevra <- bas %>%
+    filter(ann_date < as.Date("2013-06-25"))
+
+prev <- unique(ann_prevra$plid)
+postv <- unique(bas$plid[bas$ann_date >= as.Date("2013-06-25")])
+
+double <- postv[postv %in% prev]
+postv <- postv[!postv %in% double]
+prev <- prev[!prev %in% double]
+
+aa_ann <- as.character(unique(aa$plid))
+# this is over 10K places - we really miss a lot by excluding them
+length(!unique(aa$plid) %in% unique(bas$plid))
+plid_excl <- unique(aa$plid)[!unique(aa$plid) %in% unique(bas$plid)]
+
+aa %<>% 
+    filter((plid %in% bas$plid) & 
+               (!plid %in% double))
+
+aa %<>% 
+    mutate(
+        post = case_when(
+            plid %in% postv ~ "1",
+            plid %in% prev ~ "0",
+            TRUE ~ NA_character_
+        ), 
+        post = as.numeric(post)
+    )
+
+table(aa$post, exclude = NULL)
+
+length(unique(aa$plid)) #1166 places left 
+pl1320 <- read_csv("panel1320_did.csv")
+pl1320 %<>%  # places with 0 truly didn't annex 
+    filter((!plid %in% plid_excl) & 
+               (!plid %in% double))
+
+plids_to_merge <- aa %>%
+    group_by(plid) %>%
+    summarize(Treated = mean(post))
+
+pl1320 %<>% 
+    left_join(plids_to_merge, by = "plid") %>%
+    mutate(Treated = ifelse(is.na(Treated), 0, Treated))
+
+table(pl1320$Treated)
+
+# get county ID to merge with VRA data and add data to aa
+blocks2000 <- read_csv("blocks2000_var.csv")
+blocks2000 %<>%
+    mutate(countyfips = paste0(STATEA, COUNTYA),
+           plid = paste0(STATEA, str_pad(PLACEA, 5, side = "left", pad = "0"))) %>%
+    filter(!PLACEA %in% "99999") %>%
+    select(blkid, countyfips, plid, STATEA)
+
+blocks2020 <- read_csv("blocks2020_var.csv")
+
+nc <- aa %>%
+    filter(stateid=="42")
 
