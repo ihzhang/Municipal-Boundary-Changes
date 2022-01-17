@@ -649,6 +649,7 @@ acs13 %<>%
            plid = paste0(STATE, PLACE)) %>%
     select(c(plid, Geo_QName, contains("13p")))
 
+write_csv(acs13, "acs13.csv")
 
 # 2020 census ####
 places2020 <- read_csv("seplaces_allstates/2020places.csv")

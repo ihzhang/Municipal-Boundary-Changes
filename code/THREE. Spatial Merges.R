@@ -11,7 +11,7 @@ library("tidycensus")
 library("lme4")
 library("readr")
 library("data.table")
-library("readstata13")
+#library("readstata13")
 library("magrittr")
 
 # create annexed blocks file ####
@@ -524,99 +524,3 @@ length(unique(aa$plid))
 rm(no_annex)
 
 write_csv(aa, "annexedblocks0020dem_pl00_newsample_unincorp.csv") # 207043
-
-# at place-level from 2000-2013, and 2013-2020 ####
-# 1. get plid for annexations to 2000-2010 and 2010-2013 
-### filter out 2010-2013 annexations 
-# 2. for the did panel, make outcome of annexed-annexable at 2013 and 2020 
-
-# first need to clean 2010-2020 annexation data compared to BAS 
-# next, if a place annexed from 2000-2013, they are given a 0 for time, and 1 otherwise 
-# calculate outcomes 
-# need county code for each place 
-
-# load in places that definitely annexed prior to 2013, using 0010 data 
-annexed0010 <- read_csv("annexedblocks0010dem_pl00_newsample_unincorp.csv")
-
-# load in VRA data 
-# find annexations 2010-2013 
-aa <- read_csv("annexedblocks1020_base_unincorp.csv")
-year_list <- c(11:21)
-bas_list <- list()
-for (i in 1:length(year_list)) {
-    bas_list[[i]] <- read.delim(file = paste0("BAS/US_bas", year_list[i], ".txt"), 
-                                header = TRUE, na = "") 
-} 
-
-bas <- rbindlist(bas_list, use.names = T, fill = T)
-rm(bas_list, contigall2010, no_annex, annexedblocks)
-
-bas %<>% 
-    filter(Action=="Annexation" & (!is.na(Place.Name.and.LSAD) & !is.na(FIPS.Place.Code)) & !is.na(State)) %>%
-    mutate(State = str_pad(State, 2, side = "left", pad = "0"),
-           FIPS.Place.Code = str_pad(FIPS.Place.Code, 5, side = "left", pad = "0"),
-           plid = paste0(State, FIPS.Place.Code),
-           st_pln = paste0(State, Place.Name.and.LSAD),
-           ann_date = lubridate::mdy(Effective.Date)) %>%
-    filter(ann_date >= as.Date("2010-01-01") & ann_date <= as.Date("2020-12-31"))
-
-ann_prevra <- bas %>%
-    filter(ann_date < as.Date("2013-06-25"))
-
-prev <- unique(ann_prevra$plid)
-postv <- unique(bas$plid[bas$ann_date >= as.Date("2013-06-25")])
-
-double <- postv[postv %in% prev]
-postv <- postv[!postv %in% double]
-prev <- prev[!prev %in% double]
-
-aa_ann <- as.character(unique(aa$plid))
-# this is over 10K places - we really miss a lot by excluding them
-length(!unique(aa$plid) %in% unique(bas$plid))
-plid_excl <- unique(aa$plid)[!unique(aa$plid) %in% unique(bas$plid)]
-
-aa %<>% 
-    filter((plid %in% bas$plid) & 
-               (!plid %in% double))
-
-aa %<>% 
-    mutate(
-        post = case_when(
-            plid %in% postv ~ "1",
-            plid %in% prev ~ "0",
-            TRUE ~ NA_character_
-        ), 
-        post = as.numeric(post)
-    )
-
-table(aa$post, exclude = NULL)
-
-length(unique(aa$plid)) #1166 places left 
-pl1320 <- read_csv("panel1320_did.csv")
-pl1320 %<>%  # places with 0 truly didn't annex 
-    filter((!plid %in% plid_excl) & 
-               (!plid %in% double))
-
-plids_to_merge <- aa %>%
-    group_by(plid) %>%
-    summarize(Treated = mean(post))
-
-pl1320 %<>% 
-    left_join(plids_to_merge, by = "plid") %>%
-    mutate(Treated = ifelse(is.na(Treated), 0, Treated))
-
-table(pl1320$Treated)
-
-# get county ID to merge with VRA data and add data to aa
-blocks2000 <- read_csv("blocks2000_var.csv")
-blocks2000 %<>%
-    mutate(countyfips = paste0(STATEA, COUNTYA),
-           plid = paste0(STATEA, str_pad(PLACEA, 5, side = "left", pad = "0"))) %>%
-    filter(!PLACEA %in% "99999") %>%
-    select(blkid, countyfips, plid, STATEA)
-
-blocks2020 <- read_csv("blocks2020_var.csv")
-
-nc <- aa %>%
-    filter(stateid=="42")
-
