@@ -499,3 +499,6 @@ places2020 <- places2020 %>%
 
 panel1320 <- base::rbind(acs13, places2020)
 write_csv(panel1320, "panel1320_did.csv")
+
+# make interpolated block data #### 
+# clean block group data ####
