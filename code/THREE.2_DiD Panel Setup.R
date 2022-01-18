@@ -85,11 +85,170 @@ annexed0013 %<>%
 table(annexed0013$vra, exclude = NULL)
 
 # make a block version of the joined data 
-blocks2013 <- read_csv("blocks2013_int.csv")
+blocks2000 <- read_csv("blocks2000_var.csv")
 annexed0013 %<>%
-    filter(blkid %in% blocks2013$blkid)
+    filter(blkid %in% blocks2000$blkid)
 table(annexed0013$vra, exclude = NULL)
 table(annexed0013$annexed)
+
+annexed0013 %<>%
+    left_join(blocks2000 %>% select(blkid, pop00b, pctnhblack00b:pctmin00b))
+
+annexed0013 %<>%
+    filter(pop00b > 0 & !is.na(pop00b))
+
+annexed0013 %<>%
+    mutate_at(c(names(annexed0013)[9:ncol(annexed0013)]), ~ifelse(is.na(.), 0, .))
+
+places0013 <- 
+    annexed0013 %>%
+    group_by(plid, annexed) %>%
+    summarize_at(c(names(annexed0013)[7:ncol(annexed0013)]), ~mean(., na.rm = T)) 
+
+places0013 %<>%
+    mutate(vra = ifelse(vra >0 & vra < 1, 1, vra))
+table(places0013$vra)
+
+places0013 %<>%
+    pivot_wider(
+        id_cols = c(plid, vra),
+        names_from = "annexed",
+        values_from = c(annexed, pop00b:pctmin00b)
+    )
+
+varindex = names(annexed0013)[8:ncol(annexed0013)] # create change variables
+
+for (variable in varindex) {
+    varname <- paste0(variable, "_diff")
+    places0013[[varname]] <- places0013[[paste0(variable, "_1")]] - places0013[[paste0(variable, "_0")]]
+}
+
+places0013 %<>%
+    select(c(plid, vra, contains("_diff"))) %>%
+    filter(!is.na(pop00b_diff))
+
+# everything that's not in places0013 are non-annexing places, and we need 
+# to know their average contiguous characteristics 
+
+contig <- read_csv("allcontigblocks2000.csv")
+contig %<>%
+    filter(blkid %in% blocks2000$blkid) %<>%
+    select(blkid, contigplace) %>%
+    rename(plid = contigplace)
+
+contig %<>%
+    left_join(blocks2000 %>% select(blkid, pop00b, pctnhblack00b:pctmin00b))
+
+contig %<>%
+    filter(pop00b > 0 & !is.na(pop00b))
+
+contig %<>%
+    mutate(STATEA = substr(blkid, 1, 2), 
+           countyfips = substr(blkid, 1, 5))
+
+contig %<>%
+    mutate(vra = case_when(
+        STATEA %in% vrastates ~ 1,
+        countyfips %in% vra$countyfips ~ 1,
+        TRUE ~ 0
+    ))
+
+contigplaces0013 <- 
+    contig %>%
+    group_by(plid) %>%
+    summarize_at(c(names(contig)[c(3:7, 10)]), ~mean(., na.rm = T)) 
+
+contigplaces0013 %<>%
+    mutate(vra = ifelse(vra >0 & vra < 1, 1, vra))
+
+table(contigplaces0013$vra, exclude = NULL)
+
+contigplaces0013 %<>%
+    mutate_at(c(names(contigplaces0013)[c(3:6)]), ~ifelse(is.na(.), 0, .))
+
+# if the places in contigplaces are already covered by annexed, remove 
+contigplaces0013 %<>%
+    filter(!plid %in% places0013$plid)
+
+# get diff var for non-annexing places 
+places2000 <- read_csv("pl2000_cleaned.csv")
+
+places2000 %<>%
+    select(plid, pctnhblack00p:pctmin00p) 
+
+places2000 %<>%
+    filter(!plid %in% places0013$plid) %>%
+    filter(plid %in% contigplaces0013$plid)
+
+contigplaces0013 %<>%
+    left_join(places2000, by = "plid")
+
+varindex = names(contigplaces0013)[c(3:6)] # create change variables
+varindex = gsub("00b", "", varindex)
+
+for (variable in varindex) {
+    varname <- paste0(variable, "_diff")
+    contigplaces0013[[varname]] <- contigplaces0013[[paste0(variable, "00p")]] - contigplaces0013[[paste0(variable, "00b")]]
+}
+
+contigplaces0013 %<>%
+    select(c(plid, vra, contains("_diff"))) 
+
+places_to_merge2013 <- base::rbind(
+    places0013 %>% select(c(plid, vra, contains("pct"))),
+    contigplaces0013
+)
+
+places_to_merge2013$Year <- 2013
+write_csv(places_to_merge2013, "places_to_merge2013.csv")
+
+rm(places2000, annexed0013, blocks2000, contig, contigplaces0013, paneldid, places0013, places13)
+
+# repeat this for 2013-2020 ####
+aa2020 <- read_csv("annexedblocks1020_base_unincorp.csv")
+
+# remove these plids from places2020 data 
+# because we know they have annexed but we can't find info about when they 
+# annexed 
+
+plids_to_remove <- aa2020 %>%
+    filter(!plid %in% bas$plid) %>%
+    select(plid)
+
+plids_to_remove <- unique(plids_to_remove)
+
+aa2020 %<>% 
+    filter((plid %in% bas$plid) & 
+               (!plid %in% double))
+aa2020 %<>%
+    filter(plid %in% postv)
+
+write_csv(aa2020, "annexed2020.csv")
+
+aa2020 %<>%
+    mutate(countyfips = substr(blkid, 1, 5),
+           STATEA = substr(blkid, 1, 2))
+
+aa2020 %<>%
+    mutate(vra = case_when(
+        STATEA %in% vrastates ~ 1,
+        countyfips %in% vra$countyfips ~ 1,
+        TRUE ~ 0
+    ))
+
+table(aa2020$vra, exclude = NULL)
+
+# get 2013 block data 
+blocks2013 <- read_csv("blocks2013_int.csv")
+
+length(aa2020$blkid %in% blocks2013$blkid)
+
+aa2020 %<>%
+    mutate(exclude = ifelse(!blkid %in% blocks2013$blkid, 1, 0))
+table(aa2020$exclude)
+
+aa2020 %<>%
+    filter(blkid %in% blocks2013$blkid)
 
 annexed0013 %<>%
     left_join(blocks2013 %>% select(blkid, pop, pctnhblack:nhbvap))
@@ -218,21 +377,3 @@ write_csv(places_to_merge2013, "places_to_merge2013.csv")
 
 rm(acs13, annexed0013, blocks2013, contig, contigplaces0013, paneldid, places0013, places13)
 
-# repeat this for 2013-2020 ####
-aa2020 <- read_csv("annexedblocks1020_base_unincorp.csv")
-
-aa2020 %<>% 
-    filter((plid %in% bas$plid) & 
-               (!plid %in% double))
-aa2013 %<>%
-    filter(plid %in% postv)
-
-annexed0013 <- base::rbind(
-    annexed0010 %>% select(blkid, plid, annexed, STATEA, COUNTYA),
-    aa2013 %>% select(blkid, plid, annexed) %>% 
-        mutate(STATEA = substr(blkid, 1, 2), COUNTYA = substr(blkid, 3, 5))
-)
-
-rm(aa2013, ann_prevra, annexed0010, aa_ann, year_list)
-
-write_csv(annexed0013, "annexed0013.csv")

@@ -17,6 +17,7 @@ library("stargazer") # this is a handy package that produces regression tables a
 library("foreach") # for %do% function
 library("data.table") # package for handling large datasets 
 library("magrittr") # for %<>% operator
+library("zoo") # for na.approx function
 
 # 2000 block-level data ####
 blocks2000 <- read_csv(file = "ipumsblocks_allstates/2000blocks/nhgis0032_ds147_2000_block.csv")
@@ -761,14 +762,14 @@ names(blocks2010) <- gsub("10b", "", names(blocks2010))
 blocks2010 %<>%
     mutate(Year = "2010")
 
-blocks2000 %<>%
-    filter((blkid %in% blocks2010$blkid) & (blkid %in% blocks2020$blkid))
-
-blocks2010 %<>%
-    filter(blkid %in% blocks2000$blkid)
-
-blocks2020 %<>%
-    filter(blkid %in% blocks2000$blkid)
+# blocks2000 %<>%
+#     filter((blkid %in% blocks2010$blkid) & (blkid %in% blocks2020$blkid))
+# 
+# blocks2010 %<>%
+#     filter(blkid %in% blocks2000$blkid)
+# 
+# blocks2020 %<>%
+#     filter(blkid %in% blocks2000$blkid)
 
 blocks <- base::rbind(blocks2000, blocks2010, blocks2020)
 rm(blocks2000, blocks2010, blocks2020)
@@ -780,8 +781,6 @@ blocks2013 %<>%
 names(blocks2013) <- gsub("00b", "", names(blocks2013))
 blocks2013 %<>%
     mutate(Year = "2013")
-blocks2013 %<>%
-    filter(blkid %in% unique(blocks$blkid))
 
 blocks2013 %<>%
     mutate(pop = NA,
@@ -799,10 +798,14 @@ rm(blocks2013)
 blocks %<>%
     mutate(Year = as.numeric(as.character(Year))) 
 
+# 1/17 update: turns out we don't have vap data at place-level anyway 
+blocks %<>% 
+    select(-c(contains("vap")))
+
 blocks %<>%
     group_by(blkid) %>%
     arrange(Year) %>%
-    mutate_at(c(names(blocks)[2:9]), zoo::na.approx, na.rm = F) %>%
+    mutate_at(c(names(blocks)[2:6]), zoo::na.approx, na.rm = F) %>%
     ungroup()
 
 blocks %>%
