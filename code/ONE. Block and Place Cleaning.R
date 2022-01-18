@@ -810,9 +810,13 @@ blocks %<>%
 
 blocks %>%
     filter(Year=="2013") %>%
+    arrange(blkid) %>%
     View()
 
-write_csv(blocks %>% filter(Year=="2013"), "blocks2013_int.csv")
+blocks %<>%
+    filter(Year=="2013")
+
+write_csv(blocks, "blocks2013_int.csv")
 rm(blocks)
 
 # clean block group data ####
