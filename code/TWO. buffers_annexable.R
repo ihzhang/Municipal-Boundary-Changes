@@ -65,7 +65,7 @@ get_buffers <- function(state_code, year) {
   datalist <- list()
   for (i in 1:length(unique(places$plid))) {
     p1 <- places[i,]
-    p1buffer <- st_buffer(p1, 400)
+    p1buffer <- st_buffer(p1, 0)
     p1buffer_intersects <- st_intersects(p1buffer, blocks)
     if(nrow(as.data.frame(blocks[p1buffer_intersects[[1]],])) < 1) {
       next
@@ -103,4 +103,46 @@ for (state_code in state_codes) {
   get_buffers(state_code, 2010)
   print(state_code)
 }
+
+
+# 2013 blocks and their 2013 place id 
+# 2014, their 2014 place id and their contiguous blocks 
+get_block_ids <- function (state_code, year) {
+    blocks <- st_read(paste0("SHP_blk_0010/", year, "/", state_code, "/tl_", year, "_", substr(state_code, 4, 5), "_tabblock.shp"))
+    blocks <- st_transform(blocks, 3488)
+    blocks %<>%
+        mutate(blkid = paste0(str_pad(as.character(STATEFP10), 2, side = "left", pad = "0"), str_pad(as.character(COUNTYFP10), 3, side = "left", pad = "0"),
+                              str_pad(as.character(TRACTCE10), 6, side = "left", pad = "0"), str_pad(as.character(BLOCKCE10), 4, side = "left", pad = "0")))
+    
+    places <- st_read(paste0("SHP_pl/", year, "/", state_code, "/tl_", year, "_", substr("AL_01", 4, 5), "_place.shp"))
+    places <- st_transform(place, 3488)
+    
+    places %<>% 
+        mutate(plid = paste0(
+            str_pad(as.character(STATEFP), 2, side = "left", pad = "0"), 
+            str_pad(as.character(PLACEFP), 5, side = "left", pad = "0")))
+    
+    datalist <- list()
+    for (i in 1:length(unique(places$plid))) {
+        p1 <- places[i,]
+        p1blocks <- st_contains(p1, blocks)
+        if(nrow(as.data.frame(blocks[p1blocks[[1]],])) < 1) {
+            next
+        } else {
+            test <- as.data.frame(blocks[p1blocks[[1]],])
+            test$plid <- p1$plid
+            datalist[[i]] <- test %>% 
+                select(c(1:6), blkid, plid)
+        }
+    }
+    non.null.list <- lapply(datalist, Filter, f = Negate(is.null))
+    rm(datalist)
+    contig <- plyr::rbind.fill(lapply(non.null.list, as.data.frame))
+    write_csv(contig, file = paste0("SHP_blk_0010/", year, "/", state_code, "/", substr(state_code, 1, 2), "_block_plids.csv"))
+}
+
+blocks <- st_read(paste0("SHP_blk_0010/", "2013", "/", "AL_01", "/tl_2013_", substr("AL_01", 4, 5), "_tabblock.shp"))
+blocks <- st_transform(blocks, 3488)
+places <- st_read(paste0("SHP_pl/", "2013", "/", "AL_01", "/tl_2013_", substr("AL_01", 4, 5), "_place.shp"))
+places <- st_transform(place, 3488)
 
