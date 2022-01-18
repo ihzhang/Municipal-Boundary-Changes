@@ -15,6 +15,7 @@ library("data.table")
 library("magrittr")
 
 # create annexed blocks file ####
+# 2000-2010, which is needed to test PTA 
 # create a file of annexed blocks between 2000 and 2010, defined as: 
 # a) blocks in 2010 places that were not in those places in 2000, on 2010 boundaries
 # b) blocks that were previously not part of any place and are now in 2010 places 
@@ -46,7 +47,6 @@ blocks2010 <- blocks2010 %>%
 blocks2010 <- blocks2010 %>% # we don't want to bother with null places in 2010; also, 0199999 is not a unique place ID, for e.g.
   filter(PLACEA!="99999" & !is.na(PLACEA))
 
-# get list of all annexed blocks to a place from 2000-2010 ####
 # 1. first, for each place, we get a list of their blocks in 2000 and 2010 
 # 2. then, we only retain the blocks that weren't part of that place in 2000 
 # @RA: Would love your thoughts on how to make this process faster
@@ -163,11 +163,22 @@ rm(no_annex)
 
 write_csv(aa, "annexedblocks0010dem_pl00_newsample_unincorp.csv") # 251103
 
-# repeat for 2010-2020 ####
+# repeat for 2010-2013 ####
 blocks2010 <- fread("ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv", 
                     select = c("PLACEA", "STATEA", "GISJOIN", "COUNTYA", "TRACTA", "BLOCKA"))
-blocks2020 <- fread("ipumsblocks_allstates/2020blocks/nhgis0031_ds248_2020_block.csv",
-                    select = c("PLACEA", "STATEA", "GISJOIN", "COUNTYA", "TRACTA", "BLOCKA"))
+
+state_list <- list.files("SHP_blk_0010/2013/", all.files = FALSE, full.names = FALSE)
+blocks2013 <- list()
+for (i in 1:length(state_list)) {
+    blocks2013[[i]] <- read_csv(file = paste0("SHP_blk_0010/2013/", state_list[[i]], "/", substr(state_list[[i]], 1, 2), "_blocks_plids.csv")) %>%
+        mutate(State = substr(state_list[[i]], 4, 5))
+} 
+
+names(blocks2013) <- state_list
+blocks2013 <- rbindlist(blocks2013, use.names = TRUE)
+rm(state_list)
+write_csv(blocks2013, file = "blocks2013_plids.csv")
+
 
 # 2010 block data 
 # we need to generate unique place IDs (e.g., place 6238 exists in both state 1 and 2, so we need to differentiate those places)
@@ -181,7 +192,7 @@ blocks2010 <- blocks2010 %>%
 
 # 2020 block data 
 # we repeat this process for 2020 data
-blocks2020 <- blocks2020 %>%
+blocks2013 %<>%
   mutate(PLACEA = as.character(PLACEA),
          STATEA = as.character(STATEA), 
          STATEA = str_pad(STATEA, 2, side = "left", pad = "0"),
@@ -189,33 +200,32 @@ blocks2020 <- blocks2020 %>%
          plid = paste0(STATEA, PLACEA)
   )
 
-blocks2020 <- blocks2020 %>% # we don't want to bother with null places in 2020; also, 0199999 is not a unique place ID, for e.g.
+blocks2013 %<>% # we don't want to bother with null places in 2020; also, 0199999 is not a unique place ID, for e.g.
   filter(PLACEA!="99999" & !is.na(PLACEA))
 
 # 1. first, for each place, we get a list of their blocks in 2010 and 2020 
 # 2. then, we only retain the blocks that weren't part of that place in 2010 
 # @RA: Would love your thoughts on how to make this process faster
 annexedblocks <- data.frame()
-plids <- unique(blocks2020$plid)
+plids <- unique(blocks2013$plid)
 for (i in 1:length(plids)) {
   block10 <- blocks2010 %>% filter(plid==plids[i])
-  block20 <- blocks2020 %>% filter(plid==plids[i])
-  block <- block20 %>% filter(!GISJOIN %in% block10$GISJOIN) # which blocks part of 2010 places were not part of those places in 2000?
+  block13 <- blocks2013 %>% filter(plid==plids[i])
+  block <- block13 %>% filter(!GISJOIN %in% block10$GISJOIN) # which blocks part of 2010 places were not part of those places in 2000?
   annexedblocks <- base::rbind(annexedblocks, block)
 }
 
-write_csv(annexedblocks, "aa_baseline_full_1020.csv")
+write_csv(annexedblocks, "aa_baseline_full_1013.csv")
 
-rm(block, block10, block20, blocks2020, plids, i)
+rm(block, block10, block13, blocks2013, blocks2010, plids, i)
 length(unique(annexedblocks$GISJOIN)) # check that every entry is unique
 length(unique(annexedblocks$plid)) # how many places does this cover?
 
 # clean 
-# 0 eliminate annexations to 2010-2013 and attribute those to 2000-2013
 # 1. for contiguous blocks, keep only eligible blocks 
-# 2. for annexeed blocks, keep only eligible blocks 
+# 2. for annexed blocks, keep only eligible blocks 
 # we just need the blockids of blocks that are annexed
-annexedblocks <- read_csv("aa_baseline_full_1020.csv")
+annexedblocks <- read_csv("aa_baseline_full_1013.csv")
 annexedblocks %<>%
     mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
                           str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0"))) %>%
@@ -227,7 +237,7 @@ annexedblocks$annexed <- 1
 state_list <- list.files("SHP_blk_0010/2010/", all.files = FALSE, full.names = FALSE)
 contig_list <- list()
 for (i in 1:length(state_list)) {
-    contig_list[[i]] <- read_csv(file = paste0("SHP_blk_0010/2000/", state_list[[i]], "/", substr(state_list[[i]], 1, 2), "_contig.csv")) %>%
+    contig_list[[i]] <- read_csv(file = paste0("SHP_blk_0010/2010/", state_list[[i]], "/", substr(state_list[[i]], 1, 2), "_contig.csv")) %>%
         mutate(State = substr(state_list[[i]], 4, 5))
 } 
 
@@ -265,13 +275,13 @@ aa %<>%
     filter(!plid %in% no_annex$plid)
 length(unique(aa$plid))
 
-write_csv(aa, "annexedblocks1020_base_unincorp.csv")
+write_csv(aa, "annexedblocks1013_base_unincorp.csv")
 
 #clean up and get ready for Census data 
 # 2013 block data 
-blocks2010 <- read_csv("blocks2010_var.csv")
+blocks2013 <- read_csv("blocks2013_var.csv")
 
-blocks2010 %<>%
+blocks2013 %<>%
     mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
                           str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0")))
 head(aa$blkid)
@@ -330,15 +340,25 @@ rm(no_annex)
 
 write_csv(aa, "annexedblocks0010dem_pl00_newsample_unincorp.csv") # 251103
 
-# repeat for 2000 to 2020 #### 
-blocks2000 <- fread("ipumsblocks_allstates/2000blocks/nhgis0032_ds147_2000_block.csv", 
-                    select = c("PLACEA", "STATEA", "GISJOIN", "COUNTYA", "TRACTA", "BLOCKA"))
+# repeat for 2014 to 2020 #### 
+state_list <- list.files("SHP_blk_0010/2014/", all.files = FALSE, full.names = FALSE)
+blocks2014 <- list()
+for (i in 1:length(state_list)) {
+    blocks2014[[i]] <- read_csv(file = paste0("SHP_blk_0010/2014/", state_list[[i]], "/", substr(state_list[[i]], 1, 2), "_blocks_plids.csv")) %>%
+        mutate(State = substr(state_list[[i]], 4, 5))
+} 
+
+names(blocks2014) <- state_list
+blocks2014 <- rbindlist(blocks2014, use.names = TRUE)
+rm(state_list)
+write_csv(blocks2014, file = "blocks2014_plids.csv")
+
 blocks2020 <- fread("ipumsblocks_allstates/2020blocks/nhgis0031_ds248_2020_block.csv",
                     select = c("PLACEA", "STATEA", "GISJOIN", "COUNTYA", "TRACTA", "BLOCKA"))
 
 # 2000 block data 
 # we need to generate unique place IDs (e.g., place 6238 exists in both state 1 and 2, so we need to differentiate those places)
-blocks2000 <- blocks2000 %>%
+blocks2014 %<>%
   mutate(PLACEA = as.character(PLACEA),
          STATEA = as.character(STATEA), 
          STATEA = str_pad(STATEA, 2, side = "left", pad = "0"),
@@ -365,16 +385,16 @@ blocks2020 <- blocks2020 %>% # we don't want to bother with null places in 2020;
 annexedblocks <- data.frame()
 plids <- unique(blocks2020$plid)
 for (i in 1:length(plids)) {
-  block00 <- blocks2000 %>% filter(plid==plids[i])
+  block14 <- blocks2014 %>% filter(plid==plids[i])
   block20 <- blocks2020 %>% filter(plid==plids[i])
-  block <- block20 %>% filter(!GISJOIN %in% block00$GISJOIN) # which blocks part of 2010 places were not part of those places in 2000?
+  block <- block20 %>% filter(!GISJOIN %in% block14$GISJOIN) # which blocks part of 2010 places were not part of those places in 2000?
   annexedblocks <- base::rbind(annexedblocks, block)
 }
 
-write_csv(annexedblocks, "aa_baseline_full_0020.csv")
+write_csv(annexedblocks, "aa_baseline_full_1420.csv")
 
-# clean 0020 for first-stage analysis ####
-annexedblocks <- read_csv("aa_baseline_full_0020.csv")
+# clean 1420 for first-stage analysis ####
+annexedblocks <- read_csv("aa_baseline_full_1420.csv")
 blocks2000 <- blocks2000 %>%
   mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
                         str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0")))

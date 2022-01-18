@@ -12,6 +12,7 @@ library("rgeos")
 library("sf")
 library("data.table")
 library("tidyverse")
+library("magrittr")
 
 setwd("~/Google Drive/Stanford/QE2")
 
@@ -108,14 +109,19 @@ for (state_code in state_codes) {
 # 2013 blocks and their 2013 place id 
 # 2014, their 2014 place id and their contiguous blocks 
 get_block_ids <- function (state_code, year) {
-    blocks <- st_read(paste0("SHP_blk_0010/", year, "/", state_code, "/tl_", year, "_", substr(state_code, 4, 5), "_tabblock.shp"))
+    filename = ifelse(
+        year==2013, paste0("SHP_blk_0010/", year, "/", state_code, "/tl_", year, "_", substr(state_code, 4, 5), "_tabblock.shp"),
+        paste0("SHP_blk_0010/", year, "/", state_code, "/tl_", year, "_", substr(state_code, 4, 5), "_tabblock10.shp")
+    )
+    print(filename)
+    blocks <- st_read(filename)
     blocks <- st_transform(blocks, 3488)
     blocks %<>%
         mutate(blkid = paste0(str_pad(as.character(STATEFP10), 2, side = "left", pad = "0"), str_pad(as.character(COUNTYFP10), 3, side = "left", pad = "0"),
                               str_pad(as.character(TRACTCE10), 6, side = "left", pad = "0"), str_pad(as.character(BLOCKCE10), 4, side = "left", pad = "0")))
     
-    places <- st_read(paste0("SHP_pl/", year, "/", state_code, "/tl_", year, "_", substr("AL_01", 4, 5), "_place.shp"))
-    places <- st_transform(place, 3488)
+    places <- st_read(paste0("SHP_pl/", year, "/", state_code, "/tl_", year, "_", substr(state_code, 4, 5), "_place.shp"))
+    places <- st_transform(places, 3488)
     
     places %<>% 
         mutate(plid = paste0(
@@ -141,8 +147,79 @@ get_block_ids <- function (state_code, year) {
     write_csv(contig, file = paste0("SHP_blk_0010/", year, "/", state_code, "/", substr(state_code, 1, 2), "_block_plids.csv"))
 }
 
-blocks <- st_read(paste0("SHP_blk_0010/", "2013", "/", "AL_01", "/tl_2013_", substr("AL_01", 4, 5), "_tabblock.shp"))
-blocks <- st_transform(blocks, 3488)
-places <- st_read(paste0("SHP_pl/", "2013", "/", "AL_01", "/tl_2013_", substr("AL_01", 4, 5), "_place.shp"))
-places <- st_transform(place, 3488)
+# blocks <- st_read(paste0("SHP_blk_0010/", "2014", "/", "AL_01", "/tl_2014_", substr("AL_01", 4, 5), "_tabblock10.shp"))
+# blocks <- st_transform(blocks, 3488)
+# places <- st_read(paste0("SHP_pl/", "2014", "/", "AL_01", "/tl_2014_", substr("AL_01", 4, 5), "_place.shp"))
+# places <- st_transform(places, 3488)
 
+years <- c(2013, 2014)
+state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09", 
+                 "DE_10", "FL_12", "GA_13", "HI_15", "IA_19", "ID_16", "IL_17", "IN_18",
+                 "KS_20", "KY_21", "LA_22", 
+                 "MA_25", "MD_24", "ME_23", "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
+                 "NC_37", "ND_38", "NE_31", "NH_33", "NJ_34", "NM_35", "NV_32", "NY_36",
+                 "OH_39", "OK_40", "OR_41", "PA_42", "RI_44",
+                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VT_50", "VA_51",
+                 "WA_53", "WV_54", "WI_55", "WY_56"
+)
+
+for (state_code in state_codes) {
+    for (year in years) {
+        get_block_ids(state_code, year)
+        print(year)
+    }
+    print(state_code)
+}
+
+get_block_ids(AL_01, 2014)
+# get contiguity for 2014 #### 
+# first have to filter out by plid; we want is.na or 99999 only 
+
+get_buffers_14 <- function(state_code) {
+    blocks <- st_read(paste0("SHP_blk_0010/2014/", state_code, "/tl_2014_", substr(state_code, 4, 5), "_tabblock10.shp"))
+    blocks <- st_transform(blocks, 3488)
+    blocks %<>%
+            mutate(blkid = paste0(str_pad(as.character(STATEFP10), 2, side = "left", pad = "0"), str_pad(as.character(COUNTYFP10), 3, side = "left", pad = "0"),
+                                  str_pad(as.character(TRACTCE10), 6, side = "left", pad = "0"), str_pad(as.character(BLOCKCE10), 4, side = "left", pad = "0")))
+
+    # should only retain those not already part of a place
+    plid_list <- read_csv(paste0())
+    blocks %<>%
+        left_join(plid_list, by = "blkid") %>% 
+        filter(is.na(PLACEA) | PLACEA=="99999") 
+    rm(plid_list)
+    
+    # place shapefile
+    places <- st_read(paste0("SHP_pl/2014/", state_code, "/tl_2014_", substr(state_code, 4, 5), "_place.shp"))
+    places <- st_transform(places, 3488)
+    places <- places %>% 
+        mutate(PLACE = as.character(.[[2]])) %>%
+        filter(!is.na(PLACE) & PLACE != "99999" & PLACE != "999") %>%
+        mutate(plid = paste0(str_pad(as.character(.[[1]]), 2, side = "left", pad = "0"), str_pad(as.character(.[[2]]), 5, side = "left", pad = "0")))
+    
+    datalist <- list()
+    for (i in 1:length(unique(places$plid))) {
+        p1 <- places[i,]
+        p1buffer <- st_buffer(p1, 0)
+        p1buffer_intersects <- st_intersects(p1buffer, blocks)
+        if(nrow(as.data.frame(blocks[p1buffer_intersects[[1]],])) < 1) {
+            next
+        } else {
+            test <- as.data.frame(blocks[p1buffer_intersects[[1]],])
+            test$contigplace <- unique(places$plid)[i]
+            datalist[[i]] <- test %>% 
+                select(c(1:4), blkid, contigplace)
+        }
+    }
+    
+    non.null.list <- lapply(datalist, Filter, f = Negate(is.null))
+    rm(datalist)
+    contig <- plyr::rbind.fill(lapply(non.null.list, as.data.frame))
+    write_csv(contig, file = paste0("SHP_blk_0010/2014/", state_code, "/", substr(state_code, 1, 2), "_contig.csv"))
+    
+}
+
+for (state_code in state_codes) {
+    get_buffers(state_code)
+    print(state_code)
+}
