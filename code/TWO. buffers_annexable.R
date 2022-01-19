@@ -164,14 +164,12 @@ state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09",
 )
 
 for (state_code in state_codes) {
-    for (year in years) {
-        get_block_ids(state_code, year)
-        print(year)
-    }
+        get_block_ids(state_code, 2013)
     print(state_code)
 }
 
 get_block_ids(AL_01, 2014)
+
 # get contiguity for 2014 #### 
 # first have to filter out by plid; we want is.na or 99999 only 
 
