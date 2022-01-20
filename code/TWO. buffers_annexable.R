@@ -164,7 +164,7 @@ state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09",
 )
 
 for (state_code in state_codes) {
-        get_block_ids(state_code, 2013)
+        get_block_ids(state_code, 2014)
     print(state_code)
 }
 
