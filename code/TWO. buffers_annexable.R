@@ -16,13 +16,14 @@ library("magrittr")
 
 setwd("~/Google Drive/Stanford/QE2")
 
-# 1. 2000 blocks contiguous to 2000 places 
-# 2. 2010 blocks contiguous to 2010 places 
+# 1. 2000 blocks in buffers of 2000 places 
+# 2. 2010 blocks in buffers of 2010 places 
+# 3. 2014 blocks in buffers of 2014 places
 
 # 1. 
 # find all blocks within 400-m buffer of every place in 2000 
 # this forms universe of "annexable" blocks 
-# I will use alabama as test, then use a loop for the remaining states 
+# I will use Alabama as test, then use a loop for the remaining states 
 blocks_list <- list()
 blocks_list[[1]] <- fread("ipumsblocks_allstates/2000blocks/nhgis0032_ds147_2000_block.csv", select = 
                       c("GISJOIN", "STATEA", "COUNTYA", "TRACTA", "BLOCKA", "PLACEA"))
@@ -81,7 +82,7 @@ get_buffers <- function(state_code, year) {
   non.null.list <- lapply(datalist, Filter, f = Negate(is.null))
   rm(datalist)
   contig <- plyr::rbind.fill(lapply(non.null.list, as.data.frame))
-  write_csv(contig, file = paste0("SHP_blk_0010/", year, "/", state_code, "/", substr(state_code, 1, 2), "_contig.csv"))
+  write_csv(contig, file = paste0("SHP_blk_0010/", year, "/", state_code, "/", substr(state_code, 1, 2), "_buffers.csv"))
 }
 
 state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09", 
@@ -213,11 +214,11 @@ get_buffers_14 <- function(state_code) {
     non.null.list <- lapply(datalist, Filter, f = Negate(is.null))
     rm(datalist)
     contig <- plyr::rbind.fill(lapply(non.null.list, as.data.frame))
-    write_csv(contig, file = paste0("SHP_blk_0010/2014/", state_code, "/", substr(state_code, 1, 2), "_contig.csv"))
+    write_csv(contig, file = paste0("SHP_blk_0010/2014/", state_code, "/", substr(state_code, 1, 2), "_buffers.csv"))
     
 }
 
 for (state_code in state_codes) {
-    get_buffers(state_code)
+    get_buffers_14(state_code)
     print(state_code)
 }
