@@ -136,7 +136,7 @@ foreach (i = 1:length(dat_use)) %do% {
       workingage10b = rowSums(across(c(H76007:H76019, H76031:H76043), na.rm = T)), 
       dependencyratio10b = dependants10b/workingage10b,
       pctowneroccupied10b = ((IFF002+IFF003)/IFF001)*100,
-      vacanc10b = ((IFC001-IFF001)/IFC001)*100,
+      vacancy10b = ((IFC001-IFF001)/IFC001)*100,
       urbunits10b = (IFD002/IFD001)*100,
       hispvap10b = (H75002/H75001)*100,
       nhwvap10b = (H75005/H75001)*100,
@@ -183,7 +183,7 @@ foreach (i = 1:length(dat_use)) %do% {
             workingage10b = rowSums(across(c(H76007:H76019, H76031:H76043), na.rm = T)), 
             dependencyratio10b = dependants10b/workingage10b,
             pctowneroccupied10b = ((IFF002+IFF003)/IFF001)*100,
-            vacanc10b = ((IFC001-IFF001)/IFC001)*100,
+            vacancy10b = ((IFC001-IFF001)/IFC001)*100,
             urbunits10b = (IFD002/IFD001)*100,
             hispvap10b = (H75002/H75001)*100,
             nhwvap10b = (H75005/H75001)*100,
@@ -229,7 +229,7 @@ foreach (i = 1:length(dat_use)) %do% {
             workingage10b = rowSums(across(c(H76007:H76019, H76031:H76043), na.rm = T)), 
             dependencyratio10b = dependants10b/workingage10b,
             pctowneroccupied10b = ((IFF002+IFF003)/IFF001)*100,
-            vacanc10b = ((IFC001-IFF001)/IFC001)*100,
+            vacancy10b = ((IFC001-IFF001)/IFC001)*100,
             urbunits10b = (IFD002/IFD001)*100,
             hispvap10b = (H75002/H75001)*100,
             nhwvap10b = (H75005/H75001)*100,
@@ -274,7 +274,7 @@ foreach (i = 1:length(dat_use)) %do% {
             workingage10b = rowSums(across(c(H76007:H76019, H76031:H76043), na.rm = T)), 
             dependencyratio10b = dependants10b/workingage10b,
             pctowneroccupied10b = ((IFF002+IFF003)/IFF001)*100,
-            vacanc10b = ((IFC001-IFF001)/IFC001)*100,
+            vacancy10b = ((IFC001-IFF001)/IFC001)*100,
             urbunits10b = (IFD002/IFD001)*100,
             hispvap10b = (H75002/H75001)*100,
             nhwvap10b = (H75005/H75001)*100,
@@ -319,7 +319,7 @@ foreach (i = 1:length(dat_use)) %do% {
             workingage10b = rowSums(across(c(H76007:H76019, H76031:H76043), na.rm = T)), 
             dependencyratio10b = dependants10b/workingage10b,
             pctowneroccupied10b = ((IFF002+IFF003)/IFF001)*100,
-            vacanc10b = ((IFC001-IFF001)/IFC001)*100,
+            vacancy10b = ((IFC001-IFF001)/IFC001)*100,
             urbunits10b = (IFD002/IFD001)*100,
             hispvap10b = (H75002/H75001)*100,
             nhwvap10b = (H75005/H75001)*100,
@@ -717,7 +717,8 @@ foreach (i = 1:length(dat_use)) %do% {
             hispvap20b = (U7E002/U7E001)*100,
             nhwvap20b = (U7E005/U7E001)*100,
             nhbvap20b = (U7E006/U7E001)*100,
-            minorityvap20b = ((U7E001 - U7E005)/U7E001)*100
+            minorityvap20b = ((U7E001 - U7E005)/U7E001)*100,
+            vacancy20b = (U7G003/U7G001)*100
         ) %>% 
         dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
             STATEA, COUNTYA, TRACTA, BLOCKA, PLACEA, pop20b:minorityvap20b)
@@ -735,7 +736,7 @@ blocks2020 %<>%
                           str_pad(TRACTA, 6, side = "left", pad = "0"),
                           str_pad(BLOCKA, 4, side = "left", pad = "0"))) %>%
     select(blkid, pop20b, pctnhblack20b, pctnhwhite20b, pcth20b, pctmin20b,
-           hispvap20b, nhwvap20b, nhbvap20b, minorityvap20b) 
+           hispvap20b, nhwvap20b, nhbvap20b, minorityvap20b, vacancy20b) 
 
 names(blocks2020) <- gsub("20b", "", names(blocks2020))
 blocks2020 %<>%
@@ -744,7 +745,7 @@ blocks2020 %<>%
 blocks2000 <- read_csv("blocks2000_var.csv")
 blocks2000 %<>%
     select(blkid, pop00b, pctnhblack00b, pctnhwhite00b, pcth00b, pctmin00b,
-           hispvap00b, nhwvap00b, nhbvap00b, minorityvap00b) 
+           hispvap00b, nhwvap00b, nhbvap00b, minorityvap00b, vacancy00b) 
 names(blocks2000) <- gsub("00b", "", names(blocks2000))
 blocks2000 %<>%
     mutate(Year = "2000")
@@ -756,7 +757,7 @@ blocks2010 %<>%
                           str_pad(TRACTA, 6, side = "left", pad = "0"),
                           str_pad(BLOCKA, 4, side = "left", pad = "0"))) %>%
     select(blkid, pop10b, pctnhblack10b, pctnhwhite10b, pcth10b, pctmin10b,
-           hispvap10b, nhwvap10b, nhbvap10b, minorityvap10b) 
+           hispvap10b, nhwvap10b, nhbvap10b, minorityvap10b, vacancy10b) 
 
 names(blocks2010) <- gsub("10b", "", names(blocks2010))
 blocks2010 %<>%
@@ -777,7 +778,7 @@ rm(blocks2000, blocks2010, blocks2020)
 blocks2013 <- read_csv("blocks2000_var.csv")
 blocks2013 %<>%
     select(blkid, pop00b, pctnhblack00b, pctnhwhite00b, pcth00b, pctmin00b,
-           hispvap00b, nhwvap00b, nhbvap00b, minorityvap00b) 
+           hispvap00b, nhwvap00b, nhbvap00b, minorityvap00b, vacancy00b) 
 names(blocks2013) <- gsub("00b", "", names(blocks2013))
 blocks2013 %<>%
     mutate(Year = "2013")
@@ -791,16 +792,13 @@ blocks2013 %<>%
            hispvap = NA,
            nhwvap = NA,
            nhbvap = NA,
-           minorityvap = NA)
+           minorityvap = NA,
+           vacancy = NA)
 
 blocks <- base::rbind(blocks, blocks2013)
 rm(blocks2013)
 blocks %<>%
     mutate(Year = as.numeric(as.character(Year))) 
-
-# 1/17 update: turns out we don't have vap data at place-level anyway 
-blocks %<>% 
-    select(-c(contains("vap")))
 
 blocks %<>%
     group_by(blkid) %>%
@@ -808,50 +806,47 @@ blocks %<>%
     mutate_at(c(names(blocks)[2:6]), zoo::na.approx, na.rm = F) %>%
     ungroup()
 
-blocks %>%
-    filter(Year=="2013") %>%
-    arrange(blkid) %>%
-    View()
-
-blocks %<>%
+blocks13 %<>%
     filter(Year=="2013")
 
-write_csv(blocks, "blocks2013_int.csv")
+write_csv(blocks13, "blocks2013_int.csv")
+rm(blocks13)
+
+# do 2014 
+blocks2014 <- read_csv("blocks2000_var.csv")
+blocks2014 %<>%
+    select(blkid, pop00b, pctnhblack00b, pctnhwhite00b, pcth00b, pctmin00b,
+           hispvap00b, nhwvap00b, nhbvap00b, minorityvap00b, vacancy00b) 
+names(blocks2014) <- gsub("00b", "", names(blocks2014))
+blocks2014 %<>%
+    mutate(Year = "2014")
+
+blocks2014 %<>%
+    mutate(pop = NA,
+           pctnhblack = NA,
+           pctnhwhite = NA,
+           pcth = NA,
+           pctmin = NA,
+           hispvap = NA,
+           nhwvap = NA,
+           nhbvap = NA,
+           minorityvap = NA,
+           vacancy = NA)
+
+blocks <- base::rbind(blocks, blocks2014)
+rm(blocks2014)
+blocks %<>%
+    mutate(Year = as.numeric(as.character(Year))) 
+
+blocks %<>%
+    group_by(blkid) %>%
+    arrange(Year) %>%
+    mutate_at(c(names(blocks)[2:6]), zoo::na.approx, na.rm = F) %>%
+    ungroup()
+
+blocks14 <- blocks %>%
+    filter(Year == "2014")
+write_csv(blocks14, "blocks2014_int.csv")
+
 rm(blocks)
-
-# clean block group data ####
-bg2013 <- fread(file = "ipumsblocks_allstates/2013bg/nhgis0037_ds215_20155_blck_grp.csv") 
-bg2013 %<>%
-    mutate( 
-        pop13bg = ADK5E001,
-        nhblack13bg = ADK5E004,
-        nhwhite13bg = ADK5E003, 
-        h13bg = ADK5E012,
-        min13bg = (pop13bg-nhwhite13bg),
-        pctnhblack13bg = (nhblack13bg/pop13bg)*100,
-        pctnhwhite13bg = (nhwhite13bg/pop13bg)*100, 
-        pcth13bg = (h13bg/pop13bg)*100, 
-        pctmin13bg = (min13bg/pop13bg)*100
-    ) %>% 
-    dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
-        STATEA, COUNTYA, TRACTA, BLKGRPA, PLACEA, pop13bg:pctmin13bg)
-
-write_csv(bg2013, "bg2013_var.csv")
-
-bg2020 <- fread(file = "ipumsblocks_allstates/2020bg/nhgis0039_ds248_2020_blck_grp.csv") 
-bg2020 %<>%
-    mutate( 
-        pop20bg = U7C001,
-        nhblack20bg = U7C006,
-        nhwhite20bg = U7C005, 
-        h20bg = U7C002,
-        min20bg = (pop20bg-nhwhite20bg),
-        pctnhblack20bg = (nhblack20bg/pop20bg)*100,
-        pctnhwhite20bg = (nhwhite20bg/pop20bg)*100, 
-        pcth20bg = (h20bg/pop20bg)*100, 
-        pctmin20bg = (min20bg/pop20bg)*100
-    ) %>% 
-    dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
-        STATEA, COUNTYA, TRACTA, BLKGRPA, PLACEA, pop20bg:pctmin20bg)
-
-write_csv(bg2020, "bg2020_var.csv")
+rm(blocks14)

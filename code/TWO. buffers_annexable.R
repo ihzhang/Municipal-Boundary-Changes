@@ -23,7 +23,6 @@ setwd("~/Google Drive/Stanford/QE2")
 # 1. 
 # find all blocks within 400-m buffer of every place in 2000 
 # this forms universe of "annexable" blocks 
-# I will use Alabama as test, then use a loop for the remaining states 
 blocks_list <- list()
 blocks_list[[1]] <- fread("ipumsblocks_allstates/2000blocks/nhgis0032_ds147_2000_block.csv", select = 
                       c("GISJOIN", "STATEA", "COUNTYA", "TRACTA", "BLOCKA", "PLACEA"))
@@ -73,16 +72,16 @@ get_buffers <- function(state_code, year) {
       next
     } else {
       test <- as.data.frame(blocks[p1buffer_intersects[[1]],])
-      test$contigplace <- unique(places$plid)[i]
+      test$bufferplace <- unique(places$plid)[i]
       datalist[[i]] <- test %>% 
-        select(c(1:4), blkid, contigplace)
+        select(c(1:4), blkid, bufferplace)
     }
   }
   
   non.null.list <- lapply(datalist, Filter, f = Negate(is.null))
   rm(datalist)
-  contig <- plyr::rbind.fill(lapply(non.null.list, as.data.frame))
-  write_csv(contig, file = paste0("SHP_blk_0010/", year, "/", state_code, "/", substr(state_code, 1, 2), "_buffers.csv"))
+  buffers <- plyr::rbind.fill(lapply(non.null.list, as.data.frame))
+  write_csv(buffers, file = paste0("SHP_blk_0010/", year, "/", state_code, "/", substr(state_code, 1, 2), "_buffers.csv"))
 }
 
 state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09", 
@@ -100,13 +99,13 @@ for (state_code in state_codes) {
   print(state_code)
 }
 
-# 2. 2010-2020 
+# 2. 2010-2020 ####
 for (state_code in state_codes) {
   get_buffers(state_code, 2010)
   print(state_code)
 }
 
-
+# get place-to-block crosswalk for 2013 ####
 # 2013 blocks and their 2013 place id 
 # 2014, their 2014 place id and their contiguous blocks 
 get_block_ids <- function (state_code, year) {
@@ -205,16 +204,16 @@ get_buffers_14 <- function(state_code) {
             next
         } else {
             test <- as.data.frame(blocks[p1buffer_intersects[[1]],])
-            test$contigplace <- unique(places$plid)[i]
+            test$bufferplace <- unique(places$plid)[i]
             datalist[[i]] <- test %>% 
-                select(c(1:4), blkid, contigplace)
+                select(c(1:4), blkid, bufferplace)
         }
     }
     
     non.null.list <- lapply(datalist, Filter, f = Negate(is.null))
     rm(datalist)
-    contig <- plyr::rbind.fill(lapply(non.null.list, as.data.frame))
-    write_csv(contig, file = paste0("SHP_blk_0010/2014/", state_code, "/", substr(state_code, 1, 2), "_buffers.csv"))
+    buffers <- plyr::rbind.fill(lapply(non.null.list, as.data.frame))
+    write_csv(buffers, file = paste0("SHP_blk_0010/2014/", state_code, "/", substr(state_code, 1, 2), "_buffers.csv"))
     
 }
 
