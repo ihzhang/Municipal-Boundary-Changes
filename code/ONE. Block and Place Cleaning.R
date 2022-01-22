@@ -638,7 +638,7 @@ pl0010 <-
 write_csv(pl0010, "pl0010_var.csv")
 rm(list = ls())
 
-# 2013 ACS ####
+# 2013 ACS places ####
 acs13 <- read_csv("seplaces_allstates/2013places.csv")
 acs13 %<>%
     rename("nhwhite13p" = "PCT_SE_A04001_003",
@@ -647,10 +647,43 @@ acs13 %<>%
     mutate(min13p = 100-nhwhite13p,
            STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
            PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
-           plid = paste0(STATE, PLACE)) %>%
+           plid = paste0(STATE, PLACE),
+           recimm13p = ) %>%
     select(c(plid, Geo_QName, contains("13p")))
 
 write_csv(acs13, "acs13.csv")
+
+# 2014 ACS places ####
+acs14 <- read_csv("seplaces_allstates/2014places.csv")
+acs14 %<>%
+    rename("nhwhite14p" = "PCT_SE_A04001_003",
+           "nhblack14p" = "PCT_SE_A04001_004",
+           "h14p" = "PCT_SE_A04001_010") %>%
+    mutate(min14p = 100-nhwhite13p,
+           STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+           PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
+           plid = paste0(STATE, PLACE),
+           pop14p = SE_A00001_001, 
+           pcturb14p = NA,
+           pctrur14p = NA,
+           popdensity14p = SE_A00002_002,
+           nhblack14p = SE_A04001_004, 
+           nhwhite14p = SE_A04001_003, 
+           h14p = SE_A04001_010, 
+           min14p = (pop14p-nhwhite14p), 
+           pctnhblack14p = (nhblack14p/pop14p) * 100,
+           pctnhwhite14p = (nhwhite14p/pop14p) * 100, 
+           pcth14p = (h14p/pop14p) * 100, 
+           pctmin14p = (min14p/pop14p) * 100, 
+           pctrecimm14p = (SE_A10058_002 / pop14p) * 100,
+           hinc14p = SE_A14006_001, 
+           whitepov14p = (SE_A13001I_002/SE_A13001I_001)*100,
+           blackpov14p = (SE_A13001B_002/SE_A13001B_001)*100,
+           hpov14p = (SE_A13001H_002/SE_A13001H_001)*100,
+           minpov14p =  ((hpov14p + blackpov14p + SE_A13001G_002 + SE_A13001F_002 + SE_A13001E_002 + SE_A13001D_002 + SE_A13001C_002)/(SE_A13001B_001 + SE_A13001B_001 + SE_A13001G_001 + SE_A13001F_001 + SE_A13001E_001 + SE_A13001D_001 + SE_A13001C_001))*100) %>%
+    select(c(plid, Geo_QName, contains("14p")))
+
+write_csv(acs14, "acs14.csv")
 
 # 2020 census ####
 places2020 <- read_csv("seplaces_allstates/2020places.csv")
@@ -850,3 +883,40 @@ write_csv(blocks14, "blocks2014_int.csv")
 
 rm(blocks)
 rm(blocks14)
+
+# # clean block group data ####
+# bg2013 <- fread(file = "ipumsblocks_allstates/2013bg/nhgis0037_ds215_20155_blck_grp.csv") 
+# bg2013 %<>%
+#     mutate( 
+#         pop13bg = ADK5E001,
+#         nhblack13bg = ADK5E004,
+#         nhwhite13bg = ADK5E003, 
+#         h13bg = ADK5E012,
+#         min13bg = (pop13bg-nhwhite13bg),
+#         pctnhblack13bg = (nhblack13bg/pop13bg)*100,
+#         pctnhwhite13bg = (nhwhite13bg/pop13bg)*100, 
+#         pcth13bg = (h13bg/pop13bg)*100, 
+#         pctmin13bg = (min13bg/pop13bg)*100
+#     ) %>% 
+#     dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
+#         STATEA, COUNTYA, TRACTA, BLKGRPA, PLACEA, pop13bg:pctmin13bg)
+# 
+# write_csv(bg2013, "bg2013_var.csv")
+# 
+# bg2020 <- fread(file = "ipumsblocks_allstates/2020bg/nhgis0039_ds248_2020_blck_grp.csv") 
+# bg2020 %<>%
+#     mutate( 
+#         pop20bg = U7C001,
+#         nhblack20bg = U7C006,
+#         nhwhite20bg = U7C005, 
+#         h20bg = U7C002,
+#         min20bg = (pop20bg-nhwhite20bg),
+#         pctnhblack20bg = (nhblack20bg/pop20bg)*100,
+#         pctnhwhite20bg = (nhwhite20bg/pop20bg)*100, 
+#         pcth20bg = (h20bg/pop20bg)*100, 
+#         pctmin20bg = (min20bg/pop20bg)*100
+#     ) %>% 
+#     dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
+#         STATEA, COUNTYA, TRACTA, BLKGRPA, PLACEA, pop20bg:pctmin20bg)
+# 
+# write_csv(bg2020, "bg2020_var.csv")
