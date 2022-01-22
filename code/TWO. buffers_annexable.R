@@ -172,9 +172,13 @@ get_block_ids(AL_01, 2014)
 
 # get contiguity for 2014 #### 
 # first have to filter out by plid; we want is.na or 99999 only 
+# note sometimes tigris will fail, likely because of a firewall block on repeated calls
+# so the function still includes an optional line to read the file in from a local path 
+# switch the lines on and off using # 
 
 get_buffers_14 <- function(state_code) {
-    blocks <- tigris::blocks(state = substr(state_code, 4, 5), year = 2014)
+    blocks <- st_read(paste0("SHP_blk_0010/2014/", state_code, "/tl_2014_", substr(state_code, 4, 5), "_tabblock10.shp"))
+    #blocks <- tigris::blocks(state = substr(state_code, 4, 5), year = 2014)
     blocks <- st_transform(blocks, 3488)
     blocks %<>%
             mutate(blkid = paste0(str_pad(as.character(STATEFP10), 2, side = "left", pad = "0"), 
@@ -193,8 +197,8 @@ get_buffers_14 <- function(state_code) {
     rm(plid_list)
     
     # place shapefile
-    places <- tigris::places(state = substr(state_code, 4, 5), year = 2014)
-    #places <- st_read(paste0("SHP_pl/2014/", state_code, "/tl_2014_", substr(state_code, 4, 5), "_place.shp"))
+    #places <- tigris::places(state = substr(state_code, 4, 5), year = 2014)
+    places <- st_read(paste0("SHP_pl/2014/", state_code, "/tl_2014_", substr(state_code, 4, 5), "_place.shp"))
     places <- st_transform(places, 3488)
     places %<>% 
         mutate(plid = paste0(

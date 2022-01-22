@@ -23,7 +23,26 @@ library("zoo") # for na.approx function
 blocks2000 <- read_csv(file = "ipumsblocks_allstates/2000blocks/nhgis0032_ds147_2000_block.csv")
 blocks2000 <- blocks2000[-1,] # for some reason the first row of this df is irrelevant so we remove it.
 
-# 1. convert factorized numerical variables back to numerical, but the file is very large, so we need 
+# 1. rename variables
+# names2000 <- c("nhwhite", "nhblack", "nhaian", "nhasian", "nhpi",
+#                "nhother", "nh2p", "hwhite", "hblack", "haian", "hasian",
+#                "hpi", "hother", "h2p",
+#                "m5", "m5to9", "m10to14", "m15to17", "m18to19", "m20", "m21",
+#                "m22to24", "m25to29", "m30to34", "m35to39", "m40to44", "m45to49", 
+#                "m50to54", "m55to59", "m60to61", "m62to64", "m65to66", "m67to69",
+#                "m70to74", "m75to79", "m80to84", "m85p",
+#                "f5", "f5to9", "f10to14", "f15to17", "f18to19", "f20", "f21",
+#                "f22to24", "f25to29", "f30to34", "f35to39", "f40to44", "f45to49", 
+#                "f50to54", "f55to59", "f60to61", "f62to64", "f65to66", "f67to69",
+#                "f70to74", "f75to79", "f80to84", "f85p",
+#                "hu", "ownerocc", "renterocc")
+
+# names(blocks2000)[14:76] <- names2000 
+# ^ we can use the names() -- it returns a vector, which we index with [] notation, and an assignment to rename variables
+# this is old code, however. Since I have the codebook, I decided to skip the renaming process, which is very tedious, and 
+# use the mutate option instead to conduct operations on the variables. 
+
+# 2. convert factorized numerical variables back to numerical, but the file is very large, so we need 
 # to split it into manageable chunks (stored in a list object) and run the analysis on each chunk separately. 
 # The data is so large in part because there are >8 mil. blocks and 80 variables. However, we don't need 
 # each variable. You can look at the codebook for the data too to get a sense of why we don't need each variable 
@@ -63,7 +82,6 @@ foreach (i = 1:length(dat_use)) %do% {
   return(NULL)
 }
 
-# add in vap data
 vap2000block <- read_csv("ipumsblocks_allstates/2000blocks/vap2000_block.csv")
 
 vap2000block <- vap2000block %>%
@@ -92,89 +110,300 @@ blocks2000 <- blocks2000 %>%
 write_csv(blocks2000, "blocks2000_var.csv")
 
 # 2010 block-level data ####
-clean_dat_10 <- function(datuse) {
-    f <- rep(seq_len(ceiling(nrow(datuse) / 100000)), each = 100000, length.out = nrow(datuse))
-    dat_use <- split(datuse, f = f)
-    rm(datuse)
-    rm(f)
-    
-    foreach (i = 1:length(dat_use)) %do% {
-        dat_use[[i]] <- dat_use[[i]] %>%
-            mutate( 
-                pop10b = H7Z001,
-                nhblack10b = H75006,
-                nhwhite10b = H7Z003, 
-                h10b = H7Z010,
-                min10b = (pop10b-nhwhite10b),
-                pctnhblack10b = (nhblack10b/pop10b)*100,
-                pctnhwhite10b = (nhwhite10b/pop10b)*100, 
-                pcth10b = (h10b/pop10b)*100, 
-                pctmin10b = (min10b/pop10b)*100, 
-                dependants10b = rowSums(across(c(H76003:H76006, H76020:H76025, H76027:H76030, H76044:H76049), na.rm = T)),
-                workingage10b = rowSums(across(c(H76007:H76019, H76031:H76043), na.rm = T)), 
-                dependencyratio10b = dependants10b/workingage10b,
-                pctowneroccupied10b = ((IFF002+IFF003)/IFF001)*100,
-                vacancy10b = ((IFC001-IFF001)/IFC001)*100,
-                urbunits10b = (IFD002/IFD001)*100,
-                hispvap10b = (H75002/H75001)*100,
-                nhwvap10b = (H75005/H75001)*100,
-                nhbvap10b = (H75006/H75001)*100,
-                minorityvap10b = ((H75001 - H75005)/H75001)*100
-            ) %>% 
-            dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
-                STATEA, COUNTYA, TRACTA, BLOCKA, PLACEA, pop10b:minorityvap10b)
-        return(NULL)
-    }
-    
-    blocks2010 <- rbindlist(dat_use, use.names = TRUE)
-    rm(dat_use)
-    return(blocks2010)
+blocks2010 <- fread(file = "ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv") 
+blocks2010 %<>%
+    select(c("STATEA", "COUNTYA", "TRACTA", "BLOCKA", "PLACEA", "H7W001":"IFF004"))
+blocks2010 <- blocks2010[c(1:500000), ]
+f <- rep(seq_len(ceiling(nrow(blocks2010) / 100000)), each = 100000, length.out = nrow(blocks2010))
+dat_use <- split(blocks2010, f = f)
+rm(blocks2010)
+rm(f)
+
+# here's where we do processing on each chunk of the data 
+foreach (i = 1:length(dat_use)) %do% {
+  dat_use[[i]] <- dat_use[[i]] %>%
+    mutate( 
+      pop10b = H7Z001,
+      nhblack10b = H75006,
+      nhwhite10b = H7Z003, 
+      h10b = H7Z010,
+      min10b = (pop10b-nhwhite10b),
+      pctnhblack10b = (nhblack10b/pop10b)*100,
+      pctnhwhite10b = (nhwhite10b/pop10b)*100, 
+      pcth10b = (h10b/pop10b)*100, 
+      pctmin10b = (min10b/pop10b)*100, 
+      dependants10b = rowSums(across(c(H76003:H76006, H76020:H76025, H76027:H76030, H76044:H76049), na.rm = T)),
+      workingage10b = rowSums(across(c(H76007:H76019, H76031:H76043), na.rm = T)), 
+      dependencyratio10b = dependants10b/workingage10b,
+      pctowneroccupied10b = ((IFF002+IFF003)/IFF001)*100,
+      vacancy10b = ((IFC001-IFF001)/IFC001)*100,
+      urbunits10b = (IFD002/IFD001)*100,
+      hispvap10b = (H75002/H75001)*100,
+      nhwvap10b = (H75005/H75001)*100,
+      nhbvap10b = (H75006/H75001)*100,
+      minorityvap10b = ((H75001 - H75005)/H75001)*100
+      ) %>% 
+    dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
+      STATEA, COUNTYA, TRACTA, BLOCKA, PLACEA, pop10b:minorityvap10b)
+  return(NULL)
 }
 
-blocks2010 <- fread(file = "ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv") 
-blocks2010 %<>%
-    select(c("STATEA", "COUNTYA", "TRACTA", "BLOCKA", "PLACEA", "H7W001":"IFF004"))
-blocks2010 <- blocks2010[c(1:2000000), ]
+# by selecting the variables we need, we significantly reduce the file size of the data. 
 
-blocks_clean <- clean_dat_10(blocks2010)
-write_csv(blocks_clean, "blocks2010_var_pt1.csv")
+# turn list into dataframe 
+blocks2010 <- rbindlist(dat_use, use.names = TRUE)
+rm(dat_use)
 
-blocks2010 <- fread(file = "ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv") 
-blocks2010 %<>%
-    select(c("STATEA", "COUNTYA", "TRACTA", "BLOCKA", "PLACEA", "H7W001":"IFF004"))
-blocks2010 <- blocks2010[c(2000001:5000000), ]
-blocks_clean <- clean_dat_10(blocks2010)
-write_csv(blocks_clean, "blocks2010_var_pt2.csv")
+# here we save the new file we've made
+write_csv(blocks2010, "blocks2010_var_pt1.csv")
 
 blocks2010 <- fread(file = "ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv") 
 blocks2010 %<>%
     select(c("STATEA", "COUNTYA", "TRACTA", "BLOCKA", "PLACEA", "H7W001":"IFF004"))
-blocks2010 <- blocks2010[c(5000001:10000000), ]
-blocks_clean <- clean_dat_10(blocks2010)
+blocks2010 <- blocks2010[c(500001:1000000), ]
+f <- rep(seq_len(ceiling(nrow(blocks2010) / 100000)), each = 100000, length.out = nrow(blocks2010))
+dat_use <- split(blocks2010, f = f)
+rm(blocks2010)
+rm(f)
+
+# here's where we do processing on each chunk of the data 
+foreach (i = 1:length(dat_use)) %do% {
+    dat_use[[i]] <- dat_use[[i]] %>%
+        mutate( 
+            pop10b = H7Z001,
+            nhblack10b = H75006,
+            nhwhite10b = H7Z003, 
+            h10b = H7Z010,
+            min10b = (pop10b-nhwhite10b),
+            pctnhblack10b = (nhblack10b/pop10b)*100,
+            pctnhwhite10b = (nhwhite10b/pop10b)*100, 
+            pcth10b = (h10b/pop10b)*100, 
+            pctmin10b = (min10b/pop10b)*100, 
+            dependants10b = rowSums(across(c(H76003:H76006, H76020:H76025, H76027:H76030, H76044:H76049), na.rm = T)),
+            workingage10b = rowSums(across(c(H76007:H76019, H76031:H76043), na.rm = T)), 
+            dependencyratio10b = dependants10b/workingage10b,
+            pctowneroccupied10b = ((IFF002+IFF003)/IFF001)*100,
+            vacancy10b = ((IFC001-IFF001)/IFC001)*100,
+            urbunits10b = (IFD002/IFD001)*100,
+            hispvap10b = (H75002/H75001)*100,
+            nhwvap10b = (H75005/H75001)*100,
+            nhbvap10b = (H75006/H75001)*100,
+            minorityvap10b = ((H75001 - H75005)/H75001)*100
+        ) %>% 
+        dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
+            STATEA, COUNTYA, TRACTA, BLOCKA, PLACEA, pop10b:minorityvap10b)
+    return(NULL)
+}
+
+# by selecting the variables we need, we significantly reduce the file size of the data. 
+
+# turn list into dataframe 
+blocks2010 <- rbindlist(dat_use, use.names = TRUE)
+rm(dat_use)
+
+write_csv(blocks2010, "blocks2010_var_pt2.csv")
+
+blocks2010 <- fread(file = "ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv") 
+blocks2010 %<>%
+    select(c("STATEA", "COUNTYA", "TRACTA", "BLOCKA", "PLACEA", "H7W001":"IFF004"))
+blocks2010 <- blocks2010[c(1000001:5000000), ]
+f <- rep(seq_len(ceiling(nrow(blocks2010) / 100000)), each = 100000, length.out = nrow(blocks2010))
+dat_use <- split(blocks2010, f = f)
+rm(blocks2010)
+rm(f)
+
+# here's where we do processing on each chunk of the data 
+foreach (i = 1:length(dat_use)) %do% {
+    dat_use[[i]] <- dat_use[[i]] %>%
+        mutate( 
+            pop10b = H7Z001,
+            nhblack10b = H75006,
+            nhwhite10b = H7Z003, 
+            h10b = H7Z010,
+            min10b = (pop10b-nhwhite10b),
+            pctnhblack10b = (nhblack10b/pop10b)*100,
+            pctnhwhite10b = (nhwhite10b/pop10b)*100, 
+            pcth10b = (h10b/pop10b)*100, 
+            pctmin10b = (min10b/pop10b)*100, 
+            dependants10b = rowSums(across(c(H76003:H76006, H76020:H76025, H76027:H76030, H76044:H76049), na.rm = T)),
+            workingage10b = rowSums(across(c(H76007:H76019, H76031:H76043), na.rm = T)), 
+            dependencyratio10b = dependants10b/workingage10b,
+            pctowneroccupied10b = ((IFF002+IFF003)/IFF001)*100,
+            vacancy10b = ((IFC001-IFF001)/IFC001)*100,
+            urbunits10b = (IFD002/IFD001)*100,
+            hispvap10b = (H75002/H75001)*100,
+            nhwvap10b = (H75005/H75001)*100,
+            nhbvap10b = (H75006/H75001)*100,
+            minorityvap10b = ((H75001 - H75005)/H75001)*100
+        ) %>% 
+        dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
+            STATEA, COUNTYA, TRACTA, BLOCKA, PLACEA, pop10b:minorityvap10b)
+    return(NULL)
+}
+
+# by selecting the variables we need, we significantly reduce the file size of the data. 
+
+# turn list into dataframe 
+blocks2010 <- rbindlist(dat_use, use.names = TRUE)
+rm(dat_use)
 write_csv(blocks2010, "blocks2010_var_pt3.csv")
 
 blocks2010 <- fread(file = "ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv") 
 blocks2010 %<>%
     select(c("STATEA", "COUNTYA", "TRACTA", "BLOCKA", "PLACEA", "H7W001":"IFF004"))
+blocks2010 <- blocks2010[c(5000001:10000000), ]
+f <- rep(seq_len(ceiling(nrow(blocks2010) / 100000)), each = 100000, length.out = nrow(blocks2010))
+dat_use <- split(blocks2010, f = f)
+rm(blocks2010)
+rm(f)
+
+# here's where we do processing on each chunk of the data 
+foreach (i = 1:length(dat_use)) %do% {
+    dat_use[[i]] <- dat_use[[i]] %>%
+        mutate( 
+            pop10b = H7Z001,
+            nhblack10b = H75006,
+            nhwhite10b = H7Z003, 
+            h10b = H7Z010,
+            min10b = (pop10b-nhwhite10b),
+            pctnhblack10b = (nhblack10b/pop10b)*100,
+            pctnhwhite10b = (nhwhite10b/pop10b)*100, 
+            pcth10b = (h10b/pop10b)*100, 
+            pctmin10b = (min10b/pop10b)*100, 
+            dependants10b = rowSums(across(c(H76003:H76006, H76020:H76025, H76027:H76030, H76044:H76049), na.rm = T)),
+            workingage10b = rowSums(across(c(H76007:H76019, H76031:H76043), na.rm = T)), 
+            dependencyratio10b = dependants10b/workingage10b,
+            pctowneroccupied10b = ((IFF002+IFF003)/IFF001)*100,
+            vacancy10b = ((IFC001-IFF001)/IFC001)*100,
+            urbunits10b = (IFD002/IFD001)*100,
+            hispvap10b = (H75002/H75001)*100,
+            nhwvap10b = (H75005/H75001)*100,
+            nhbvap10b = (H75006/H75001)*100,
+            minorityvap10b = ((H75001 - H75005)/H75001)*100
+        ) %>% 
+        dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
+            STATEA, COUNTYA, TRACTA, BLOCKA, PLACEA, pop10b:minorityvap10b)
+    return(NULL)
+}
+
+# by selecting the variables we need, we significantly reduce the file size of the data. 
+
+# turn list into dataframe 
+blocks2010 <- rbindlist(dat_use, use.names = TRUE)
+rm(dat_use)
+write_csv(blocks2010, "blocks2010_var_pt4.csv")
+
+blocks2010 <- fread(file = "ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv") 
+blocks2010 %<>%
+    select(c("STATEA", "COUNTYA", "TRACTA", "BLOCKA", "PLACEA", "H7W001":"IFF004"))
 blocks2010 <- blocks2010[c(10000001:nrow(blocks2010)), ]
+f <- rep(seq_len(ceiling(nrow(blocks2010) / 100000)), each = 100000, length.out = nrow(blocks2010))
+dat_use <- split(blocks2010, f = f)
+rm(blocks2010)
+rm(f)
+
+# here's where we do processing on each chunk of the data 
+foreach (i = 1:length(dat_use)) %do% {
+    dat_use[[i]] <- dat_use[[i]] %>%
+        mutate( 
+            pop10b = H7Z001,
+            nhblack10b = H75006,
+            nhwhite10b = H7Z003, 
+            h10b = H7Z010,
+            min10b = (pop10b-nhwhite10b),
+            pctnhblack10b = (nhblack10b/pop10b)*100,
+            pctnhwhite10b = (nhwhite10b/pop10b)*100, 
+            pcth10b = (h10b/pop10b)*100, 
+            pctmin10b = (min10b/pop10b)*100, 
+            dependants10b = rowSums(across(c(H76003:H76006, H76020:H76025, H76027:H76030, H76044:H76049), na.rm = T)),
+            workingage10b = rowSums(across(c(H76007:H76019, H76031:H76043), na.rm = T)), 
+            dependencyratio10b = dependants10b/workingage10b,
+            pctowneroccupied10b = ((IFF002+IFF003)/IFF001)*100,
+            vacancy10b = ((IFC001-IFF001)/IFC001)*100,
+            urbunits10b = (IFD002/IFD001)*100,
+            hispvap10b = (H75002/H75001)*100,
+            nhwvap10b = (H75005/H75001)*100,
+            nhbvap10b = (H75006/H75001)*100,
+            minorityvap10b = ((H75001 - H75005)/H75001)*100
+        ) %>% 
+        dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
+            STATEA, COUNTYA, TRACTA, BLOCKA, PLACEA, pop10b:minorityvap10b)
+    return(NULL)
+}
+
+# by selecting the variables we need, we significantly reduce the file size of the data. 
+
+# turn list into dataframe 
+blocks2010 <- rbindlist(dat_use, use.names = TRUE)
+rm(dat_use)
 
 pt1 <- read_csv("blocks2010_var_pt1.csv")
 pt2 <- read_csv("blocks2010_var_pt2.csv")
 pt3 <- read_csv("blocks2010_var_pt3.csv")
-
-blocks2010 <- base::rbind(pt1, pt2, pt3, blocks2010)
-rm(pt1, pt2, pt3)
+pt4 <- read_csv("blocks2010_var_pt4.csv")
+blocks2010 <- base::rbind(pt1, pt2, pt3, pt4, blocks2010)
+rm(pt1, pt2, pt3, pt4)
 write_csv(blocks2010, "blocks2010_var.csv")
 
 # 2000 place-level data ####
-# cpi to 2016$, which is ACS$ 
-# 2000(1999), 2010(2009), 2013(2012), 2014(2013)
-cpi <- c(1.42, 1.11, 1.03, 1)
 places2000 <- read_csv(file = "seplaces_allstates/2000places.csv") # notice that place-level data is much smaller
-#poverty00 <- read_csv("seplaces_allstates/povt00.csv")
+poverty00 <- read_csv("seplaces_allstates/povt00.csv")
 vap2000 <- read_csv("seplaces_allstates/vap2000.csv") 
+# vap stands for voting-age population. 
+
+names(places2000)
+#names(places2000)[12:216]
+
+#1. rename variables 
+#names2000 <- c("poppl00", "pop2pl00", "popdensitypl00", "areapl00", "pop3pl00", "a5pl00", "a10pl00", "a15pl00", "a18pl00", "a20pl00", "a21pl00",
+               # "a22pl00", "a25pl00", "a30pl00", "a35pl00", "a40pl00", "a45pl00", "a50pl00", "a55pl00", "a60pl00", "a62pl00", "a65pl00", "a67pl00",
+               # "a70pl00", "a75pl00", "a80pl00", "a85pl00",
+               # "pop4pl00", "nhtotalpl00", "nhwhitepl00", "nhblackpl00", "nhaianpl00", "nhasianpl00", "nhpipl00", "nhotherpl00", "nh2ppl00", 
+               # "htotalpl00", "hwhitepl00", "hblackpl00", "haianpl00", "hasianpl00", "hpipl00", "hotherpl00", "h2ppl00",
+               # "lfppl00", "lfparmedpl00", "lfpcivilianpl00", "mhincpl00", 
+               # "blackpoppl00", "blackbelowpovpl00", "blackatabovepovpl00", 
+               # "pop5pl00", "nativebornpl00", "foreignbornpl00", "naturalizedpl00", "notcitizenpl00",
+               # "foreignborntotalpl00", "foreign9500pl00", "foreign9094pl00", "foreign8589pl00", "foreign8084pl00", "foreign7579pl00", "foreign7074pl00", "foreign6569pl00", "foreignb65pl00",
+               # "foreignborntotal2pl00", "europepl00", "neuropepl00", "ukpl00", "irepl00", "swepl00", "othernepl00", 
+               # "weuropepl00", "austriapl00", "frpl00", "gerpl00", "netherpl00", "otherwepl00", 
+               # "seuropepl00", "greecepl00", "italypl00", "portpl00", "spainpl00", "othersepl00",
+               # "eeuropepl00", "czechpl00", "hungpl00", "polpl00", "romaniapl00", "belaruspl00", "russiapl00", "ukrainepl00", "bosniahpl00", "yugopl00", "othereepl00", "othereuropepl00",
+               # "asiapl00", "easiapl00", "chinapl00", "chinamainpl00", "hkpl00", "taiwanpl00", "japanpl00", "koreapl00", "othereapl00", 
+               # "scasiapl00", "afghanpl00", "banglapl00", "indiapl00", "iranpl00", "pakistanpl00", "otherscapl00", 
+               # "seasiapl00", "cambodiapl00", "indopl00", "laospl00", "malaypl00", "philippl00", "thaipl00", "vietpl00", "otherseapl00", 
+               # "wasiapl00", "iraqpl00", "israelpl00", "jordanpl00", "lebanonpl00", "syriapl00", "turkeypl00", "armeniapl00", "otherwapl00", "otherasiapl00", 
+               # "africapl00", "eafricapl00", "ethiopiapl00", "othereafrpl00", 
+               # "mafricapl00", "norafricapl00", "egyptpl00", "othernorafricapl00", 
+               # "safricapl00", "safpl00", "othersafpl00",
+               # "wafricapl00", "ghanapl00", "nigeriapl00", "sierrapl00", "otherwafricapl00", "otherafricapl00", 
+               # "oceaniapl00", "ausnzpl00", "auspl00", "otherausnzpl00", "melanisiapl00", "micronesiapl00", "polynesiapl00", "otheroceaniapl00", 
+               # "americaspl00", "latampl00", "caribpl00", "barbadospl00", "cubapl00", "drpl00", "haitipl00", "jamaicapl00", "trintobpl00", "othercaribpl00", 
+               # "centampl00", "mexicopl00", "othercentampl00", "costaricapl00", "elsavpl00", "guatpl00", "honduraspl00", "nicarpl00", "panamapl00", "othercentam2pl00", 
+               # "sampl00", "argentinapl00", "boliviapl00", "brazilpl00", "chilepl00", "colompl00", "ecuapl00", "guyanapl00", "perupl00", "venezpl00", "othersampl00",
+               # "norampl00", "canpl00", "othernorpl00", "bornatseapl00")
+
+# names(places2000)[12:202] <- names2000 
+
+# left_join is how we merge datasets together. 
+?left_join #? + the command name is how you get more information on the command. 
+# here, you'll find documentation on how left_join and right_join etc. are different from each other. 
+# when joining data, you want to specify the by-variable. i.e. how are the two datasets matched to each other?
+# there are other tricks/issues with using left_join but we won't address them here. the main one is 
+# avoiding having duplicate variables across datasets. That's why I use select to only keep variables 
+# I know don't repeat, and keep only the by-variable across both. You can also match by more than one variable, 
+# it would look like by = c("A", "B", "C")
+# here, we're joining place dataset A to place dataset B to place dataset C, so we are joining by the place identifier. 
+# we need a unique ID for each place, i.e. plid, which is a 7-digit number generated 
+# from State (2-digit) and Place (5-digit) IDs 
+# we use string pad because we need the ids to be 7-digits for maximum uniqueness 
+# but sometimes the data is formatted such that state 01 shows up as 1, so we need a leading 0 in those cases
 
 places2000 <- places2000 %>%
+  mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+         PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
+         plid = paste0(STATE, PLACE))
+
+poverty00 <- poverty00 %>%
   mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
          PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
          plid = paste0(STATE, PLACE))
@@ -185,13 +414,14 @@ vap2000 <- vap2000 %>%
          plid = paste0(STATE, PLACE))
 
 places2000 <- places2000 %>%
+  left_join(poverty00 %>% select(plid, SE_T187_001:PCT_SE_T194_003), by = "plid") %>%
   left_join(vap2000 %>% select(plid, SF1_P006001:SF1_P006073), by = "plid")
 
 # 2. create variables needed 
 places2000 <- places2000 %>%
   mutate(pop00p = SE_T001_001, 
-         #pcturb00p = (SE_T002_002/pop00p)*100, 
-         #pctrur00p = 100-pcturb00p,
+         pcturb00p = (SE_T002_002/pop00p)*100, 
+         pctrur00p = 100-pcturb00p,
          popdensity00p = SE_T003_001,
          nhblack00p = SE_T015_004, 
          nhwhite00p = SE_T015_003, 
@@ -201,14 +431,11 @@ places2000 <- places2000 %>%
          pctnhwhite00p = (nhwhite00p/pop00p) * 100, 
          pcth00p = (h00p/pop00p) * 100, 
          pctmin00p = (min00p/pop00p) * 100, 
-         pctrecimm00p = (SE_T202_002/pop00p) * 100,
-         hinc00p = SE_T093_001 * cpi[1], 
-         pctowneroccupied00p = (SE_T156_002/SE_T156_001) * 100,
-         pctvacancy00p = (SE_T157_003/SE_T157_001) * 100,
-         mhmval00p = SE_T163-001*cpi[1],
-         blackpov00p = (SE_T187_002/SE_T187_001)*100,
-         hpov00p = (SE_T193_002/SE_T193_001)*100, 
-         nhwhitepov00p = (SE_T194_002/SET194_001)*100, 
+         pctrecimm00p = ((SE_T202_003 + SE_T202_002) / pop00p) * 100,
+         hinc00p = SE_T093_001, 
+         blackpov00p = PCT_SE_T187_002,
+         hpov00p = PCT_SE_T193_002, 
+         nhwhitepov00p = PCT_SE_T194_002, 
          minpov00p = ((SE_T187_002 + SE_T188_002 + SE_T189_002 + SE_T190_002 + SE_T191_002 + SE_T192_002 + SE_T193_002)/(SE_T187_001 + SE_T188_001 + SE_T189_001 + SE_T190_001 + SE_T191_001 + SE_T192_001 + SE_T193_001))*100,
          nhwhitevap00p = (SF1_P006005/SF1_P006001)*100, #nh stands for non-Hispanic
          nhblackvap00p = (SF1_P006006/SF1_P006001)*100,
