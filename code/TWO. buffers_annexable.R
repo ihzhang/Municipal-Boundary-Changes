@@ -174,26 +174,32 @@ get_block_ids(AL_01, 2014)
 # first have to filter out by plid; we want is.na or 99999 only 
 
 get_buffers_14 <- function(state_code) {
-    blocks <- st_read(paste0("SHP_blk_0010/2014/", state_code, "/tl_2014_", substr(state_code, 4, 5), "_tabblock10.shp"))
+    blocks <- tigris::blocks(state = substr(state_code, 4, 5), year = 2014)
     blocks <- st_transform(blocks, 3488)
     blocks %<>%
-            mutate(blkid = paste0(str_pad(as.character(STATEFP10), 2, side = "left", pad = "0"), str_pad(as.character(COUNTYFP10), 3, side = "left", pad = "0"),
-                                  str_pad(as.character(TRACTCE10), 6, side = "left", pad = "0"), str_pad(as.character(BLOCKCE10), 4, side = "left", pad = "0")))
+            mutate(blkid = paste0(str_pad(as.character(STATEFP10), 2, side = "left", pad = "0"), 
+                                  str_pad(as.character(COUNTYFP10), 3, side = "left", pad = "0"),
+                                  str_pad(as.character(TRACTCE10), 6, side = "left", pad = "0"), 
+                                  str_pad(as.character(BLOCKCE10), 4, side = "left", pad = "0")))
 
     # should only retain those not already part of a place
-    plid_list <- read_csv(paste0())
+    plid_list <- read_csv(file = paste0("SHP_blk_0010/2014/", state_code, "/", substr(state_code, 1, 2), "_block_plids.csv"))
+    plid_list %<>% 
+        select(blkid, plid) %>%
+        mutate(blkid = as.character(blkid))
     blocks %<>%
         left_join(plid_list, by = "blkid") %>% 
-        filter(is.na(PLACEA) | PLACEA=="99999") 
+        filter(is.na(plid))
     rm(plid_list)
     
     # place shapefile
-    places <- st_read(paste0("SHP_pl/2014/", state_code, "/tl_2014_", substr(state_code, 4, 5), "_place.shp"))
+    places <- tigris::places(state = substr(state_code, 4, 5), year = 2014)
+    #places <- st_read(paste0("SHP_pl/2014/", state_code, "/tl_2014_", substr(state_code, 4, 5), "_place.shp"))
     places <- st_transform(places, 3488)
-    places <- places %>% 
-        mutate(PLACE = as.character(.[[2]])) %>%
-        filter(!is.na(PLACE) & PLACE != "99999" & PLACE != "999") %>%
-        mutate(plid = paste0(str_pad(as.character(.[[1]]), 2, side = "left", pad = "0"), str_pad(as.character(.[[2]]), 5, side = "left", pad = "0")))
+    places %<>% 
+        mutate(plid = paste0(
+            str_pad(as.character(STATEFP), 2, side = "left", pad = "0"), 
+            str_pad(as.character(PLACEFP), 5, side = "left", pad = "0"))) 
     
     datalist <- list()
     for (i in 1:length(unique(places$plid))) {
@@ -216,6 +222,16 @@ get_buffers_14 <- function(state_code) {
     write_csv(buffers, file = paste0("SHP_blk_0010/2014/", state_code, "/", substr(state_code, 1, 2), "_buffers.csv"))
     
 }
+
+state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09", 
+                 "DE_10", "FL_12", "GA_13", "HI_15", "IA_19", "ID_16", "IL_17", "IN_18",
+                 "KS_20", "KY_21", "LA_22", 
+                 "MA_25", "MD_24", "ME_23", "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
+                 "NC_37", "ND_38", "NE_31", "NH_33", "NJ_34", "NM_35", "NV_32", "NY_36",
+                 "OH_39", "OK_40", "OR_41", "PA_42", "RI_44",
+                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VT_50", "VA_51",
+                 "WA_53", "WV_54", "WI_55", "WY_56"
+)
 
 for (state_code in state_codes) {
     get_buffers_14(state_code)
