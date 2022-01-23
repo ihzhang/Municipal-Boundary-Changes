@@ -239,8 +239,11 @@ state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09",
 
 for (state_code in state_codes) {
     start_time <- Sys.time()
+    print(start_time)
     get_buffers_14(state_code)
     end_time <- Sys.time()
     print(state_code)
     print(end_time - start_time)
+    print(end_time)
+    Sys.sleep(60)
 }
