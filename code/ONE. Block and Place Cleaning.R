@@ -332,7 +332,7 @@ places2010 <- places2010 %>%
   left_join(vap2010 %>% select(plid, SF1_P0110001:SF1_P0110073), by = "plid")
 
 # 2. make variables 
-places2010 <- places2010 %>%
+places2010 %<>%
   mutate(pop10p = SE_A00001_001, 
          #pcturb10p = NA,
          #pctrur10p = NA,
@@ -397,82 +397,92 @@ write_csv(pl0010, "pl0010_var.csv")
 rm(list = ls())
 
 # 2013 ACS places ####
-acs13 <- read_csv("seplaces_allstates/2013places.csv")
-fb13 <- read_csv()
+# wee just need vap info 
+acs13 <- read_csv("seplaces_allstates/acs0913vap.csv")
 
 acs13 %<>%
-    mutate(pop10p = SE_A00001_001, 
-           #pcturb10p = NA,
-           #pctrur10p = NA,
-           popdensity10p = SE_A00002_002,
-           nhblack10p = SE_A04001_004, 
-           nhwhite10p = SE_A04001_003, 
-           h10p = SE_A04001_010, 
-           min10p = (pop10p-nhwhite10p), 
-           pctnhblack10p = (nhblack10p/pop10p) * 100,
-           pctnhwhite10p = (nhwhite10p/pop10p) * 100, 
-           pcth10p = (h10p/pop10p) * 100, 
-           pctmin10p = (min10p/pop10p) * 100, 
-           pctrecimm10p = (SE_A10058_003/pop10p) * 100,
-           unemp10p = (SE_A17002_006/SE_A17002_004)*100,
-           pctowneroccupied10p = (SE_A10060_002/SE_A10060_001)*100,
-           pctvacancy10p = (SE_A10044_003/SE_A10044_001)*100,
-           mhmval10p = SE_A10036_001*cpi[2],
-           hinc10p = SE_A14006_001 * cpi[2], 
-           whitepov10p = (SE_A13001I_002/SE_A13001I_001)*100,
-           blackpov10p = (SE_A13001B_002/SE_A13001B_001)*100,
-           hpov10p = (SE_A13001H_002/SE_A13001H_001)*100,
-           minpov10p =  ((hpov10p + blackpov10p + SE_A13001G_002 + SE_A13001F_002 + SE_A13001E_002 + SE_A13001D_002 + SE_A13001C_002)/(SE_A13001B_001 + SE_A13001B_001 + SE_A13001G_001 + SE_A13001F_001 + SE_A13001E_001 + SE_A13001D_001 + SE_A13001C_001))*100,
-           popover18 = SF1_P0110001,
-           nhwhitevap10p = (SF1_P0110005/popover18)*100,
-           nhblackvap10p = (SF1_P0110006/popover18)*100,
-           hispvap10p = (SF1_P0110002/popover18)*100,
-           minvap10p = ((popover18-SF1_P0110005)/popover18)*100)
-
+    mutate(popover18 = SE_T003_001,
+           nhwhitevap13p = (SE_T003_003/popover18)*100,
+           nhblackvap13p = (SE_T003_004/popover18)*100,
+           hispvap13p = (SE_T003_014/popover18)*100,
+           minvap13p = ((popover18-SE_T003_003)/popover18)*100) %>%
+    select(-popover18)
 
 write_csv(acs13, "acs13.csv")
 
 # 2014 ACS places ####
-acs14 <- read_csv("seplaces_allstates/2014places.csv")
-acs14 %<>%
-    rename("nhwhite14p" = "PCT_SE_A04001_003",
-           "nhblack14p" = "PCT_SE_A04001_004",
-           "h14p" = "PCT_SE_A04001_010") %>%
-    mutate(min14p = 100-nhwhite13p,
-           STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+places2014 <- read_csv("seplaces_allstates/2014places.csv")
+vap2014 <- read_csv("seplaces_allstates/acs1014vap.csv")
+emp2014 <- read_csv("seplaces_allstates/acs14_emp.csv")
+hu2014 <- read_csv("seplaces_allstates/acs14_hu.csv")
+
+places2014 <- places2014 %>%
+    mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
            PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
-           plid = paste0(STATE, PLACE),
-           pop14p = SE_A00001_001, 
-           pcturb14p = NA,
-           pctrur14p = NA,
+           plid = paste0(STATE, PLACE))
+
+vap2014 <- vap2014 %>%
+    mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+           PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
+           plid = paste0(STATE, PLACE))
+
+emp2014 %<>%
+    mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+           PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
+           plid = paste0(STATE, PLACE))
+
+hu2014 %<>%
+    mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+           PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
+           plid = paste0(STATE, PLACE))
+
+places2014 <- places2014 %>%
+    left_join(vap2014 %>% select(plid, SF1_P0110001:SF1_P0110073), by = "plid") %>%
+    left_join(emp2014 %>% select(plid, SE_A17002_001:SE_A17002_007), by = "plid") %>%
+    left_join(hu2014 %>% select(plid, SE_A10001_001) ,by = "plid")
+
+places2014 %<>%
+    mutate(pop14p = SE_A00002_001, 
+           #pcturb14p = NA,
+           #pctrur14p = NA,
            popdensity14p = SE_A00002_002,
-           nhblack14p = SE_A04001_004, 
-           nhwhite14p = SE_A04001_003, 
-           h14p = SE_A04001_010, 
+           nhblack14p = SE_B03002004, 
+           nhwhite14p = SE_B03002003, 
+           h14p = SE_B03002012, 
            min14p = (pop14p-nhwhite14p), 
            pctnhblack14p = (nhblack14p/pop14p) * 100,
            pctnhwhite14p = (nhwhite14p/pop14p) * 100, 
            pcth14p = (h14p/pop14p) * 100, 
            pctmin14p = (min14p/pop14p) * 100, 
-           pctrecimm14p = (SE_A10058_002 / pop14p) * 100,
-           hinc14p = SE_A14006_001, 
+           pctrecimm14p = (SE_A10058_002/pop14p) * 100,
+           unemp14p = (SE_A17002_006/SE_A17002_004)*100,
+           pctowneroccupied14p = (SE_B25003002/SE_B25003001)*100,
+           pctvacancy14p = (SE_B25004001/SE_A10001_001)*100,
+           mhmval14p = SE_B25077001*cpi[3],
+           hinc14p = SE_B19013001 * cpi[3], 
            whitepov14p = (SE_A13001I_002/SE_A13001I_001)*100,
            blackpov14p = (SE_A13001B_002/SE_A13001B_001)*100,
            hpov14p = (SE_A13001H_002/SE_A13001H_001)*100,
-           minpov14p =  ((hpov14p + blackpov14p + SE_A13001G_002 + SE_A13001F_002 + SE_A13001E_002 + SE_A13001D_002 + SE_A13001C_002)/(SE_A13001B_001 + SE_A13001B_001 + SE_A13001G_001 + SE_A13001F_001 + SE_A13001E_001 + SE_A13001D_001 + SE_A13001C_001))*100) %>%
-    select(c(plid, Geo_QName, contains("14p")))
+           minpov14p =  ((hpov14p + blackpov14p + SE_A13001G_002 + SE_A13001F_002 + SE_A13001E_002 + SE_A13001D_002 + SE_A13001C_002)/(SE_A13001B_001 + SE_A13001B_001 + SE_A13001G_001 + SE_A13001F_001 + SE_A13001E_001 + SE_A13001D_001 + SE_A13001C_001))*100,
+           popover18 = SE_T003_001,
+           nhwhitevap14p = (SE_T003_003/popover18)*100,
+           nhblackvap14p = (SE_T003_004/popover18)*100,
+           hispvap14p = (SE_T003_014/popover18)*100,
+           minvap14p = ((popover18-SE_T003_003)/popover18)*100) %>%
+    select(-popover18)
 
 write_csv(acs14, "acs14.csv")
 
 # 2020 census ####
-places2020 <- read_csv("seplaces_allstates/2020places.csv")
+# only need vap data 
+places2020 <- read_csv("seplaces_allstates/acs1519vap.csv")
 places2020 %<>% 
     rename("Geo_QName" = "Geo_QNAME") %>%
-    mutate(pop20p = SE_T003_001, 
-           nhwhite20p = SE_T004_003,
-           nhblack20p = SE_T004_005,
-           h20p = SE_T004_017,
-           min20p = 100-nhwhite20p,
+    mutate(popover18 = SE_T003_001,
+           nhwhitevap20p = (SE_T003_003/popover18)*100,
+           nhblackvap20p = (SE_T003_004/popover18)*100,
+           hispvap20p = (SE_T003_014/popover18)*100,
+           minvap20p = ((popover18-SE_T003_003)/popover18)*100,
            STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
            PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
            plid = paste0(STATE, PLACE)) %>%
