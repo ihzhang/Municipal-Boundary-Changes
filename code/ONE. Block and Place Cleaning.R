@@ -3,7 +3,6 @@
 # for place90, place00, block00 and block10 datasets before doing ###########
 # analysis outlined in BAS0010. This is script step ONE. ####################
 
-
 rm(list = ls())
 setwd("~/Google Drive/Stanford/QE2") # use setwd() to set your home directory 
 
@@ -58,8 +57,7 @@ foreach (i = 1:length(dat_use)) %do% {
              vacancy00b = ((FV5001 - (FWA001 + FWA002))/FV5001)*100,
              blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
                             str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0"))) %>%
-    dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
-               GISJOIN, STATEA, COUNTYA, TRACTA, BLOCKA, PLACEA, blkid, pop00b:vacancy00b)
+    dplyr::select(STATEA, COUNTYA, TRACTA, BLOCKA, PLACEA, blkid, pop00b:vacancy00b, -dependants00b, -workingage00b)
   return(NULL)
 }
 
@@ -90,6 +88,42 @@ rm(dat_use)
 blocks2000 <- blocks2000 %>%
   left_join(vap2000block, by = "blkid")
 write_csv(blocks2000, "blocks2000_var.csv")
+
+# get vra data for 2000
+rm(vap2000block)
+
+vrastates <- c("01", "02", "04", "13", "22", "28", "45", "48", "51")
+vra <- read_csv("vra_counties.csv")
+vra %<>% 
+    mutate(countyfips = str_pad(countyfips, 5, side = "left", pad = "0"),
+           sectionv = 1)
+
+blocks2000 %<>%
+    mutate(countyfips = paste0(STATEA, COUNTYA)) %>%
+    left_join(vra, 
+              by = "countyfips") %>%
+    mutate(sectionv = 
+               case_when(
+                   STATEA %in% vrastates ~ 1,
+                   is.na(sectionv) ~ 0,
+                   TRUE ~ sectionv
+               ))
+table(blocks2000$sectionv, exclude = NULL)
+
+vra_plids_2000 <- blocks2000 %>%
+    filter(PLACEA != "99999") %>%
+    mutate(plid = paste0(
+        str_pad(STATEA, 2, side = "left", pad = "0"),
+        str_pad(PLACEA, 5, "left", "0")
+    )) %>%
+    group_by(plid) %>%
+    summarize(sectionv = mean(sectionv)) %>%
+    mutate(sectionv = ifelse(sectionv > 0 & sectionv < 1, 1, sectionv))
+
+table(vra_plids_2000$sectionv)
+write_csv(vra_plids_2000, "vra_plids_2000.csv")
+
+rm(list = ls())
 
 # 2010 block-level data ####
 clean_dat_10 <- function(datuse) {
@@ -138,6 +172,7 @@ blocks2010 <- blocks2010[c(1:2000000), ]
 
 blocks_clean <- clean_dat_10(blocks2010)
 write_csv(blocks_clean, "blocks2010_var_pt1.csv")
+rm(blocks_clean)
 
 blocks2010 <- fread(file = "ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv") 
 blocks2010 %<>%
@@ -145,26 +180,63 @@ blocks2010 %<>%
 blocks2010 <- blocks2010[c(2000001:5000000), ]
 blocks_clean <- clean_dat_10(blocks2010)
 write_csv(blocks_clean, "blocks2010_var_pt2.csv")
+rm(blocks_clean)
 
 blocks2010 <- fread(file = "ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv") 
 blocks2010 %<>%
     select(c("STATEA", "COUNTYA", "TRACTA", "BLOCKA", "PLACEA", "H7W001":"IFF004"))
 blocks2010 <- blocks2010[c(5000001:10000000), ]
 blocks_clean <- clean_dat_10(blocks2010)
-write_csv(blocks2010, "blocks2010_var_pt3.csv")
+write_csv(blocks_clean, "blocks2010_var_pt3.csv")
+rm(blocks_clean)
 
 blocks2010 <- fread(file = "ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv") 
 blocks2010 %<>%
     select(c("STATEA", "COUNTYA", "TRACTA", "BLOCKA", "PLACEA", "H7W001":"IFF004"))
 blocks2010 <- blocks2010[c(10000001:nrow(blocks2010)), ]
+blocks_clean <- clean_dat_10(blocks2010)
+rm(blocks2010)
 
 pt1 <- read_csv("blocks2010_var_pt1.csv")
 pt2 <- read_csv("blocks2010_var_pt2.csv")
 pt3 <- read_csv("blocks2010_var_pt3.csv")
 
-blocks2010 <- base::rbind(pt1, pt2, pt3, blocks2010)
-rm(pt1, pt2, pt3)
+blocks2010 <- base::rbind(pt1, pt2, pt3, blocks_clean)
+rm(pt1, pt2, pt3, blocks_clean)
 write_csv(blocks2010, "blocks2010_var.csv")
+
+vrastates <- c("01", "02", "04", "13", "22", "28", "45", "48", "51")
+vra <- read_csv("vra_counties.csv")
+vra %<>% 
+    mutate(countyfips = str_pad(countyfips, 5, side = "left", pad = "0"),
+           sectionv = 1)
+
+blocks2010 %<>%
+    mutate(countyfips = paste0(STATEA, COUNTYA)) %>%
+    left_join(vra, 
+              by = "countyfips") %>%
+    mutate(sectionv = 
+               case_when(
+                   STATEA %in% vrastates ~ 1,
+                   is.na(sectionv) ~ 0,
+                   TRUE ~ sectionv
+               ))
+table(blocks2010$sectionv, exclude = NULL)
+
+vra_plids_2010 <- blocks2010 %>%
+    filter(PLACEA != "99999") %>%
+    mutate(plid = paste0(
+        str_pad(STATEA, 2, side = "left", pad = "0"),
+        str_pad(PLACEA, 5, "left", "0")
+    )) %>%
+    group_by(plid) %>%
+    summarize(sectionv = mean(sectionv)) %>%
+    mutate(sectionv = ifelse(sectionv > 0 & sectionv < 1, 1, sectionv))
+
+table(vra_plids_2010$sectionv)
+write_csv(vra_plids_2010, "vra_plids_2010.csv")
+
+rm(list = ls())
 
 # 2000 place-level data ####
 # cpi to 2016$, which is ACS$ 
