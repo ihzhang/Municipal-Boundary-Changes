@@ -169,7 +169,6 @@ blocks2010 <- fread("ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block
 
 state_list <- list.files("SHP_blk_0010/2013/", all.files = FALSE, full.names = FALSE)
 blocks2013 <- list()
-
 for (i in 1:length(state_list)) {
     blocks2013[[i]] <- read_csv(file = paste0("SHP_blk_0010/2013/", state_list[[i]], "/", substr(state_list[[i]], 1, 2), "_block_plids.csv")) %>%
         mutate(State = substr(state_list[[i]], 4, 5))
@@ -191,8 +190,6 @@ blocks2010 <- blocks2010 %>%
          blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
                         str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0"))
   ) 
-
-blocks2010 %<>% filter(STATEA=="44")
 
 # 1. first, for each place, we get a list of their blocks in 2010 and 2020 
 # 2. then, we only retain the blocks that weren't part of that place in 2010 
