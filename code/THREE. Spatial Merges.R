@@ -187,9 +187,12 @@ blocks2010 <- blocks2010 %>%
          STATEA = as.character(STATEA), 
          STATEA = str_pad(STATEA, 2, side = "left", pad = "0"),
          PLACEA = str_pad(PLACEA, 5, side = "left", pad = "0"),
-         plid = paste0(STATEA, PLACEA) # this 7-digit number is the unique place ID for each Census place 
-  ) %>%
-    filter(PLACEA=="99999" | is.na(plid))
+         plid = paste0(STATEA, PLACEA),
+         blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
+                        str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0"))
+  ) 
+
+blocks2010 %<>% filter(STATEA=="44")
 
 # 1. first, for each place, we get a list of their blocks in 2010 and 2020 
 # 2. then, we only retain the blocks that weren't part of that place in 2010 

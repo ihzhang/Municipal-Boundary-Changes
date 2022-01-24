@@ -13,6 +13,8 @@ library("sf")
 library("data.table")
 library("tidyverse")
 library("magrittr")
+library("crsuggest")
+library("tigris")
 
 setwd("~/Google Drive/Stanford/QE2")
 
@@ -109,12 +111,7 @@ for (state_code in state_codes) {
 # 2013 blocks and their 2013 place id 
 # 2014, their 2014 place id and their contiguous blocks 
 get_block_ids <- function (state_code, year) {
-    filename = ifelse(
-        year==2013, paste0("SHP_blk_0010/", year, "/", state_code, "/tl_", year, "_", substr(state_code, 4, 5), "_tabblock.shp"),
-        paste0("SHP_blk_0010/", year, "/", state_code, "/tl_", year, "_", substr(state_code, 4, 5), "_tabblock10.shp")
-    )
-    print(filename)
-    blocks <- st_read(filename)
+    blocks <- st_read(paste0("SHP_blk_0010/", year, "/", state_code, "/tl_", year, "_", substr(state_code, 4, 5), "_tabblock.shp"))
     blocks <- st_transform(blocks, 3488)
     blocks %<>%
         mutate(blkid = paste0(str_pad(as.character(STATEFP10), 2, side = "left", pad = "0"), str_pad(as.character(COUNTYFP10), 3, side = "left", pad = "0"),
@@ -138,7 +135,7 @@ get_block_ids <- function (state_code, year) {
             test <- as.data.frame(blocks[p1blocks[[1]],])
             test$plid <- p1$plid
             datalist[[i]] <- test %>% 
-                select(c(1:6), blkid, plid)
+                select(c(1:6), blkid, plid, GEOID)
         }
     }
     non.null.list <- lapply(datalist, Filter, f = Negate(is.null))
@@ -151,6 +148,11 @@ get_block_ids <- function (state_code, year) {
 # blocks <- st_transform(blocks, 3488)
 # places <- st_read(paste0("SHP_pl/", "2014", "/", "AL_01", "/tl_2014_", substr("AL_01", 4, 5), "_place.shp"))
 # places <- st_transform(places, 3488)
+
+ggplot() + 
+    geom_sf(data = places, fill = "black") +
+    geom_sf(data = blocks %>% 
+                filter(blkid %in% contig$blkid), fill="#CCFFCC") 
 
 years <- c(2013, 2014)
 state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09", 
