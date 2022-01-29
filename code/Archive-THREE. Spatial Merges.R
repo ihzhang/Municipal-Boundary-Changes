@@ -170,14 +170,15 @@ blocks2010 <- fread("ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block
 state_list <- list.files("SHP_blk_0010/2013/", all.files = FALSE, full.names = FALSE)
 blocks2013 <- list()
 for (i in 1:length(state_list)) {
-    blocks2013[[i]] <- read_csv(file = paste0("SHP_blk_0010/2013/", state_list[[i]], "/", substr(state_list[[i]], 1, 2), "_block_plids.csv")) %>%
+    blocks2013[[i]] <- read_csv(file = paste0("SHP_blk_0010/2013/", state_list[[i]], "/", substr(state_list[[i]], 1, 2), "_blocks_plids.csv")) %>%
         mutate(State = substr(state_list[[i]], 4, 5))
 } 
 
-#names(blocks2013) <- state_list
+names(blocks2013) <- state_list
 blocks2013 <- rbindlist(blocks2013, use.names = TRUE)
 rm(state_list)
 write_csv(blocks2013, file = "blocks2013_plids.csv")
+
 
 # 2010 block data 
 # we need to generate unique place IDs (e.g., place 6238 exists in both state 1 and 2, so we need to differentiate those places)
@@ -186,10 +187,21 @@ blocks2010 <- blocks2010 %>%
          STATEA = as.character(STATEA), 
          STATEA = str_pad(STATEA, 2, side = "left", pad = "0"),
          PLACEA = str_pad(PLACEA, 5, side = "left", pad = "0"),
-         plid = paste0(STATEA, PLACEA),
-         blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
-                        str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0"))
-  ) 
+         plid = paste0(STATEA, PLACEA) # this 7-digit number is the unique place ID for each Census place 
+  )
+
+# 2020 block data 
+# we repeat this process for 2020 data
+blocks2013 %<>%
+  mutate(PLACEA = as.character(PLACEA),
+         STATEA = as.character(STATEA), 
+         STATEA = str_pad(STATEA, 2, side = "left", pad = "0"),
+         PLACEA = str_pad(PLACEA, 5, side = "left", pad = "0"),
+         plid = paste0(STATEA, PLACEA)
+  )
+
+blocks2013 %<>% # we don't want to bother with null places in 2020; also, 0199999 is not a unique place ID, for e.g.
+  filter(PLACEA!="99999" & !is.na(PLACEA))
 
 # 1. first, for each place, we get a list of their blocks in 2010 and 2020 
 # 2. then, we only retain the blocks that weren't part of that place in 2010 
@@ -199,7 +211,7 @@ plids <- unique(blocks2013$plid)
 for (i in 1:length(plids)) {
   block10 <- blocks2010 %>% filter(plid==plids[i])
   block13 <- blocks2013 %>% filter(plid==plids[i])
-  block <- block13 %>% filter(!blkid %in% block10$blkid) # which blocks part of 2010 places were not part of those places in 2000?
+  block <- block13 %>% filter(!GISJOIN %in% block10$GISJOIN) # which blocks part of 2010 places were not part of those places in 2000?
   annexedblocks <- base::rbind(annexedblocks, block)
 }
 
