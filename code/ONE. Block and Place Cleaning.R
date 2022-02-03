@@ -450,6 +450,41 @@ places2014 %<>%
 write_csv(places2014, "places2014_cleaned.csv")
 rm(emp2014, hu2014, places2014, vap2014)
 
+# 1014 lagged var ####
+places2010 <- read_csv("pl2010_cleaned.csv")
+places2014 <- read_csv("places2014_cleaned.csv")
+
+pl1014 <- 
+  left_join(
+    places2010 %>% select(
+      c(plid, pop10p:minvap10p)), 
+    places2014 %>% select(
+      c(plid, pop14p:minvap14p)), 
+    by = "plid")
+
+pl1014 %<>%
+  mutate(popgrowth = ((pop14p-pop10p)/pop10p) * 100,
+         densification = (popdensity14p - popdensity10p),
+         nhwhitegrowth = ((nhwhite14p-nhwhite10p)/nhwhite10p) * 100, 
+         nhblackgrowth = ((nhblack14p-nhblack10p)/nhblack10p) * 100,
+         hgrowth = ((h14p-h10p)/h10p) * 100,
+         mingrowth = ((min14p-min10p)/min10p) * 100,
+         recimmgrowth = (pctrecimm14p - pctrecimm10p),
+         incomegrowth = ((hinc14p - hinc10p*1.09)/hinc14p)*100, 
+         blackpovgrowth = (blackpov14p - blackpov10p),
+         whitepovgrowth = (whitepov14p - whitepov10p),
+         hpovgrowth = (hpov14p - hpov10p),
+         minpovgrowth = (minpov14p - minpov10p), 
+         nhwhitevapgrowth = nhwhitevap14p - nhwhitevap10p,
+         nhblackvapgrowth = nhblackvap14p - nhblackvap10p,
+         hispvapgrowth = hispvap14p - hispvap10p,
+         minvapgrowth = minvap14p - minvap10p)
+
+write_csv(pl1014, "pl1014_var.csv")
+
+#rm(list = ls())
+rm(places2010, vap2010)
+
 # 2020 census ####
 # only need vap data 
 places2020 <- read_csv("seplaces_allstates/acs1519vap.csv")

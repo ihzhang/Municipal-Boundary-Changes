@@ -11,6 +11,7 @@ library("readr")
 library("data.table")
 #library("readstata13")
 library("magrittr")
+library("fixest")
 
 # make DiD panel ####
 # 1. get plid for annexations to 2000-2010 and 2010-2013 
@@ -35,7 +36,59 @@ annexed0010 <- read_csv("annexedblocks0010dem_pl00_newsample_unincorp.csv")
 # get 2010-2013 
 # find annexations 2010-2013 
 aa2013 <- read_csv("annexedblocks1020_base_unincorp.csv")
+year_list <- c(11:21)
+bas_list <- list()
+for (i in 1:length(year_list)) {
+    bas_list[[i]] <- read.delim(file = paste0("BAS/US_bas", year_list[i], ".txt"), 
+                                header = TRUE, na = "") 
+} 
 
+bas <- rbindlist(bas_list, use.names = T, fill = T)
+rm(bas_list)
+
+bas %<>% 
+    filter(Action=="Annexation" & (!is.na(Place.Name.and.LSAD) & !is.na(FIPS.Place.Code)) & !is.na(State)) %>%
+    mutate(State = str_pad(State, 2, side = "left", pad = "0"),
+           FIPS.Place.Code = str_pad(FIPS.Place.Code, 5, side = "left", pad = "0"),
+           plid = paste0(State, FIPS.Place.Code),
+           st_pln = paste0(State, Place.Name.and.LSAD),
+           ann_date = lubridate::mdy(Effective.Date)) %>%
+    filter(ann_date >= as.Date("2010-01-01") & ann_date <= as.Date("2020-12-31"))
+
+ann_prevra <- bas %>%
+    filter(ann_date < as.Date("2013-06-25"))
+
+prev <- unique(ann_prevra$plid)
+postv <- unique(bas$plid[bas$ann_date >= as.Date("2013-06-25")])
+
+double <- postv[postv %in% prev]
+postv <- postv[!postv %in% double]
+prev <- prev[!prev %in% double]
+
+aa_ann <- as.character(unique(aa2013$plid))
+
+# this is over 10K places - we really miss a lot by excluding them
+length(!unique(aa2013$plid) %in% unique(bas$plid))
+plid_excl <- unique(aa2013$plid)[!unique(aa2013$plid) %in% unique(bas$plid)]
+
+aa2013 %<>% 
+    filter((plid %in% bas$plid) & 
+               (!plid %in% double))
+aa2013 %<>%
+    filter(plid %in% prev)
+
+annexed0013 <- base::rbind(
+    annexed0010 %>% select(blkid, plid, annexed, STATEA, COUNTYA),
+    aa2013 %>% select(blkid, plid, annexed) %>% 
+        mutate(STATEA = substr(blkid, 1, 2), COUNTYA = substr(blkid, 3, 5))
+)
+
+rm(aa2013, ann_prevra, annexed0010, aa_ann, year_list)
+
+write_csv(annexed0013, "annexed0013.csv")
+
+# load in VRA data 
+annexed0013 <- read_csv("annexed0013.csv")
 
 vrastates <- c("01", "02", "04", "13", "22", "28", "45", "48", "51")
 vra <- read_csv("vra_counties.csv")
