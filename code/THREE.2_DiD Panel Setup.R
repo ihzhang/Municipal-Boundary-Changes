@@ -34,318 +34,382 @@ annexed0010 <- read_csv("annexedblocks0010dem_pl00_newsample_unincorp.csv")
 
 # get 2010-2013 
 # find annexations 2010-2013 
-aa2013 <- read_csv("annexedblocks1020_base_unincorp.csv")
+aa1013 <- read_csv("analyticalfiles/annexedblocks1013dem_pl00_newsample_unincorp.csv")
 
-
-vrastates <- c("01", "02", "04", "13", "22", "28", "45", "48", "51")
-vra <- read_csv("vra_counties.csv")
-vra %<>% 
-    mutate(countyfips = str_pad(countyfips, 5, side = "left", pad = "0"),
-           sectionv = 1)
-annexed0013 %<>%
-    mutate(countyfips = paste0(STATEA, COUNTYA))
-
-annexed0013 %<>%
-    mutate(vra = case_when(
-        STATEA %in% vrastates ~ 1,
-        countyfips %in% vra$countyfips ~ 1,
-        TRUE ~ 0
-    ))
-
-table(annexed0013$vra, exclude = NULL)
-
-# make a block version of the joined data 
-blocks2000 <- read_csv("blocks2000_var.csv")
-annexed0013 %<>%
-    filter(blkid %in% blocks2000$blkid)
-table(annexed0013$vra, exclude = NULL)
-table(annexed0013$annexed)
-
-annexed0013 %<>%
-    left_join(blocks2000 %>% select(blkid, pop00b, pctnhblack00b:pctmin00b))
-
-annexed0013 %<>%
-    filter(pop00b > 0 & !is.na(pop00b))
-
-annexed0013 %<>%
-    mutate_at(c(names(annexed0013)[9:ncol(annexed0013)]), ~ifelse(is.na(.), 0, .))
-
-places0013 <- 
-    annexed0013 %>%
-    group_by(plid, annexed) %>%
-    summarize_at(c(names(annexed0013)[7:ncol(annexed0013)]), ~mean(., na.rm = T)) 
-
-places0013 %<>%
-    mutate(vra = ifelse(vra >0 & vra < 1, 1, vra))
-table(places0013$vra)
-
-places0013 %<>%
-    pivot_wider(
-        id_cols = c(plid, vra),
-        names_from = "annexed",
-        values_from = c(annexed, pop00b:pctmin00b)
-    )
-
-varindex = names(annexed0013)[8:ncol(annexed0013)] # create change variables
-
-for (variable in varindex) {
-    varname <- paste0(variable, "_diff")
-    places0013[[varname]] <- places0013[[paste0(variable, "_1")]] - places0013[[paste0(variable, "_0")]]
-}
-
-places0013 %<>%
-    select(c(plid, vra, contains("_diff"))) %>%
-    filter(!is.na(pop00b_diff)) %>%
-    mutate(annexed = 1)
-
-# everything that's not in places0013 are non-annexing places, and we need 
-# to know their average contiguous characteristics 
-
-contig <- read_csv("allcontigblocks2000.csv")
-contig %<>%
-    filter(blkid %in% blocks2000$blkid) %<>%
-    select(blkid, contigplace) %>%
-    rename(plid = contigplace)
-
-contig %<>%
-    left_join(blocks2000 %>% select(blkid, pop00b, pctnhblack00b:pctmin00b))
-
-contig %<>%
-    filter(pop00b > 0 & !is.na(pop00b))
-
-contig %<>%
-    mutate(STATEA = substr(blkid, 1, 2), 
-           countyfips = substr(blkid, 1, 5))
-
-contig %<>%
-    mutate(vra = case_when(
-        STATEA %in% vrastates ~ 1,
-        countyfips %in% vra$countyfips ~ 1,
-        TRUE ~ 0
-    ))
-
-contigplaces0013 <- 
-    contig %>%
-    group_by(plid) %>%
-    summarize_at(c(names(contig)[c(3:7, 10)]), ~mean(., na.rm = T)) 
-
-contigplaces0013 %<>%
-    mutate(vra = ifelse(vra >0 & vra < 1, 1, vra))
-
-table(contigplaces0013$vra, exclude = NULL)
-
-contigplaces0013 %<>%
-    mutate_at(c(names(contigplaces0013)[c(3:6)]), ~ifelse(is.na(.), 0, .))
-
-# if the places in contigplaces are already covered by annexed, remove 
-contigplaces0013 %<>%
-    filter(!plid %in% places0013$plid)
-
-# get diff var for non-annexing places 
-places2000 <- read_csv("pl2000_cleaned.csv")
-
-places2000 %<>%
-    select(plid, pctnhblack00p:pctmin00p) 
-
-places2000 %<>%
-    filter(!plid %in% places0013$plid) %>%
-    filter(plid %in% contigplaces0013$plid)
-
-contigplaces0013 %<>%
-    left_join(places2000, by = "plid")
-
-varindex = names(contigplaces0013)[c(3:6)] # create change variables
-varindex = gsub("00b", "", varindex)
-
-for (variable in varindex) {
-    varname <- paste0(variable, "_diff")
-    contigplaces0013[[varname]] <- contigplaces0013[[paste0(variable, "00p")]] - contigplaces0013[[paste0(variable, "00b")]]
-}
-
-contigplaces0013 %<>%
-    select(c(plid, vra, contains("_diff"))) 
-
-places_to_merge2013 <- base::rbind(
-    places0013 %>% select(c(plid, vra, contains("pct"), annexed)),
-    contigplaces0013 %>% mutate(annexed = 0)
+# transform this into place-level summaries
+# characteristic of all annexable blocks
+# diff between annexed and not annexed 
+place_all <- aa1013 %>% 
+  group_by(plid) %>%
+  summarize(pop_total = sum(pop),
+         nhblack_total = sum(nhblack),
+         nhblack_mean = mean((nhblack_total/pop_total)*100, na.rm = T),
+         nhwhite_total = sum(nhwhite),
+         nhwhite_mean = mean((nhwhite_total/pop_total)*100, na.rm = T),
+         h_total = sum(h),
+         h_mean = mean((h_total/pop_total)*100, na.rm = T),
+         min_total = sum(min),
+         min_mean = mean((min_total/pop_total)*100, na.rm = T),
+         vap_total = sum(sum(nhwvap), sum(minorityvap)),
+         nhblackvap_total = sum(nhbvap),
+         nhblackvap_mean = mean((nhblackvap_total/vap_total)*100),
+         nhwhitevap_total = sum(nhwvap),
+         nhwhitevap_mean = mean((nhwhitevap_total/vap_total)*100),
+         hvap_total = sum(hispvap),
+         hvap_mean = mean((hvap_total/vap_total)*100),
+         minorityvap_total = sum(minorityvap),
+         minorityvap_mean = mean((minorityvap_total/vap_total)*100),
+         pct_annexed = mean(annexed, na.rm = T)) %>%
+  ungroup()
+  
+place_by_annex <- aa1013 %>%
+  group_by(plid, annexed) %>%
+  summarize(pop_total = sum(pop),
+            nhblack_total = sum(nhblack),
+            nhblack_mean = mean((nhblack_total/pop_total)*100, na.rm = T),
+            nhwhite_total = sum(nhwhite),
+            nhwhite_mean = mean((nhwhite_total/pop_total)*100, na.rm = T),
+            h_total = sum(h),
+            h_mean = mean((h_total/pop_total)*100, na.rm = T),
+            min_total = sum(min),
+            min_mean = mean((min_total/pop_total)*100, na.rm = T),
+            vap_total = sum(sum(nhwvap), sum(minorityvap)),
+            nhblackvap_total = sum(nhbvap),
+            nhblackvap_mean = mean((nhblackvap_total/vap_total)*100),
+            nhwhitevap_total = sum(nhwvap),
+            nhwhitevap_mean = mean((nhwhitevap_total/vap_total)*100),
+            hvap_total = sum(hispvap),
+            hvap_mean = mean((hvap_total/vap_total)*100),
+            minorityvap_total = sum(minorityvap),
+            minorityvap_mean = mean((minorityvap_total/vap_total)*100)) %>%
+  ungroup() %>%
+  pivot_wider(
+    id_cols = plid,
+    names_from = annexed,
+    values_from = c(pop_total:minorityvap_mean)
+  )
+  
+pl_annex_var_1013 <- left_join(
+  place_all, place_by_annex, 
+  by = "plid"
 )
 
-places_to_merge2013$Year <- 2013
-write_csv(places_to_merge2013, "places_to_merge2013.csv")
+# add vra indicator 
 
-rm(places2000, annexed0013, blocks2000, contig, contigplaces0013, paneldid, places0013, places13)
+places_vra <- aa1013 %>%
+  group_by(plid) %>%
+  summarize(vra = mean(vra, na.rm = T),
+            annexing = mean(annexed, na.rm = T)) %>%
+  ungroup() %>%
+  mutate(vra = ifelse(vra > 0, 1, 0),
+         annexing = ifelse(annexing > 0, 1, 0))
 
-# repeat this for 2013-2020 ####
-aa2020 <- read_csv("annexedblocks1020_base_unincorp.csv")
+pl_annex_var_1013 %<>%
+  left_join(places_vra, by = "plid")
 
-# remove these plids from places2020 data 
-# because we know they have annexed but we can't find info about when they 
-# annexed 
+# add place-level data for race and vap 
+# vra violation = if pctwhite after annex > pctwhite before annex compared to
+# what would have been, i.e. pctwhite given growth rate by 2013
+# or if pctblack after annex < pctblack before annex compared to what would 
+# have been, i.e. pctwhite given growth rate by 2013
+# or if pcth after annex < pcth before annex compared to what would have been,
+# i.e. pcth given growth rate by 2013 
+pl0010 <- read_csv("pl0010_var.csv")
 
-plids_to_remove <- aa2020 %>%
-    filter(!plid %in% bas$plid) %>%
-    select(plid)
+pl0010 %<>%
+  filter(
+    is.finite(popgrowth) & 
+      is.finite(nhwhitegrowth) & 
+      is.finite(nhwhitevapgrowth) &
+      is.finite(nhblackgrowth) & 
+      is.finite(nhblackvapgrowth) &
+      is.finite(hgrowth) & 
+      is.finite(hispvapgrowth) &
+      is.finite(mingrowth) & 
+      is.finite(minvapgrowth) 
+  ) %>%
+  mutate(proj_growth_white = (((nhwhitegrowth/10)*3)/100)+1,
+         proj_growth_black = (((nhblackgrowth/10)*3)/100)+1,
+         proj_growth_h = (((hgrowth/10)*3)/100)+1,
+         proj_growth_min = (((mingrowth/10)*3)/100)+1,
+         proj_growth_whitevap = (((nhwhitevapgrowth/10)*3)/100)+1, 
+         proj_growth_blackvap = (((nhblackvapgrowth/10)*3)/100)+1,
+         proj_growth_hvap = (((hispvapgrowth/10)*3)/100)+1,
+         proj_growth_minvap = (((minvapgrowth/10)*3)/100)+1,
+         proj_pop = pop10p*((((popgrowth/10)*3)/100)+1),
+         proj_vap = nhwhitevap10p*proj_growth_whitevap + 
+           minvap10p*proj_growth_minvap,
+         proj_nhwhite = nhwhite10p*proj_growth_white,
+         proj_nhblack = nhblack10p*proj_growth_black,
+         proj_h = h10p*proj_growth_h,
+         proj_min = min10p*proj_growth_min,
+         proj_nhwhitevap = nhwhitevap10p*proj_growth_whitevap,
+         proj_nhblackvap = nhblackvap10p*proj_growth_blackvap,
+         proj_hvap = hispvap10p*proj_growth_hvap,
+         proj_minvap = minvap10p*proj_growth_minvap,
+         densifying = ifelse(is.na(densification), NA,
+                             ifelse(densification > 0, 1, 0)),
+         economic_need = ifelse(is.na(hinc10p), NA,
+                                ifelse(((hinc10p-hinc00p*1.25)/(hinc00p*1.25)) < 0, 1, 0))
+  ) %>%
+  select(plid, c(contains("proj")), densifying, economic_need, c(contains("growth")), -c(contains("_growth")))
 
-plids_to_remove <- unique(plids_to_remove)
+table(pl_annex_var_1013$plid %in% pl0010$plid) #4695 false
 
-aa2020 %<>% 
-    filter((plid %in% bas$plid) & 
-               (!plid %in% double))
-aa2020 %<>%
-    filter(plid %in% postv)
+pl_annex_var_1013 %<>%
+  filter(plid %in% pl0010$plid) %>%
+  left_join(pl0010, by = "plid") %>%
+  mutate(post = 0)
 
-write_csv(aa2020, "annexed2020.csv")
+table(pl_annex_var_1013$annexing)
 
-aa2020 <- read_csv("annexed2020.csv")
-aa2020 %<>%
-    mutate(countyfips = substr(blkid, 1, 5),
-           STATEA = substr(blkid, 1, 2))
-
-aa2020 %<>%
-    mutate(vra = case_when(
-        STATEA %in% vrastates ~ 1,
-        countyfips %in% vra$countyfips ~ 1,
-        TRUE ~ 0
-    ))
-
-table(aa2020$vra, exclude = NULL)
-
-# get 2013 block data 
-blocks2013 <- read_csv("blocks2013_int.csv")
-
-length(aa2020$blkid %in% blocks2013$blkid)
-
-aa2020 %<>%
-    mutate(exclude = ifelse(!blkid %in% blocks2013$blkid, 1, 0))
-table(aa2020$exclude)
-aa2020 %<>%
-    select(-exclude)
-
-aa2020 %<>%
-    filter(blkid %in% blocks2013$blkid)
-
-aa2020 %<>%
-    left_join(blocks2013 %>% select(blkid, pop, pctnhblack:pctmin))
-
-aa2020 %<>%
-    filter(pop > 0 & !is.na(pop))
-
-aa2020 %<>%
-    mutate_at(c(names(aa2020)[8:ncol(aa2020)]), ~ifelse(is.na(.), 0, .))
-
-places2020 <- 
-    aa2020 %>%
-    group_by(plid, annexed) %>%
-    summarize_at(c(names(aa2020)[6:ncol(aa2020)]), ~mean(., na.rm = T)) 
-
-places2020 %<>%
-    mutate(vra = ifelse(vra >0 & vra < 1, 1, vra))
-table(places2020$vra)
-
-places2020 %<>%
-    pivot_wider(
-        id_cols = c(plid, vra),
-        names_from = "annexed",
-        values_from = c(annexed, pop:pctmin)
+# make underbound variable
+pl_annex_var_1013 %<>%
+  mutate(
+    underbound_black = ifelse(
+      (annexing == 1 & (((nhblack_total_1 + proj_nhblack)/(proj_pop + pop_total_1)) < (proj_nhblack/proj_pop))), 1, 
+      ifelse(annexing == 0 & (((nhblack_total_0 + proj_nhblack)/proj_pop + pop_total_0) < (proj_nhblack/proj_pop)), 1, 0)
+    ),
+    underbound_hisp = ifelse(
+      (annexing == 1 & (((h_total_1 + proj_h)/(proj_pop + pop_total_1)) < (proj_h/proj_pop))), 1, 
+      ifelse(annexing == 0 & (((h_total_0 + proj_h)/proj_pop + pop_total_0) < (proj_h/proj_pop)), 1, 0)
+    ),
+    underbound_minority = ifelse(
+      (annexing == 1 & (((min_total_1 + proj_min)/(proj_pop + pop_total_1)) < (proj_min/proj_pop))), 1, 
+      ifelse(annexing == 0 & (((min_total_0 + proj_min)/proj_pop + pop_total_0) < (proj_min/proj_pop)), 1, 0)
+    ),
+    overbound_white = ifelse(
+      (annexing == 1 & (((nhwhite_total_1 + proj_nhwhite)/(proj_pop + pop_total_1)) > (proj_nhwhite/proj_pop))), 1, 
+      ifelse(annexing == 0 & (((nhwhite_total_0 + proj_nhwhite)/proj_pop + pop_total_0) > (proj_nhwhite/proj_pop)), 1, 0)
+    ),
+    underbound_blackvap = ifelse(
+      (annexing == 1 & (((nhblackvap_total_1 + proj_nhblackvap)/(proj_vap + vap_total_1)) < (proj_nhblackvap/proj_vap))), 1, 
+      ifelse(annexing == 0 & (((nhblackvap_total_0 + proj_nhblackvap)/proj_vap + vap_total_0) < (proj_nhblackvap/proj_vap)), 1, 0)
+    ),
+    underbound_hispvap = ifelse(
+      (annexing == 1 & (((hvap_total_1 + proj_hvap)/(proj_vap + pop_total_1)) < (proj_hvap/proj_vap))), 1, 
+      ifelse(annexing == 0 & (((hvap_total_0 + proj_hvap)/proj_vap + pop_total_0) < (proj_hvap/proj_vap)), 1, 0)
+    ),
+    underbound_minorityvap = ifelse(
+      (annexing == 1 & (((minorityvap_total_1 + proj_minvap)/(proj_vap + pop_total_1)) < (proj_minvap/proj_vap))), 1, 
+      ifelse(annexing == 0 & (((minorityvap_total_0 + proj_minvap)/proj_vap + pop_total_0) < (proj_minvap/proj_vap)), 1, 0)
+    ),
+    overbound_whitevap = ifelse(
+      (annexing == 1 & (((nhwhitevap_total_1 + proj_nhwhitevap)/(proj_vap + pop_total_1)) > (proj_nhwhitevap/proj_vap))), 1, 
+      ifelse(annexing == 0 & (((nhwhitevap_total_0 + proj_nhwhitevap)/proj_vap + pop_total_0) > (proj_nhwhitevap/proj_vap)), 1, 0)
     )
+  )
 
-varindex = names(aa2020)[7:ncol(aa2020)] # create change variables
+table(pl_annex_var_1013$underbound_black)
+table(pl_annex_var_1013$underbound_hisp)
+table(pl_annex_var_1013$underbound_minority)
+table(pl_annex_var_1013$overbound_white)
+table(pl_annex_var_1013$underbound_blackvap)
+table(pl_annex_var_1013$underbound_hispvap)
+table(pl_annex_var_1013$underbound_minorityvap)
+table(pl_annex_var_1013$overbound_whitevap)
 
-for (variable in varindex) {
-    varname <- paste0(variable, "_diff")
-    places2020[[varname]] <- places2020[[paste0(variable, "_1")]] - places2020[[paste0(variable, "_0")]]
-}
+write_csv(pl_annex_var_1013, "analyticalfiles/pl_annex_var_1013.csv")
 
-places2020 %<>%
-    select(c(plid, vra, contains("_diff"))) %>%
-    filter(!is.na(pop_diff)) %>%
-    mutate(annexed = 1)
+table(pl_annex_var_1013$vra, pl_annex_var_1013$underbound_black)
+table(pl_annex_var_1013$vra, pl_annex_var_1013$underbound_hisp)
+table(pl_annex_var_1013$vra, pl_annex_var_1013$underbound_minority)
+table(pl_annex_var_1013$vra, pl_annex_var_1013$overbound_white)
+table(pl_annex_var_1013$vra, pl_annex_var_1013$underbound_blackvap)
+table(pl_annex_var_1013$vra, pl_annex_var_1013$underbound_hispvap)
+table(pl_annex_var_1013$vra, pl_annex_var_1013$underbound_minorityvap)
+table(pl_annex_var_1013$vra, pl_annex_var_1013$overbound_whitevap)
 
-# everything that's not in places2020 are non-annexing places, and we need 
-# to know their average contiguous characteristics 
+rm(list = ls())
 
-contig <- read_csv("allcontigblocks2010.csv")
-contig %<>%
-    filter(blkid %in% blocks2013$blkid) %<>%
-    select(blkid, contigplace) %>%
-    rename(plid = contigplace)
+#repeat for 1420 ####
+aa1420 <- read_csv("analyticalfiles/annexedblocks1420dem_pl00_newsample_unincorp.csv")
 
-contig %<>%
-    left_join(blocks2013 %>% select(blkid, pop, pctnhblack:pctmin))
+# transform this into place-level summaries
+# characteristic of all annexable blocks
+# diff between annexed and not annexed 
+place_all <- aa1420 %>% 
+  group_by(plid) %>%
+  summarize(pop_total = sum(pop),
+            nhblack_total = sum((pctnhblack*pop)),
+            nhblack_mean = mean((nhblack_total/pop_total)*100, na.rm = T),
+            nhwhite_total = sum((pctnhwhite*pop)),
+            nhwhite_mean = mean((nhwhite_total/pop_total)*100, na.rm = T),
+            h_total = sum((pcth*pop)),
+            h_mean = mean((h_total/pop_total)*100, na.rm = T),
+            min_total = sum((pctmin*pop)),
+            min_mean = mean((min_total/pop_total)*100, na.rm = T),
+            vap_total = sum(sum(nhwvap), sum(minorityvap)),
+            nhblackvap_total = sum(nhbvap),
+            nhblackvap_mean = mean((nhblackvap_total/vap_total)*100),
+            nhwhitevap_total = sum(nhwvap),
+            nhwhitevap_mean = mean((nhwhitevap_total/vap_total)*100),
+            hvap_total = sum(hispvap),
+            hvap_mean = mean((hvap_total/vap_total)*100),
+            minorityvap_total = sum(minorityvap),
+            minorityvap_mean = mean((minorityvap_total/vap_total)*100),
+            pct_annexed = mean(annexed, na.rm = T)) %>%
+  ungroup()
 
-contig %<>%
-    filter(pop > 0 & !is.na(pop))
+place_by_annex <- aa1420 %>%
+  group_by(plid, annexed) %>%
+  summarize(pop_total = sum(pop),
+            nhblack_total = sum(nhblack),
+            nhblack_mean = mean((nhblack_total/pop_total)*100, na.rm = T),
+            nhwhite_total = sum(nhwhite),
+            nhwhite_mean = mean((nhwhite_total/pop_total)*100, na.rm = T),
+            h_total = sum(h),
+            h_mean = mean((h_total/pop_total)*100, na.rm = T),
+            min_total = sum(min),
+            min_mean = mean((min_total/pop_total)*100, na.rm = T),
+            vap_total = sum(sum(nhwvap), sum(minorityvap)),
+            nhblackvap_total = sum(nhbvap),
+            nhblackvap_mean = mean((nhblackvap_total/vap_total)*100),
+            nhwhitevap_total = sum(nhwvap),
+            nhwhitevap_mean = mean((nhwhitevap_total/vap_total)*100),
+            hvap_total = sum(hispvap),
+            hvap_mean = mean((hvap_total/vap_total)*100),
+            minorityvap_total = sum(minorityvap),
+            minorityvap_mean = mean((minorityvap_total/vap_total)*100)) %>%
+  ungroup() %>%
+  pivot_wider(
+    id_cols = plid,
+    names_from = annexed,
+    values_from = c(pop_total:minorityvap_mean)
+  )
 
-contig %<>%
-    mutate(STATEA = substr(blkid, 1, 2), 
-           countyfips = substr(blkid, 1, 5))
-
-contig %<>%
-    mutate(vra = case_when(
-        STATEA %in% vrastates ~ 1,
-        countyfips %in% vra$countyfips ~ 1,
-        TRUE ~ 0
-    ))
-
-contigplaces2020 <- 
-    contig %>%
-    group_by(plid) %>%
-    summarize_at(c(names(contig)[c(3:7, 10)]), ~mean(., na.rm = T)) 
-
-contigplaces2020 %<>%
-    mutate(vra = ifelse(vra >0 & vra < 1, 1, vra))
-
-table(contigplaces2020$vra, exclude = NULL)
-
-contigplaces2020 %<>%
-    mutate_at(c(names(contigplaces2020)[c(3:6)]), ~ifelse(is.na(.), 0, .))
-
-# if the places in contigplaces are already covered by annexed, remove 
-contigplaces2020 %<>%
-    filter(!plid %in% places2020$plid) %>%
-    filter(!plid %in% plids_to_remove)
-
-# get diff var for non-annexing places 
-places20census <- read_csv("places2020_var.csv")
-
-contigplaces2020 %<>%
-    select(plid, vra, pctnhblack:pctmin)
-
-places20census %<>%
-    select(-Geo_QName) 
-
-names(places20census)[2:ncol(places20census)] <- paste0("pct", names(places20census)[2:ncol(places20census)])
-
-places20census %<>%
-    filter(!plid %in% places2020$plid) %>%
-    filter(!plid %in% plids_to_remove) %>%
-    filter(plid %in% contigplaces2020$plid)
-
-contigplaces2020 %<>%
-    left_join(places20census, by = "plid")
-
-varindex = names(contigplaces2020)[c(3:6)] # create change variables
-
-for (variable in varindex) {
-    varname <- paste0(variable, "_diff")
-    contigplaces2020[[varname]] <- contigplaces2020[[paste0(variable, "20p")]] - contigplaces2020[[paste0(variable)]]
-}
-
-contigplaces2020 %<>%
-    select(c(plid, vra, contains("_diff"))) %>%
-    mutate(annexed = 0)
-
-places_to_merge2020 <- base::rbind(
-    places2020 %>% select(c(plid, vra, contains("pct"), annexed)),
-    contigplaces2020
+pl_annex_var_1420 <- left_join(
+  place_all, place_by_annex, 
+  by = "plid"
 )
 
-places_to_merge2020$Year <- 2020
-table(places_to_merge2020$annexed, exclude = NULL)
+# add vra indicator 
 
-write_csv(places_to_merge2020, "places_to_merge2020.csv")
+places_vra <- aa1420 %>%
+  group_by(plid) %>%
+  summarize(vra = mean(vra, na.rm = T),
+            annexing = mean(annexed, na.rm = T)) %>%
+  ungroup() %>%
+  mutate(vra = ifelse(vra > 0, 1, 0),
+         annexing = ifelse(annexing > 0, 1, 0))
 
-rm(places20census, aa2020, blocks2013, contig, contigplaces2020, places2020)
+pl_annex_var_1420 %<>%
+  left_join(places_vra, by = "plid")
+
+# add place-level data for race and vap 
+# vra violation = if pctwhite after annex > pctwhite before annex compared to
+# what would have been, i.e. pctwhite given growth rate by 2013
+# or if pctblack after annex < pctblack before annex compared to what would 
+# have been, i.e. pctwhite given growth rate by 2013
+# or if pcth after annex < pcth before annex compared to what would have been,
+# i.e. pcth given growth rate by 2013 
+pl0010 <- read_csv("pl0010_var.csv")
+
+pl0010 %<>%
+  filter(
+    is.finite(popgrowth) & 
+      is.finite(nhwhitegrowth) & 
+      is.finite(nhwhitevapgrowth) &
+      is.finite(nhblackgrowth) & 
+      is.finite(nhblackvapgrowth) &
+      is.finite(hgrowth) & 
+      is.finite(hispvapgrowth) &
+      is.finite(mingrowth) & 
+      is.finite(minvapgrowth) 
+  ) %>%
+  mutate(proj_growth_white = (((nhwhitegrowth/10)*3)/100)+1,
+         proj_growth_black = (((nhblackgrowth/10)*3)/100)+1,
+         proj_growth_h = (((hgrowth/10)*3)/100)+1,
+         proj_growth_min = (((mingrowth/10)*3)/100)+1,
+         proj_growth_whitevap = (((nhwhitevapgrowth/10)*3)/100)+1, 
+         proj_growth_blackvap = (((nhblackvapgrowth/10)*3)/100)+1,
+         proj_growth_hvap = (((hispvapgrowth/10)*3)/100)+1,
+         proj_growth_minvap = (((minvapgrowth/10)*3)/100)+1,
+         proj_pop = pop10p*((((popgrowth/10)*3)/100)+1),
+         proj_vap = nhwhitevap10p*proj_growth_whitevap + 
+           minvap10p*proj_growth_minvap,
+         proj_nhwhite = nhwhite10p*proj_growth_white,
+         proj_nhblack = nhblack10p*proj_growth_black,
+         proj_h = h10p*proj_growth_h,
+         proj_min = min10p*proj_growth_min,
+         proj_nhwhitevap = nhwhitevap10p*proj_growth_whitevap,
+         proj_nhblackvap = nhblackvap10p*proj_growth_blackvap,
+         proj_hvap = hispvap10p*proj_growth_hvap,
+         proj_minvap = minvap10p*proj_growth_minvap,
+         densifying = ifelse(is.na(densification), NA,
+                             ifelse(densification > 0, 1, 0)),
+         economic_need = ifelse(is.na(hinc10p), NA,
+                                ifelse(((hinc10p-hinc00p*1.25)/(hinc00p*1.25)) < 0, 1, 0))
+  ) %>%
+  select(plid, c(contains("proj")), densifying, economic_need, c(contains("growth")), -c(contains("_growth")))
+
+table(pl_annex_var_1420$plid %in% pl0010$plid) #4695 false
+
+pl_annex_var_1420 %<>%
+  filter(plid %in% pl0010$plid) %>%
+  left_join(pl0010, by = "plid") %>%
+  mutate(post = 0)
+
+table(pl_annex_var_1420$annexing)
+
+# make underbound variable
+pl_annex_var_1420 %<>%
+  mutate(
+    underbound_black = ifelse(
+      (annexing == 1 & (((nhblack_total_1 + proj_nhblack)/(proj_pop + pop_total_1)) < (proj_nhblack/proj_pop))), 1, 
+      ifelse(annexing == 0 & (((nhblack_total_0 + proj_nhblack)/proj_pop + pop_total_0) < (proj_nhblack/proj_pop)), 1, 0)
+    ),
+    underbound_hisp = ifelse(
+      (annexing == 1 & (((h_total_1 + proj_h)/(proj_pop + pop_total_1)) < (proj_h/proj_pop))), 1, 
+      ifelse(annexing == 0 & (((h_total_0 + proj_h)/proj_pop + pop_total_0) < (proj_h/proj_pop)), 1, 0)
+    ),
+    underbound_minority = ifelse(
+      (annexing == 1 & (((min_total_1 + proj_min)/(proj_pop + pop_total_1)) < (proj_min/proj_pop))), 1, 
+      ifelse(annexing == 0 & (((min_total_0 + proj_min)/proj_pop + pop_total_0) < (proj_min/proj_pop)), 1, 0)
+    ),
+    overbound_white = ifelse(
+      (annexing == 1 & (((nhwhite_total_1 + proj_nhwhite)/(proj_pop + pop_total_1)) > (proj_nhwhite/proj_pop))), 1, 
+      ifelse(annexing == 0 & (((nhwhite_total_0 + proj_nhwhite)/proj_pop + pop_total_0) > (proj_nhwhite/proj_pop)), 1, 0)
+    ),
+    underbound_blackvap = ifelse(
+      (annexing == 1 & (((nhblackvap_total_1 + proj_nhblackvap)/(proj_vap + vap_total_1)) < (proj_nhblackvap/proj_vap))), 1, 
+      ifelse(annexing == 0 & (((nhblackvap_total_0 + proj_nhblackvap)/proj_vap + vap_total_0) < (proj_nhblackvap/proj_vap)), 1, 0)
+    ),
+    underbound_hispvap = ifelse(
+      (annexing == 1 & (((hvap_total_1 + proj_hvap)/(proj_vap + pop_total_1)) < (proj_hvap/proj_vap))), 1, 
+      ifelse(annexing == 0 & (((hvap_total_0 + proj_hvap)/proj_vap + pop_total_0) < (proj_hvap/proj_vap)), 1, 0)
+    ),
+    underbound_minorityvap = ifelse(
+      (annexing == 1 & (((minorityvap_total_1 + proj_minvap)/(proj_vap + pop_total_1)) < (proj_minvap/proj_vap))), 1, 
+      ifelse(annexing == 0 & (((minorityvap_total_0 + proj_minvap)/proj_vap + pop_total_0) < (proj_minvap/proj_vap)), 1, 0)
+    ),
+    overbound_whitevap = ifelse(
+      (annexing == 1 & (((nhwhitevap_total_1 + proj_nhwhitevap)/(proj_vap + pop_total_1)) > (proj_nhwhitevap/proj_vap))), 1, 
+      ifelse(annexing == 0 & (((nhwhitevap_total_0 + proj_nhwhitevap)/proj_vap + pop_total_0) > (proj_nhwhitevap/proj_vap)), 1, 0)
+    )
+  )
+
+table(pl_annex_var_1420$underbound_black)
+table(pl_annex_var_1420$underbound_hisp)
+table(pl_annex_var_1420$underbound_minority)
+table(pl_annex_var_1420$overbound_white)
+table(pl_annex_var_1420$underbound_blackvap)
+table(pl_annex_var_1420$underbound_hispvap)
+table(pl_annex_var_1420$underbound_minorityvap)
+table(pl_annex_var_1420$overbound_whitevap)
+
+write_csv(pl_annex_var_1420, "analyticalfiles/pl_annex_var_1420.csv")
+
+table(pl_annex_var_1420$vra, pl_annex_var_1420$underbound_black)
+table(pl_annex_var_1420$vra, pl_annex_var_1420$underbound_hisp)
+table(pl_annex_var_1420$vra, pl_annex_var_1420$underbound_minority)
+table(pl_annex_var_1420$vra, pl_annex_var_1420$overbound_white)
+table(pl_annex_var_1420$vra, pl_annex_var_1420$underbound_blackvap)
+table(pl_annex_var_1420$vra, pl_annex_var_1420$underbound_hispvap)
+table(pl_annex_var_1420$vra, pl_annex_var_1420$underbound_minorityvap)
+table(pl_annex_var_1420$vra, pl_annex_var_1420$overbound_whitevap)
+
+rm(list = ls())
 
 # make panel data!!!!! ####
 places_to_merge2013 <- read_csv("places_to_merge2013.csv")

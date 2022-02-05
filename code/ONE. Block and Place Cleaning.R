@@ -150,10 +150,15 @@ clean_dat_10 <- function(datuse) {
                 pctowneroccupied10b = ((IFF002+IFF003)/IFF001)*100,
                 vacancy10b = ((IFC001-IFF001)/IFC001)*100,
                 urbunits10b = (IFD002/IFD001)*100,
-                hispvap10b = (H75002/H75001)*100,
-                nhwvap10b = (H75005/H75001)*100,
-                nhbvap10b = (H75006/H75001)*100,
-                minorityvap10b = ((H75001 - H75005)/H75001)*100
+                vap10b = H75001,
+                nhwvap10b = H75005,
+                nhbvap10b = H75006,
+                hispvap10b = H75002,
+                minorityvap10b = (vap10b-nhwvap10b),
+                pcthispvap10b = (H75002/H75001)*100,
+                pctnhwvap10b = (H75005/H75001)*100,
+                pctnhbvap10b = (H75006/H75001)*100,
+                pctminorityvap10b = ((H75001 - H75005)/H75001)*100
             ) %>% 
             dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
                 STATEA, COUNTYA, TRACTA, BLOCKA, PLACEA, pop10b:minorityvap10b)
@@ -353,7 +358,7 @@ pl0010 <-
          hgrowth = ((h10p-h00p)/h00p) * 100,
          mingrowth = ((min10p-min00p)/min00p) * 100,
          recimmgrowth = (pctrecimm10p - pctrecimm00p),
-         incomegrowth = ((hinc10p - hinc00p*cpi)/hinc10p)*100, 
+         incomegrowth = ((hinc10p - hinc00p*cpi[1])/hinc10p)*100, 
          blackpovgrowth = (blackpov10p - blackpov00p),
          whitepovgrowth = (whitepov10p - nhwhitepov00p),
          hpovgrowth = (hpov10p - hpov00p),
@@ -548,10 +553,15 @@ foreach (i = 1:length(dat_use)) %do% {
             pctnhwhite20b = (nhwhite20b/pop20b)*100, 
             pcth20b = (h20b/pop20b)*100, 
             pctmin20b = (min20b/pop20b)*100, 
-            hispvap20b = (U7E002/U7E001)*100,
-            nhwvap20b = (U7E005/U7E001)*100,
-            nhbvap20b = (U7E006/U7E001)*100,
-            minorityvap20b = ((U7E001 - U7E005)/U7E001)*100,
+            vap20b = U7E001,
+            hispvap20b = U7E002,
+            pcthispvap20b = (U7E002/U7E001)*100,
+            nhwvap20b = U7E005,
+            pctnhwvap20b = (U7E005/U7E001)*100,
+            nhbvap20b = U7E006,
+            pctnhbvap20b = (U7E006/U7E001)*100,
+            minorityvap20b = (vap20b - nhwvap20b),
+            pctminorityvap20b = ((U7E001 - U7E005)/U7E001)*100,
             vacancy20b = (U7G003/U7G001)*100
         ) %>% 
         dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
