@@ -1,51 +1,51 @@
-State (exclude D.C. and Puerto Rico) ,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Boundary commission,Annexation by petition,County approval required,Annexation by city ordinance,Annexation by judicial review,Annexation of noncontiguous land,Difficulty of incorporation,Township state,Municipal financial autonomy,Municipal functional autonomy,Municipal structural autonomy
-Alabama,1,0,0,0,1,0,1,1,1,,,,,
-Alaska,1,0,1,1,1,0,1,1,0,,,,,
-Arizona,1,0,1,0,1,0,0,1,0,,,,,
-Arkansas,1,0,1,0,1,0,1,1,0,,,,,
-California,1,0,1,1,1,1,1,0,0,,,,,
-Colorado,1,0,1,0,1,0,0,1,0,,,,,
-Connecticut,0,0,0,0,0,0,0,0,1,,,,,
-Delaware,1,0,0,0,1,1,1,0,0,,,,,
-Florida,1,1,1,0,1,0,1,1,0,,,,,
-Georgia,1,0,1,0,1,0,1,1,0,,,,,
-Hawaii,0,0,0,0,0,0,0,0,1,,,,,
-Idaho,0,0,0,0,0,0,1,0,0,,,,,
-Illinois,1,1,1,0,1,0,1,1,0,,,,,
-Indiana,0,0,1,0,1,0,1,1,0,,,,,
-Iowa,1,1,1,1,1,0,0,1,0,,,,,
-Kansas,0,0,0,0,0,0,1,1,0,,,,,
-Kentucky,1,1,1,0,0,0,1,1,0,,,,,
-Louisiana,1,1,1,0,1,0,1,1,0,,,,,
-Maine,0,0,0,0,0,0,0,0,1,,,,,
-Maryland,1,1,1,0,1,0,1,0,0,,,,,
-Massachusetts,0,0,0,0,0,0,0,0,1,,,,,
-Michigan,1,1,1,1,1,1,1,1,0,,,,,
-Minnesota,0,1,1,1,1,0,1,0,0,,,,,
-Mississippi,0,0,1,0,0,0,1,1,0,,,,,
-Missouri,1,0,1,1,1,0,1,1,0,,,,,
-Montana,1,0,0,0,1,0,0,1,0,,,,,
-Nebraska,0,0,1,0,1,0,1,1,0,,,,,
-Nevada,0,0,1,1,1,0,1,1,0,,,,,
-New Hampshire,0,0,0,0,0,0,0,0,1,,,,,
-New Jersey,0,0,0,0,1,0,0,0,1,,,,,
-New Mexico,0,0,1,0,1,0,1,1,0,,,,,
-New York,1,0,1,0,1,0,0,1,0,,,,,
-North Carolina,0,0,1,0,1,0,1,1,0,,,,,
-North Dakota,0,0,1,0,1,0,1,1,0,,,,,
-Ohio,0,0,1,0,1,1,1,1,0,,,,,
-Oklahoma,1,0,1,0,1,1,1,1,0,,,,,
-Oregon,1,1,1,1,1,0,1,1,0,,,,,
-Pennsylvania,1,0,0,0,1,0,0,0,1,,,,,
-Rhode Island,0,0,0,0,0,0,0,0,1,,,,,
-South Carolina,1,1,0,0,1,0,0,1,0,,,,,
-South Dakota,1,1,1,0,1,1,1,1,0,,,,,
-Tennessee,1,1,1,0,1,0,1,1,0,,,,,
-Texas,1,1,1,0,1,0,1,1,0,,,,,
-Utah,0,0,0,1,1,0,1,1,0,,,,,
-Vermont,0,0,0,0,0,0,0,0,1,,,,,
-Virginia,0,0,0,1,1,0,1,1,0,,,,,
-Washington,1,0,1,1,1,1,1,0,0,,,,,
-West Virginia,1,1,0,0,1,0,0,1,0,,,,,
-Wisconsin,1,0,0,0,1,0,1,1,0,,,,,
-Wyoming,0,0,1,0,1,0,1,1,0,,,,,
+State (exclude D.C. and Puerto Rico) ,FIPS Code,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Boundary commission,Annexation by petition,County approval required,Annexation by city ordinance,Annexation by judicial review,Annexation of noncontiguous land,Difficulty of incorporation,Township state,"Municipal financial autonomy (1 = high automony, 5 = low autonomy)","Municipal functional autonomy (1 = high autonomy, 5 = low autonomy)","Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
+Alabama,AL,1,0,0,0,1,0,1,1,1,,0,2,2,4.5
+Alaska,AK,1,0,1,1,1,0,1,1,0,,0,2,2,1
+Arizona,AZ,1,0,1,0,1,0,0,1,0,,0,1.75,1.75,2.5
+Arkansas,AR,1,0,1,0,1,0,1,1,0,,0,3,3,5
+California,CA,1,0,1,1,1,1,1,0,0,,0,2,2,2
+Colorado,CO,1,0,1,0,1,0,0,1,0,,0,3.5,3.5,2.5
+Connecticut,CT,0,0,0,0,0,0,0,0,1,,1,2,2,1
+Delaware,DE,1,0,0,0,1,1,1,0,0,,0,3,3,1.5
+Florida,FL,1,1,1,0,1,0,1,1,0,,0,4.5,4.5,1
+Georgia,GA,1,0,1,0,1,0,1,1,0,,0,3,3,5
+Hawaii,HI,0,0,0,0,0,0,0,0,1,,0,,,
+Idaho,ID,0,0,0,0,0,0,1,0,0,,0,5,5,3
+Illinois,IL,1,1,1,0,1,0,1,1,0,,1,1.5,1.5,1.1
+Indiana,IN,0,0,1,0,1,0,1,1,0,,1,4,4,5
+Iowa,IA,1,1,1,1,1,0,0,1,0,,0,4.5,4.5,1.8
+Kansas,KS,0,0,0,0,0,0,1,1,0,,1,3,3,1
+Kentucky,KY,1,1,1,0,0,0,1,1,0,,0,2.6,2.6,1.5
+Louisiana,LA,1,1,1,0,1,0,1,1,0,,0,3,3,1
+Maine,ME,0,0,0,0,0,0,0,0,1,,1,1.5,1.5,1
+Maryland,MD,1,1,1,0,1,0,1,0,0,,0,2.25,2.25,1
+Massachusetts,MA,0,0,0,0,0,0,0,0,1,,0,5,5,1
+Michigan,MI,1,1,1,1,1,1,1,1,0,,1,2,2,1
+Minnesota,MN,0,1,1,1,1,0,1,0,0,,1,4,4,1
+Mississippi,MS,0,0,1,0,0,0,1,1,0,,0,4,4,2
+Missouri,MO,1,0,1,1,1,0,1,1,0,,1,3,3,1
+Montana,MT,1,0,0,0,1,0,0,1,0,,0,5,5,1
+Nebraska,NE,0,0,1,0,1,0,1,1,0,,1,3.5,3.5,1.5
+Nevada,NV,0,0,1,1,1,0,1,1,0,,0,4,4,2.5
+New Hampshire,NH,0,0,0,0,0,0,0,0,1,,1,4,4,2
+New Jersey,NJ,0,0,0,0,1,0,0,0,1,,1,4,4,3
+New Mexico,NM,0,0,1,0,1,0,1,1,0,,0,3,3,3
+New York,NY,1,0,1,0,1,0,0,1,0,,1,4,4,1.5
+North Carolina,NC,0,0,1,0,1,0,1,1,0,,0,2.5,2.5,1
+North Dakota,ND,0,0,1,0,1,0,1,1,0,,1,3.5,3.5,1.8
+Ohio,OH,0,0,1,0,1,1,1,1,0,,1,2.5,2.5,1
+Oklahoma,OK,1,0,1,0,1,1,1,1,0,,0,2.5,2.5,1
+Oregon,OR,1,1,1,1,1,0,1,1,0,,0,2,2,1
+Pennsylvania,PA,1,0,0,0,1,0,0,0,1,,1,2.5,2.5,2
+Rhode Island,RI,0,0,0,0,0,0,0,0,1,,1,5,5,1
+South Carolina,SC,1,1,0,0,1,0,0,1,0,,0,2,2,4
+South Dakota,SD,1,1,1,0,1,1,1,1,0,,1,3,3,3
+Tennessee,TN,1,1,1,0,1,0,1,1,0,,0,3,3,3
+Texas,TX,1,1,1,0,1,0,1,1,0,,0,1.5,1.5,1
+Utah,UT,0,0,0,1,1,0,1,1,0,,0,3.5,3.5,2.5
+Vermont,VT,0,0,0,0,0,0,0,0,1,,1,5,5,5
+Virginia,VA,0,0,0,1,1,0,1,1,0,,0,2,2,3
+Washington,WA,1,0,1,1,1,1,1,0,0,,0,3.5,3.5,1.3
+West Virginia,WV,1,1,0,0,1,0,0,1,0,,0,5,5,4
+Wisconsin,WI,1,0,0,0,1,0,1,1,0,,1,3,3,1
+Wyoming,WY,0,0,1,0,1,0,1,1,0,,0,3,3,1

@@ -1,11 +1,15 @@
 # Exploratory analysis ####
-setwd("~/Google Drive/Stanford/QE2") # @RA you should modify this file path as necessary
+install.packages("tidyverse")
+
+setwd("/Volumes/GoogleDrive/.shortcut-targets-by-id/1txEHbDEqbELgEgsEHW1S64HfeilcEXPS/QE2") # @RA you should modify this file path as necessary
 
 # refer to codebook for variable definitions 
 # interesting variables would be: 
 # white, immigrant, black, minority, income, mhmval, pop 
 # compare annexed to non-annexed blocks on these variables, or more
 
+
+library(tidyverse)
 # using:  
 aa <- read_csv("annexedblocks0020dem_pl00_newsample_unincorp.csv")
 
@@ -17,10 +21,10 @@ vars <- c("pop00b", "nhblack00b", "nhwhite00b", "h00b", "min00b",
 )
 
 descriptives <- as.data.frame(aa %>% 
-                                 group_by(annexed) %>%
-                                 summarize_at(vars, 
-                                              list(~mean(., na.rm = T), ~median(., na.rm = T), ~sd(., na.rm = T))) %>% 
-                                 t())
+                                group_by(annexed) %>%
+                                summarize_at(vars, 
+                                             list(~mean(., na.rm = T), ~median(., na.rm = T), ~sd(., na.rm = T))) %>% 
+                                t())
 
 # however, I want to start with some "interesting" places
 cali <- aa %>% #california is a nice one to pick because there are pockets of republican places even though it's very diverse

@@ -1,51 +1,51 @@
 State,Laws
 Alabama,Referenda in area “at risk”,Annexation by petition,Annexation by city ordinance,Annexation by judicial review,Annexation of noncontiguous land
-Alaska,Referenda in area “at risk”,Public hearing,Boundary commission,Annexation by petition,Annexation by city ordinance,Annexation by judicial review
+Alaska,Referenda in area “at risk”,Public hearing,Boundary commission,Annexation by petition,Annexation by city ordinance,Annexation by judicial review,"Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
 Arizona,Referenda in area “at risk”,Public hearing,Annexation by petition,Annexation by judicial review
 Arkansas,Referenda in area “at risk”,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review
 California,Referenda in area “at risk”,Public hearing,Boundary commission,Annexation by petition,County approval required,Annexation by city ordinance
 Colorado,Referenda in area “at risk”,Public hearing,Annexation by petition,Annexation by judicial review
-Connecticut,Annexation of noncontiguous land
+Connecticut,Annexation of noncontiguous land,Township state,"Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
 Delaware,Referenda in area “at risk”,Annexation by petition,County approval required,Annexation by city ordinance
-Florida,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review
+Florida,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review,"Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
 Georgia,Referenda in area “at risk”,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review
 Hawaii,Annexation of noncontiguous land
 Idaho,Annexation by city ordinance
-Illinois,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review
-Indiana,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review
+Illinois,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review,Township state
+Indiana,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review,Township state
 Iowa,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Boundary commission,Annexation by petition,Annexation by judicial review
-Kansas,Annexation by city ordinance,Annexation by judicial review
+Kansas,Annexation by city ordinance,Annexation by judicial review,Township state,"Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
 Kentucky,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Annexation by city ordinance,Annexation by judicial review
-Louisiana,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review
-Maine,Annexation of noncontiguous land
-Maryland,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Annexation by petition,Annexation by city ordinance
-Massachusetts,Annexation of noncontiguous land
-Michigan,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Boundary commission,Annexation by petition,County approval required,Annexation by city ordinance,Annexation by judicial review
-Minnesota,Referenda in annexing city,Public hearing,Boundary commission,Annexation by petition,Annexation by city ordinance
+Louisiana,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review,"Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
+Maine,Annexation of noncontiguous land,Township state,"Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
+Maryland,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Annexation by petition,Annexation by city ordinance,"Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
+Massachusetts,Annexation of noncontiguous land,"Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
+Michigan,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Boundary commission,Annexation by petition,County approval required,Annexation by city ordinance,Annexation by judicial review,Township state,"Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
+Minnesota,Referenda in annexing city,Public hearing,Boundary commission,Annexation by petition,Annexation by city ordinance,Township state,"Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
 Mississippi,Public hearing,Annexation by city ordinance,Annexation by judicial review
-Missouri,Referenda in area “at risk”,Public hearing,Boundary commission,Annexation by petition,Annexation by city ordinance,Annexation by judicial review
-Montana,Referenda in area “at risk”,Annexation by petition,Annexation by judicial review
-Nebraska,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review
+Missouri,Referenda in area “at risk”,Public hearing,Boundary commission,Annexation by petition,Annexation by city ordinance,Annexation by judicial review,Township state,"Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
+Montana,Referenda in area “at risk”,Annexation by petition,Annexation by judicial review,"Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
+Nebraska,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review,Township state
 Nevada,Public hearing,Boundary commission,Annexation by petition,Annexation by city ordinance,Annexation by judicial review
-New Hampshire,Annexation of noncontiguous land
-New Jersey,Annexation by petition,Annexation of noncontiguous land
+New Hampshire,Annexation of noncontiguous land,Township state
+New Jersey,Annexation by petition,Annexation of noncontiguous land,Township state
 New Mexico,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review
-New York,Referenda in area “at risk”,Public hearing,Annexation by petition,Annexation by judicial review
-North Carolina,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review
-North Dakota,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review
-Ohio,Public hearing,Annexation by petition,County approval required,Annexation by city ordinance,Annexation by judicial review
-Oklahoma,Referenda in area “at risk”,Public hearing,Annexation by petition,County approval required,Annexation by city ordinance,Annexation by judicial review
-Oregon,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Boundary commission,Annexation by petition,Annexation by city ordinance,Annexation by judicial review
-Pennsylvania,Referenda in area “at risk”,Annexation by petition,Annexation of noncontiguous land
-Rhode Island,Annexation of noncontiguous land
+New York,Referenda in area “at risk”,Public hearing,Annexation by petition,Annexation by judicial review,Township state
+North Carolina,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review,"Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
+North Dakota,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review,Township state
+Ohio,Public hearing,Annexation by petition,County approval required,Annexation by city ordinance,Annexation by judicial review,Township state,"Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
+Oklahoma,Referenda in area “at risk”,Public hearing,Annexation by petition,County approval required,Annexation by city ordinance,Annexation by judicial review,"Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
+Oregon,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Boundary commission,Annexation by petition,Annexation by city ordinance,Annexation by judicial review,"Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
+Pennsylvania,Referenda in area “at risk”,Annexation by petition,Annexation of noncontiguous land,Township state
+Rhode Island,Annexation of noncontiguous land,Township state,"Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
 South Carolina,Referenda in area “at risk”,Referenda in annexing city,Annexation by petition,Annexation by judicial review
-South Dakota,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Annexation by petition,County approval required,Annexation by city ordinance,Annexation by judicial review
+South Dakota,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Annexation by petition,County approval required,Annexation by city ordinance,Annexation by judicial review,Township state
 Tennessee,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review
-Texas,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review
+Texas,Referenda in area “at risk”,Referenda in annexing city,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review,"Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
 Utah,Boundary commission,Annexation by petition,Annexation by city ordinance,Annexation by judicial review
-Vermont,Annexation of noncontiguous land
+Vermont,Annexation of noncontiguous land,Township state
 Virginia,Boundary commission,Annexation by petition,Annexation by city ordinance,Annexation by judicial review
 Washington,Referenda in area “at risk”,Public hearing,Boundary commission,Annexation by petition,County approval required,Annexation by city ordinance
 West Virginia,Referenda in area “at risk”,Referenda in annexing city,Annexation by petition,Annexation by judicial review
-Wisconsin,Referenda in area “at risk”,Annexation by petition,Annexation by city ordinance,Annexation by judicial review
-Wyoming,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review
+Wisconsin,Referenda in area “at risk”,Annexation by petition,Annexation by city ordinance,Annexation by judicial review,Township state,"Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
+Wyoming,Public hearing,Annexation by petition,Annexation by city ordinance,Annexation by judicial review,"Municipal structural autonomy (1 = high autonomy, 5 = low autonomy)"
