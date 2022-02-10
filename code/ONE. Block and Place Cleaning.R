@@ -4,7 +4,7 @@
 # analysis outlined in BAS0010. This is script step ONE. ####################
 
 rm(list = ls())
-setwd("~/Google Drive/Stanford/QE2") # use setwd() to set your home directory 
+setwd("~/Google Drive/My Drive/Stanford/QE2") # use setwd() to set your home directory 
 
 # you likely won't have some of these packages yet. To get them, you'll have to do install.packages("PACKAGENAME")
 # luckily you only need to do this step once. You will have to call library("PACKAGENAME") each time, however.
@@ -19,8 +19,8 @@ library("magrittr") # for %<>% operator
 library("zoo") # for na.approx function
 
 # 2000 block-level data ####
-blocks2000 <- read_csv(file = "ipumsblocks_allstates/2000blocks/nhgis0032_ds147_2000_block.csv")
-blocks2000 <- blocks2000[-1,] # for some reason the first row of this df is irrelevant so we remove it.
+blocks2000 <- fread(file = "ipumsblocks_allstates/2000blocks/nhgis0032_ds147_2000_block.csv")
+blocks2000 <- blocks2000[-1,]
 
 # 1. convert factorized numerical variables back to numerical, but the file is very large, so we need 
 # to split it into manageable chunks (stored in a list object) and run the analysis on each chunk separately. 
@@ -65,19 +65,19 @@ foreach (i = 1:length(dat_use)) %do% {
 vap2000block <- read_csv("ipumsblocks_allstates/2000blocks/vap2000_block.csv")
 
 vap2000block <- vap2000block %>%
-  mutate(vap = FX4001,
-         hispvap = FX9001,
-         nhwvap = FYB001,
-         nhbvap = FYB002,
-         minorityvap = vap - nhwvap) %>%
-  dplyr::select(STATEA, COUNTYA, TRACTA, BLOCKA, vap, hispvap, nhwvap, nhbvap, minorityvap) %>%
-  mutate(hispvap00b = (hispvap/vap)*100,
-         nhwvap00b = (nhwvap/vap)*100,
-         nhbvap00b = (nhbvap/vap)*100,
-         minorityvap00b = (minorityvap/vap)*100,
+  mutate(vap00b = FX4001,
+         hispvap00b = FX9001,
+         nhwvap00b = FYB001,
+         nhbvap00b = FYB002,
+         minorityvap00b = vap00b - nhwvap00b) %>%
+  dplyr::select(STATEA, COUNTYA, TRACTA, BLOCKA, vap00b, hispvap00b, nhwvap00b, nhbvap00b, minorityvap00b) %>%
+  mutate(pcthispvap00b = (hispvap00b/vap00b)*100,
+         pctnhwvap00b = (nhwvap00b/vap00b)*100,
+         pctnhbvap00b = (nhbvap00b/vap00b)*100,
+         pctminvap00b = (minorityvap00b/vap00b)*100,
          blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
                         str_pad(TRACTA, 6, side = "left", pad = "0"), sprintf("%04.0f", BLOCKA))) %>%
-  dplyr::select(blkid, hispvap00b, nhwvap00b, nhbvap00b, minorityvap00b)
+  dplyr::select(blkid, vap00b:pctminvap00b)
 # by selecting the variables we need, we significantly reduce the file size of the data. 
 
 # turn list into dataframe 
@@ -161,7 +161,7 @@ clean_dat_10 <- function(datuse) {
                 pctminorityvap10b = ((H75001 - H75005)/H75001)*100
             ) %>% 
             dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
-                STATEA, COUNTYA, TRACTA, BLOCKA, PLACEA, pop10b:minorityvap10b)
+                STATEA, COUNTYA, TRACTA, BLOCKA, PLACEA, pop10b:pctminorityvap10b)
         return(NULL)
     }
     
@@ -579,12 +579,11 @@ blocks2020 %<>%
                           str_pad(COUNTYA, 3, side = "left", pad = "0"),
                           str_pad(TRACTA, 6, side = "left", pad = "0"),
                           str_pad(BLOCKA, 4, side = "left", pad = "0"))) %>%
-    select(blkid, pop20b, pctnhblack20b, pctnhwhite20b, pcth20b, pctmin20b,
-           hispvap20b, nhwvap20b, nhbvap20b, minorityvap20b, vacancy20b) 
+    select(blkid, pop20b:vacancy20b) 
 
 names(blocks2020) <- gsub("20b", "", names(blocks2020))
 blocks2020 %<>%
-    mutate(Year = "2020")
+    mutate(Year = 2020)
 
 blocks2000 <- read_csv("blocks2000_var.csv")
 blocks2000 %<>%
@@ -600,12 +599,11 @@ blocks2010 %<>%
                           str_pad(COUNTYA, 3, side = "left", pad = "0"),
                           str_pad(TRACTA, 6, side = "left", pad = "0"),
                           str_pad(BLOCKA, 4, side = "left", pad = "0"))) %>%
-    select(blkid, pop10b, pctnhblack10b, pctnhwhite10b, pcth10b, pctmin10b,
-           hispvap10b, nhwvap10b, nhbvap10b, minorityvap10b, vacancy10b) 
+    select(blkid, pop10b:pctmin10b, vacancy10b, vap10b:pctminorityvap10b) 
 
 names(blocks2010) <- gsub("10b", "", names(blocks2010))
 blocks2010 %<>%
-    mutate(Year = "2010")
+    mutate(Year = 2010)
 
 # blocks2000 %<>%
 #     filter((blkid %in% blocks2010$blkid) & (blkid %in% blocks2020$blkid))
@@ -615,6 +613,15 @@ blocks2010 %<>%
 # 
 # blocks2020 %<>%
 #     filter(blkid %in% blocks2000$blkid)
+
+blocks2010 %<>%
+  filter(blkid %in% blocks2020$blkid) 
+
+blocks2020 %<>%
+  filter(blkid %in% blocks2010$blkid)
+
+blocks2010 %<>%
+  filter(blkid %in% blocks2020$blkid) 
 
 blocks <- base::rbind(blocks2010, blocks2020)
 rm(blocks2010, blocks2020)
@@ -662,46 +669,37 @@ write_csv(blocks13, "blocks2013_int.csv")
 rm(blocks13)
 
 # do 2014 
-blocks %<>%
-    filter(Year != "2013")
-
-blocks2014 <- read_csv("blocks2010_var.csv")
-blocks2014 %<>%
-    select(blkid, pop10b, pctnhblack10b, pctnhwhite10b, pcth10b, pctmin10b,
-           hispvap10b, nhwvap10b, nhbvap10b, minorityvap10b, vacancy10b) 
-names(blocks2014) <- gsub("10b", "", names(blocks2014))
-blocks2014 %<>%
-    mutate(Year = "2014")
+blocks2014 <- blocks2010
 
 blocks2014 %<>%
-    mutate(pop = NA,
-           pctnhblack = NA,
-           pctnhwhite = NA,
-           pcth = NA,
-           pctmin = NA,
-           hispvap = NA,
-           nhwvap = NA,
-           nhbvap = NA,
-           minorityvap = NA,
-           vacancy = NA)
+    mutate_at(all_of(names(blocks2014)[2:20]), ~NA) %>%
+  mutate(Year = 2014)
 
-blocks <- base::rbind(blocks, blocks2014)
-rm(blocks2014)
-blocks %<>%
-    mutate(Year = as.numeric(as.character(Year))) 
+blocks <- base::rbind(blocks2010, blocks2014, blocks2020)
 
-blocks %<>%
+rm(blocks2010, blocks2014, blocks2020)
+
+test <- blocks %>% filter(blkid %in% unique(blkid)[1:50])
+
+test %<>%
     group_by(blkid) %>%
     arrange(Year) %>%
-    mutate_at(c(names(blocks)[2:6]), zoo::na.approx, na.rm = F) %>%
-    ungroup()
+    mutate_at(all_of(names(blocks)[2:20]), zoo::na.approx, na.rm = F) %>%
+    ungroup() 
+
+blocks %<>%
+  group_by(blkid) %>%
+  arrange(Year) %>%
+  mutate_at(all_of(names(blocks)[2:20]), zoo::na.approx, na.rm = F) %>%
+  ungroup() 
+
+rm(test)
 
 blocks14 <- blocks %>%
     filter(Year == "2014")
 write_csv(blocks14, "blocks2014_int.csv")
 
-rm(blocks)
-rm(blocks14)
+rm(list = ls())
 
 # # clean block group data ####
 # bg2013 <- fread(file = "ipumsblocks_allstates/2013bg/nhgis0037_ds215_20155_blck_grp.csv") 

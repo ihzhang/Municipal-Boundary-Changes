@@ -130,41 +130,155 @@ aa %<>%
 length(unique(aa$plid))
 
 write_csv(aa, "annexedblocks0010_base_unincorp.csv")
+
+#clean up and get ready for Census data 
 aa <- read_csv("annexedblocks0010_base_unincorp.csv")
 
 #clean up and get ready for Census data 
-# 2000 block data 
+# 2013 block data 
 blocks2000 <- read_csv("blocks2000_var.csv")
-
 blocks2000 %<>%
-    mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
-                          str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0")))
+  mutate(STATEA = str_pad(STATEA, 2, side = "left", pad = "0"),
+         blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
+                        str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0")),
+         county = substr(blkid, 1, 5)
+  ) %>%
+  select(-TRACTA, -BLOCKA, -PLACEA, -COUNTYA)
+
 head(aa$blkid)
 head(blocks2000$blkid)
 
 # check they seem to be in comparable formats
 aa %<>%
-    left_join(blocks2000, by = "blkid")
+  left_join(blocks2000, by = "blkid")
+rm(blocks2000)
 
-# drop if pop = 0 or hu = 0 
+names(aa) <- gsub("00b", "", names(aa))
+
+# drop missing values
 aa %<>% 
-    filter(pop00b > 0)
+  filter(!is.na(pop) & pop > 0 & 
+           !is.na(pctnhblack) & 
+           !is.na(pctnhwhite) & 
+           !is.na(pcth) & 
+           !is.na(pctmin) & 
+           !is.na(hispvap) & 
+           !is.na(nhwvap) & 
+           !is.na(minorityvap) & 
+           !is.na(nhbvap) & 
+           !is.na(vacancy))
 
-# do filtering of non-annexing places again 
-no_annex <- aa %>% 
-    group_by(plid) %>%
-    summarize(n = sum(annexed==1)) %>%
-    filter(n==0) %>%
-    dplyr::select(plid) #965. this would leave us with 
-length(unique(aa$plid)) - nrow(no_annex) #12635 places 
+table(aa$annexed)
+
+aa %<>% 
+  group_by(plid) %>%
+  mutate(n = sum(annexed==1),
+         annexing_place = ifelse(n==0, 0, 1)) %>%
+  ungroup() %>%
+  dplyr::select(-n) 
+table(aa$annexing_place)
+
+# we can't have places that annexed all their blocks, 
+# nor places that only had 1 contiguous block
+aa %<>%
+  group_by(plid) %>%
+  mutate(n_annexed = sum(annexed==1),
+         n = n()) %>%
+  ungroup() %>%
+  filter(n_annexed < n &
+           n >= 2) %>%
+  select(-n_annexed, -n)
+
+table(aa$annexed)
+5524/nrow(aa)
+
+# merge in place data for 2010, as well as 2000-2010 trends 
+pl9000 <- read_csv("pl9000_var.csv")
+table(aa$plid %in% pl9000$plid) 
+
+pl0010 %<>%
+  filter(
+    is.finite(popgrowth) & 
+      is.finite(nhwhitegrowth) & 
+      is.finite(nhwhitegrowth) & 
+      hinc00p > 0
+  )
 
 aa %<>%
-    filter(!plid %in% no_annex$plid)
-length(unique(aa$plid))
-rm(no_annex)
+  filter(plid %in% pl9000$plid) %>%
+  left_join(pl9000, by = "plid")
 
-write_csv(aa, "annexedblocks0010dem_pl00_newsample_unincorp.csv") # 251103
-aa <- read_csv("annexedblocks0010dem_pl00_newsample_unincorp.csv")
+# places that would have gone from majority-white to majority-minority  
+aa %<>%
+  mutate(proj_growth_white = (((nhwhitegrowth/10)*3)/100)+1,
+         proj_growth_whitevap = (((nhwhitevapgrowth/10)*3)/100)+1, 
+         proj_growth_minvap = (((minvapgrowth/10)*3)/100)+1,
+         proj_pop = pop10p*((((popgrowth/10)*3)/100)+1),
+         proj_vap = nhwhitevap10p*proj_growth_whitevap + 
+           minvap10p*proj_growth_minvap,
+         threat_white = case_when(
+           (pctnhwhite10p >= 60 & 
+              ((pctnhwhite10p*proj_growth_white)/proj_pop) >= 0.6) ~ "none",
+           (pctnhwhite10p >= 60 & 
+              ((pctnhwhite10p*proj_growth_white)/proj_pop) < 0.6) ~ "loss_solid",
+           (pctnhwhite10p >= 50 & pctnhwhite10p < 60 &
+              ((pctnhwhite10p*proj_growth_white)/proj_pop) < 0.5) ~ "loss_competitive",
+           pctnhwhite10p < 50 ~ "maj-min",
+           TRUE ~ NA_character_
+         ),
+         threat_white_vap = case_when(
+           (nhwhitevap10p >= 60 & 
+              ((nhwhitevap10p*proj_growth_whitevap)/proj_vap) >= 0.6) ~ "none",
+           (nhwhitevap10p >= 60 & 
+              ((nhwhitevap10p*proj_growth_whitevap)/proj_vap) < 0.6) ~ "loss_solid",
+           (nhwhitevap10p >= 50 & nhwhitevap10p < 60 &
+              ((nhwhitevap10p*proj_growth_whitevap)/proj_vap) < 0.5) ~ "loss_competitive",
+           nhwhitevap10p < 50 ~ "maj-min",
+           TRUE ~ NA_character_
+         ),
+         densifying = ifelse(is.na(densification), NA,
+                             ifelse(densification > 0, 1, 0)),
+         economic_need = ifelse(is.na(hinc10p), NA,
+                                ifelse(((hinc10p-hinc00p*1.25)/(hinc00p*1.25)) < 0, 1, 0))
+  )
+
+table(aa$threat_white)
+table(aa$threat_white_vap)
+table(aa$densifying)
+table(aa$economic_need)
+
+aa %<>%
+  select(-c(contains("00p")))
+names(aa)
+# we can't have places that annexed all their blocks, 
+# nor places that only had 1 contiguous block
+aa %<>%
+  group_by(plid) %>%
+  mutate(n_annexed = sum(annexed==1),
+         n = n()) %>%
+  ungroup() %>%
+  filter(n_annexed < n &
+           n >= 2) %>%
+  select(-n_annexed, -n)
+
+# merge in vra 
+vrastates <- c("01", "02", "04", "13", "22", "28", "45", "48", "51")
+vra.df <- read_csv("vra_counties.csv")
+vra.df %<>% 
+  mutate(countyfips = str_pad(countyfips, 5, side = "left", pad = "0"),
+         sectionv = 1)
+
+aa %<>%
+  mutate(vra = case_when(
+    STATEA %in% vrastates ~ 1,
+    county %in% vra.df$countyfips ~ 1,
+    TRUE ~ 0
+  ))
+
+# prep for rbind 
+names(aa) <- gsub("10p", "_p", names(aa))
+aa$period <- "1013"
+write_csv(aa, "analyticalfiles/annexedblocks1013dem_pl00_newsample_unincorp.csv") # 280122
 
 # repeat for 2010-2013 ####
 blocks2010 <- fread("ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv", 
@@ -589,7 +703,7 @@ aa %<>%
 # prep for rbind 
 names(aa) <- gsub("14p", "_p", names(aa))
 aa$period <- "1420"
-write_csv(aa, "analyticalfiles/annexedblocks1420dem_pl00_newsample_unincorp.csv") # 280122
+write_csv(aa, "analyticalfiles/annexedblocks1420dem_pl00_newsample_unincorp.csv") # 156527
 
 rm(list = ls())
 

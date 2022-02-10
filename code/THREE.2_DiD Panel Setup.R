@@ -168,35 +168,35 @@ pl_annex_var_1013 %<>%
   mutate(
     underbound_black = ifelse(
       (annexing == 1 & (((nhblack_total_1 + proj_nhblack)/(proj_pop + pop_total_1)) < (proj_nhblack/proj_pop))), 1, 
-      ifelse(annexing == 0 & (((nhblack_total_0 + proj_nhblack)/proj_pop + pop_total_0) < (proj_nhblack/proj_pop)), 1, 0)
+      ifelse(annexing == 0 & (economic_need == 1 | densifying == 1) & (((nhblack_total_0 + proj_nhblack)/proj_pop + pop_total_0) < (proj_nhblack/proj_pop)), 1, 0)
     ),
     underbound_hisp = ifelse(
       (annexing == 1 & (((h_total_1 + proj_h)/(proj_pop + pop_total_1)) < (proj_h/proj_pop))), 1, 
-      ifelse(annexing == 0 & (((h_total_0 + proj_h)/proj_pop + pop_total_0) < (proj_h/proj_pop)), 1, 0)
+      ifelse(annexing == 0 & (economic_need == 1 | densifying == 1) & (((h_total_0 + proj_h)/proj_pop + pop_total_0) < (proj_h/proj_pop)), 1, 0)
     ),
     underbound_minority = ifelse(
       (annexing == 1 & (((min_total_1 + proj_min)/(proj_pop + pop_total_1)) < (proj_min/proj_pop))), 1, 
-      ifelse(annexing == 0 & (((min_total_0 + proj_min)/proj_pop + pop_total_0) < (proj_min/proj_pop)), 1, 0)
+      ifelse(annexing == 0 & (economic_need == 1 | densifying == 1) & (((min_total_0 + proj_min)/proj_pop + pop_total_0) < (proj_min/proj_pop)), 1, 0)
     ),
     overbound_white = ifelse(
       (annexing == 1 & (((nhwhite_total_1 + proj_nhwhite)/(proj_pop + pop_total_1)) > (proj_nhwhite/proj_pop))), 1, 
-      ifelse(annexing == 0 & (((nhwhite_total_0 + proj_nhwhite)/proj_pop + pop_total_0) > (proj_nhwhite/proj_pop)), 1, 0)
+      ifelse(annexing == 0 & (economic_need == 1 | densifying == 1) & (((nhwhite_total_0 + proj_nhwhite)/proj_pop + pop_total_0) > (proj_nhwhite/proj_pop)), 1, 0)
     ),
     underbound_blackvap = ifelse(
       (annexing == 1 & (((nhblackvap_total_1 + proj_nhblackvap)/(proj_vap + vap_total_1)) < (proj_nhblackvap/proj_vap))), 1, 
-      ifelse(annexing == 0 & (((nhblackvap_total_0 + proj_nhblackvap)/proj_vap + vap_total_0) < (proj_nhblackvap/proj_vap)), 1, 0)
+      ifelse(annexing == 0 & (economic_need == 1 | densifying == 1) & (((nhblackvap_total_0 + proj_nhblackvap)/proj_vap + vap_total_0) < (proj_nhblackvap/proj_vap)), 1, 0)
     ),
     underbound_hispvap = ifelse(
       (annexing == 1 & (((hvap_total_1 + proj_hvap)/(proj_vap + pop_total_1)) < (proj_hvap/proj_vap))), 1, 
-      ifelse(annexing == 0 & (((hvap_total_0 + proj_hvap)/proj_vap + pop_total_0) < (proj_hvap/proj_vap)), 1, 0)
+      ifelse(annexing == 0 & (economic_need == 1 | densifying == 1) & (((hvap_total_0 + proj_hvap)/proj_vap + pop_total_0) < (proj_hvap/proj_vap)), 1, 0)
     ),
     underbound_minorityvap = ifelse(
       (annexing == 1 & (((minorityvap_total_1 + proj_minvap)/(proj_vap + pop_total_1)) < (proj_minvap/proj_vap))), 1, 
-      ifelse(annexing == 0 & (((minorityvap_total_0 + proj_minvap)/proj_vap + pop_total_0) < (proj_minvap/proj_vap)), 1, 0)
+      ifelse(annexing == 0 & (economic_need == 1 | densifying == 1) & (((minorityvap_total_0 + proj_minvap)/proj_vap + pop_total_0) < (proj_minvap/proj_vap)), 1, 0)
     ),
     overbound_whitevap = ifelse(
       (annexing == 1 & (((nhwhitevap_total_1 + proj_nhwhitevap)/(proj_vap + pop_total_1)) > (proj_nhwhitevap/proj_vap))), 1, 
-      ifelse(annexing == 0 & (((nhwhitevap_total_0 + proj_nhwhitevap)/proj_vap + pop_total_0) > (proj_nhwhitevap/proj_vap)), 1, 0)
+      ifelse(annexing == 0 & (economic_need == 1 | densifying == 1) & (((nhwhitevap_total_0 + proj_nhwhitevap)/proj_vap + pop_total_0) > (proj_nhwhitevap/proj_vap)), 1, 0)
     )
   )
 
@@ -303,9 +303,9 @@ pl_annex_var_1420 %<>%
 # have been, i.e. pctwhite given growth rate by 2013
 # or if pcth after annex < pcth before annex compared to what would have been,
 # i.e. pcth given growth rate by 2013 
-pl0010 <- read_csv("pl0010_var.csv")
+pl1014 <- read_csv("pl1014_var.csv")
 
-pl0010 %<>%
+pl1014 %<>%
   filter(
     is.finite(popgrowth) & 
       is.finite(nhwhitegrowth) & 
@@ -325,30 +325,30 @@ pl0010 %<>%
          proj_growth_blackvap = (((nhblackvapgrowth/10)*3)/100)+1,
          proj_growth_hvap = (((hispvapgrowth/10)*3)/100)+1,
          proj_growth_minvap = (((minvapgrowth/10)*3)/100)+1,
-         proj_pop = pop10p*((((popgrowth/10)*3)/100)+1),
-         proj_vap = nhwhitevap10p*proj_growth_whitevap + 
-           minvap10p*proj_growth_minvap,
-         proj_nhwhite = nhwhite10p*proj_growth_white,
-         proj_nhblack = nhblack10p*proj_growth_black,
-         proj_h = h10p*proj_growth_h,
-         proj_min = min10p*proj_growth_min,
-         proj_nhwhitevap = nhwhitevap10p*proj_growth_whitevap,
-         proj_nhblackvap = nhblackvap10p*proj_growth_blackvap,
-         proj_hvap = hispvap10p*proj_growth_hvap,
-         proj_minvap = minvap10p*proj_growth_minvap,
+         proj_pop = pop14p*((((popgrowth/10)*3)/100)+1),
+         proj_vap = nhwhitevap14p*proj_growth_whitevap + 
+           minvap14p*proj_growth_minvap,
+         proj_nhwhite = nhwhite14p*proj_growth_white,
+         proj_nhblack = nhblack14p*proj_growth_black,
+         proj_h = h14p*proj_growth_h,
+         proj_min = min14p*proj_growth_min,
+         proj_nhwhitevap = nhwhitevap14p*proj_growth_whitevap,
+         proj_nhblackvap = nhblackvap14p*proj_growth_blackvap,
+         proj_hvap = hispvap14p*proj_growth_hvap,
+         proj_minvap = minvap14p*proj_growth_minvap,
          densifying = ifelse(is.na(densification), NA,
                              ifelse(densification > 0, 1, 0)),
-         economic_need = ifelse(is.na(hinc10p), NA,
-                                ifelse(((hinc10p-hinc00p*1.25)/(hinc00p*1.25)) < 0, 1, 0))
+         economic_need = ifelse(is.na(hinc14p), NA,
+                                ifelse(((hinc14p-hinc10p*1.25)/(hinc10p*1.25)) < 0, 1, 0))
   ) %>%
   select(plid, c(contains("proj")), densifying, economic_need, c(contains("growth")), -c(contains("_growth")))
 
-table(pl_annex_var_1420$plid %in% pl0010$plid) #4695 false
+table(pl_annex_var_1420$plid %in% pl1014$plid) #7828 false (damn)
 
 pl_annex_var_1420 %<>%
-  filter(plid %in% pl0010$plid) %>%
-  left_join(pl0010, by = "plid") %>%
-  mutate(post = 0)
+  filter(plid %in% pl1014$plid) %>%
+  left_join(pl1014, by = "plid") %>%
+  mutate(post = 1)
 
 table(pl_annex_var_1420$annexing)
 
@@ -357,35 +357,35 @@ pl_annex_var_1420 %<>%
   mutate(
     underbound_black = ifelse(
       (annexing == 1 & (((nhblack_total_1 + proj_nhblack)/(proj_pop + pop_total_1)) < (proj_nhblack/proj_pop))), 1, 
-      ifelse(annexing == 0 & (((nhblack_total_0 + proj_nhblack)/proj_pop + pop_total_0) < (proj_nhblack/proj_pop)), 1, 0)
+      ifelse(annexing == 0 & (economic_need == 1 | densifying == 1) & (((nhblack_total_0 + proj_nhblack)/proj_pop + pop_total_0) < (proj_nhblack/proj_pop)), 1, 0)
     ),
     underbound_hisp = ifelse(
       (annexing == 1 & (((h_total_1 + proj_h)/(proj_pop + pop_total_1)) < (proj_h/proj_pop))), 1, 
-      ifelse(annexing == 0 & (((h_total_0 + proj_h)/proj_pop + pop_total_0) < (proj_h/proj_pop)), 1, 0)
+      ifelse(annexing == 0 & (economic_need == 1 | densifying == 1) & (((h_total_0 + proj_h)/proj_pop + pop_total_0) < (proj_h/proj_pop)), 1, 0)
     ),
     underbound_minority = ifelse(
       (annexing == 1 & (((min_total_1 + proj_min)/(proj_pop + pop_total_1)) < (proj_min/proj_pop))), 1, 
-      ifelse(annexing == 0 & (((min_total_0 + proj_min)/proj_pop + pop_total_0) < (proj_min/proj_pop)), 1, 0)
+      ifelse(annexing == 0 & (economic_need == 1 | densifying == 1) & (((min_total_0 + proj_min)/proj_pop + pop_total_0) < (proj_min/proj_pop)), 1, 0)
     ),
     overbound_white = ifelse(
       (annexing == 1 & (((nhwhite_total_1 + proj_nhwhite)/(proj_pop + pop_total_1)) > (proj_nhwhite/proj_pop))), 1, 
-      ifelse(annexing == 0 & (((nhwhite_total_0 + proj_nhwhite)/proj_pop + pop_total_0) > (proj_nhwhite/proj_pop)), 1, 0)
+      ifelse(annexing == 0 & (economic_need == 1 | densifying == 1) & (((nhwhite_total_0 + proj_nhwhite)/proj_pop + pop_total_0) > (proj_nhwhite/proj_pop)), 1, 0)
     ),
     underbound_blackvap = ifelse(
       (annexing == 1 & (((nhblackvap_total_1 + proj_nhblackvap)/(proj_vap + vap_total_1)) < (proj_nhblackvap/proj_vap))), 1, 
-      ifelse(annexing == 0 & (((nhblackvap_total_0 + proj_nhblackvap)/proj_vap + vap_total_0) < (proj_nhblackvap/proj_vap)), 1, 0)
+      ifelse(annexing == 0 & (economic_need == 1 | densifying == 1) & (((nhblackvap_total_0 + proj_nhblackvap)/proj_vap + vap_total_0) < (proj_nhblackvap/proj_vap)), 1, 0)
     ),
     underbound_hispvap = ifelse(
       (annexing == 1 & (((hvap_total_1 + proj_hvap)/(proj_vap + pop_total_1)) < (proj_hvap/proj_vap))), 1, 
-      ifelse(annexing == 0 & (((hvap_total_0 + proj_hvap)/proj_vap + pop_total_0) < (proj_hvap/proj_vap)), 1, 0)
+      ifelse(annexing == 0 & (economic_need == 1 | densifying == 1) & (((hvap_total_0 + proj_hvap)/proj_vap + pop_total_0) < (proj_hvap/proj_vap)), 1, 0)
     ),
     underbound_minorityvap = ifelse(
       (annexing == 1 & (((minorityvap_total_1 + proj_minvap)/(proj_vap + pop_total_1)) < (proj_minvap/proj_vap))), 1, 
-      ifelse(annexing == 0 & (((minorityvap_total_0 + proj_minvap)/proj_vap + pop_total_0) < (proj_minvap/proj_vap)), 1, 0)
+      ifelse(annexing == 0 & (economic_need == 1 | densifying == 1) & (((minorityvap_total_0 + proj_minvap)/proj_vap + pop_total_0) < (proj_minvap/proj_vap)), 1, 0)
     ),
     overbound_whitevap = ifelse(
       (annexing == 1 & (((nhwhitevap_total_1 + proj_nhwhitevap)/(proj_vap + pop_total_1)) > (proj_nhwhitevap/proj_vap))), 1, 
-      ifelse(annexing == 0 & (((nhwhitevap_total_0 + proj_nhwhitevap)/proj_vap + pop_total_0) > (proj_nhwhitevap/proj_vap)), 1, 0)
+      ifelse(annexing == 0 & (economic_need == 1 | densifying == 1) & (((nhwhitevap_total_0 + proj_nhwhitevap)/proj_vap + pop_total_0) > (proj_nhwhitevap/proj_vap)), 1, 0)
     )
   )
 
@@ -412,75 +412,88 @@ table(pl_annex_var_1420$vra, pl_annex_var_1420$overbound_whitevap)
 rm(list = ls())
 
 # make panel data!!!!! ####
-places_to_merge2013 <- read_csv("places_to_merge2013.csv")
-places_to_merge2013 %<>%
-    mutate(pctnhblack_diff = ifelse(is.na(pctnhblack_diff), pctnhblack00b_diff, pctnhblack_diff),
-           pctnhwhite_diff = ifelse(is.na(pctnhwhite_diff), pctnhwhite00b_diff, pctnhwhite_diff),
-           pcth_diff = ifelse(is.na(pcth_diff), pcth00b_diff, pcth_diff),
-           pctmin_diff = ifelse(is.na(pctmin_diff), pctmin00b_diff, pctmin_diff),
-    ) %>%
-    select(-c(contains("00b")))
-   
-places_to_merge2013 %<>%
-    filter(plid %in% places_to_merge2020$plid)
+pl1013 <- read_csv("analyticalfiles/pl_annex_var_1013.csv")
+pl1420 <- read_csv("analyticalfiles/pl_annex_var_1420.csv")
 
-places_to_merge2020 %<>%
-    filter(plid %in% places_to_merge2013$plid)
+pl1013 %<>%
+  filter(plid %in% pl1420$plid)
 
-panel1320_did <- base::rbind(
-    places_to_merge2013,
-    places_to_merge2020
+pl1420 %<>%
+  filter(plid %in% pl1013$plid)
+
+panel1020_did <- base::rbind(
+    pl1013, pl1420
 )
 
-write_csv(panel1320_did, "panel1320_did.csv")
+write_csv(panel1020_did, "analyticalfiles/panel1020_did.csv")
+
+z <- function(var_name) {
+  (var_name - mean(var_name, na.rm = T))/sd(var_name, na.rm = T)
+}
+
+panel1020_did %<>%
+  mutate(STATEA = as.character(substr(plid, 1, 2)),
+         recimmgrowth_b = ifelse(recimmgrowth > 0, 1, 0),
+         pct_annexed_z = z(pct_annexed),
+         incomegrowth_z = z(incomegrowth),
+         recimmgrowth_z = z(recimmgrowth),
+         nhblackgrowth_z = z(nhblackgrowth),
+         nhblackvapgrowth_z = z(nhblackvapgrowth),
+         nhwhitegrowth_z = z(nhwhitegrowth),
+         nhwhitevapgrowth_z = z(nhwhitevapgrowth),
+         minrowth_z = z(mingrowth),
+         minvapgrowth_z = z(minvapgrowth),
+         hgrowth_z = z(hgrowth),
+         hispvapgrowth_z = z(hispvapgrowth),
+         popgrowth_z = z(popgrowth))
 
 # test reg
-panel1320_did <- read_csv("panel1320_did.csv")
-panel1320_did %<>%
-    mutate(post = ifelse(Year > 2013, 1, 0),
-           treatment = ifelse(vra==1, 1, 0)
-           )
-
-panel1320_did %<>% 
-    filter(!is.na(pctnhblack_diff)) %>%
-    group_by(plid) %>%
-    mutate(appear = n()) %>%
-    filter(appear == 2) %>%
-    ungroup()
-
-panel1320_did %<>%
-    mutate(underbound_nhb_abs = ifelse(pctnhblack_diff < 0, 1, 0),
-           underbound_nhb_med = ifelse(pctnhblack_diff < 6.06, 1, 0),
-           underbound_nhw_med = ifelse(pctnhwhite_diff > 5.03, 1, 0))
-
-testdid <- fixest::feglm(underbound_nhb_abs ~ treatment + post + treatment*post | as.factor(as.character(plid)), family = "binomial", data = panel1320_did)
-testdid2 <- fixest::feglm(underbound_nhb_med ~ treatment + post + treatment*post | as.factor(as.character(plid)), family = "binomial", data = panel1320_did)
-testdid2 <- fixest::feglm(underbound_nhw_med ~ treatment + post + treatment*post | as.factor(as.character(plid)), family = "binomial", data = panel1320_did)
+testdid <- fixest::feols(underbound_black ~ vra + post + vra*post + 
+                           pct_annexed_z + popgrowth_z + recimmgrowth_z +
+                           incomegrowth_z + nhblackgrowth_z | plid + STATEA, data = panel1020_did)
+testdid2 <- fixest::feols(underbound_hisp ~ vra + post + vra*post | plid + STATEA, data = panel1020_did)
+testdid3 <- fixest::feols(underbound_minority ~ vra + post + vra*post | plid + STATEA, data = panel1020_did)
+testdid4 <- fixest::feols(overbound_white ~ vra + post + vra*post | plid, data = panel1020_did)
 
 summary(testdid)
 summary(testdid2)
+summary(testdid3)
+summary(testdid4)
 
-predictdf <- with(panel1320_did, data.frame(
-                  treatment = c(0, 0, 1, 1),
-                      post = c(0, 1, 0, 1),
-                  plid = rep("0100124", 4)))
+vapdid <- fixest::feols(underbound_blackvap ~ vra + post + vra*post + 
+                          log(pop_total + 1) + pct_annexed + log(popgrowth + 1) + log(recimmgrowth + 1) +
+                          log(incomegrowth + 1) + log(blackpovgrowth + 1) + log(nhblackgrowth + 1) | plid, data = panel1020_did)
+vapdid2 <- fixest::feols(underbound_hispvap ~ vra + post + vra*post | plid, data = panel1020_did)
+vapdid3 <- fixest::feols(underbound_minorityvap ~ vra + post + vra*post | plid, data = panel1020_did)
+vapdid4 <- fixest::feols(overbound_whitevap ~ vra + post + vra*post | plid, data = panel1020_did)
 
-predictdf <- cbind(predictdf, predict(testdid, newdata = predictdf)) 
-names(predictdf)[4] <- "pred_val"
-predictdf %<>% mutate(predicted_val = exp(pred_val - 1))
+summary(vapdid)
+summary(vapdid2)
+summary(vapdid3)
+summary(vapdid4)
 
-summary(testdid)
+indices <- c(grep("underbound", names(panel1020_did)), grep("overbound", names(panel1020_did)))
+indices <- names(panel1020_did)[indices]
 
-panel1320_did %<>%
-    mutate(plid = as.numeric(as.character(plid)))
+did_vis <- panel1020_did %>%
+  group_by(vra, post) %>%
+  summarise_at(all_of(indices), 
+               ~mean(., na.rm = T))
+  
 
-testdid2 <- att_gt(
-    yname = "pctnhblack_diff",
-    gname = "treatment",
-    tname = "post",
-    idname = "plid",
-    xformla = ~1,
-    data = panel1320_did,
-    est_method = "reg"
-)
+ggplot(did_vis %>%
+           select(vra, post, contains("black")) %>%
+           pivot_longer(cols = starts_with("underbound"),
+                        names_to = "underbound", 
+                        values_to = "mean") %>%
+           mutate(underbound = gsub("underbound_", "", underbound),
+                  vra = as.character(vra)), 
+         aes(y = mean, x = post, color = vra)) + 
+  geom_line() + 
+  facet_wrap(~underbound)
+  
+  
+  
+  
+  
 
