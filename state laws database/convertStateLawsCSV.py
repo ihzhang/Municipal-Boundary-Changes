@@ -21,7 +21,7 @@ new_rows = []
 
 for row in rows:
     new_row = [row[0]]
-    for elementnum in range(1,len(row)):
+    for elementnum in range(2,len(row)):
         if row[elementnum] == "1":
             new_row.append(header[elementnum])
     new_rows.append(new_row)
