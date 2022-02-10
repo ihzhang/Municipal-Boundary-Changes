@@ -17,3 +17,6 @@ To Do: Run in Terminal "bash download.sh". All files will populate in the approp
 Note: If running the Python script, you will have to install Selenium and then configure an appropriate Chrome Web Driver.
 
 Note: Currently, the files don't seem to allow unzipping. Will need to investigate this further.
+
+
+Note: If downloading this folder, just downloading this file is enough! Run it and the rest will populate.
