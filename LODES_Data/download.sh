@@ -1,6 +1,13 @@
 #! /bin/bash
 ORIGINALDIR="/Users/phalpha/Downloads"
-MKDIR files/
+MKDIR gz_files/
+MKDIR csv_files/
+MKDIR csv_files/2010/
+MKDIR csv_files/2014/
+MKDIR csv_files/2010/rac/
+MKDIR csv_files/2010/wac/
+MKDIR csv_files/2014/rac/
+MKDIR csv_files/2014/wac/
 baseURL="https://lehd.ces.census.gov/data/lodes/LODES7"
 FIPS=("al" "ak" "az" "ar" "ca" "co" "ct" "de" "fl" "ga" "id" "il" "in" "ia" "ks" "ky" "la" "me" "md" "ma" "mi" "mn" "ms" "mo" "mt" "ne" "nv" "nh" "nj" "nm" "ny" "nc" "nd" "oh" "ok" "or" "pa" "ri" "sc" "sd" "tn" "tx" "ut" "vt" "va" "wa" "wv" "wi" "wy")
 for i in ${!FIPS[@]}
@@ -13,8 +20,14 @@ do
   curl -O "$URL2"
   curl -O "$URL3"
   curl -O "$URL4"
-  mv ${FIPS[$i]}_wac_S000_JT00_2010.csv.gz files
-  mv ${FIPS[$i]}_wac_S000_JT00_2014.csv.gz files
-  mv ${FIPS[$i]}_rac_S000_JT00_2010.csv.gz files
-  mv ${FIPS[$i]}_rac_S000_JT00_2014.csv.gz files
+  cp ${FIPS[$i]}_wac_S000_JT00_2010.csv.gz gz_files
+  cp ${FIPS[$i]}_wac_S000_JT00_2014.csv.gz gz_files
+  cp ${FIPS[$i]}_rac_S000_JT00_2010.csv.gz gz_files
+  cp ${FIPS[$i]}_rac_S000_JT00_2014.csv.gz gz_files
+
+
+  mv ${FIPS[$i]}_wac_S000_JT00_2010.csv.gz csv_files/2010/wac
+  mv ${FIPS[$i]}_wac_S000_JT00_2014.csv.gz csv_files/2014/wac
+  mv ${FIPS[$i]}_rac_S000_JT00_2010.csv.gz csv_files/2010/rac
+  mv ${FIPS[$i]}_rac_S000_JT00_2014.csv.gz csv_files/2014/rac
 done
