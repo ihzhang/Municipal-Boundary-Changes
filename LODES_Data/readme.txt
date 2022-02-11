@@ -4,6 +4,13 @@ This folder LODES_Data gathers the LODES Data from https://lehd.ces.census.gov/d
 - for years 2010 and 2014
 Total of 49*4=196 files.
 
+
+- NOTE: the bash script is currently buggy, for 100% chance of this working, just run the Python script!
+Unfortunately this means uncompressing and moving around the files manuallly. 
+
+
+
+
 files:
 readme.txt: this file
 lodes_data_download_script.py: The Python script contains a web scraper using Selenium (overkill! made initially when I didn't realize that all the download links are very systematically written)
