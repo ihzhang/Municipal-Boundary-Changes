@@ -439,7 +439,7 @@ pl0010 %<>%
   filter(
     is.finite(popgrowth) & 
       is.finite(nhwhitegrowth) & 
-      is.finite(nhwhitegrowth) & 
+      is.finite(nhwhitevapgrowth) & 
       hinc00p > 0
   )
 
@@ -623,7 +623,7 @@ pl1014 %<>%
   filter(
     is.finite(popgrowth) & 
       is.finite(nhwhitegrowth) & 
-      is.finite(nhwhitegrowth) & 
+      is.finite(nhwhitevapgrowth) & 
       hinc14p > 0
   )
 

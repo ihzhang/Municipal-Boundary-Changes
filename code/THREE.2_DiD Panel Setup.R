@@ -339,7 +339,7 @@ pl1014 %<>%
   ) %>%
   select(plid, c(contains("proj")), densifying, economic_need, c(contains("growth")), -c(contains("_growth")))
 
-table(pl_annex_var_1420$plid %in% pl1014$plid) #29 false 
+table(pl_annex_var_1420$plid %in% pl1014$plid) #5 false 
 
 pl_annex_var_1420 %<>%
   filter(plid %in% pl1014$plid) %>%

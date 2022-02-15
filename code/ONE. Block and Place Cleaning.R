@@ -391,7 +391,7 @@ pl9000 %<>%
          hispvapgrowth = ((hispvap00p - hispvap90p)/hispvap90p)*100,
          minvapgrowth = ((minvap00p - minvap90p)/minvap90p)*100)
 
-write_csv(pl0010, "pl9000_var.csv")
+write_csv(pl9000, "pl9000_var.csv")
 
 # 2010 places ####
 places2010 <- read_csv(file = "seplaces_allstates/2010places.csv")
