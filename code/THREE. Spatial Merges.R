@@ -189,14 +189,11 @@ aa %<>%
            n >= 2) %>%
   select(-n_annexed, -n)
 
-table(aa$annexed)
-5524/nrow(aa)
-
 # merge in place data for 2010, as well as 2000-2010 trends 
 pl9000 <- read_csv("pl9000_var.csv")
 table(aa$plid %in% pl9000$plid) 
 
-pl0010 %<>%
+pl9000 %<>%
   filter(
     is.finite(popgrowth) & 
       is.finite(nhwhitegrowth) & 
@@ -213,33 +210,33 @@ aa %<>%
   mutate(proj_growth_white = (((nhwhitegrowth/10)*3)/100)+1,
          proj_growth_whitevap = (((nhwhitevapgrowth/10)*3)/100)+1, 
          proj_growth_minvap = (((minvapgrowth/10)*3)/100)+1,
-         proj_pop = pop10p*((((popgrowth/10)*3)/100)+1),
-         proj_vap = nhwhitevap10p*proj_growth_whitevap + 
-           minvap10p*proj_growth_minvap,
+         proj_pop = pop00p*((((popgrowth/10)*3)/100)+1),
+         proj_vap = nhwhitevap00p*proj_growth_whitevap + 
+           minvap00p*proj_growth_minvap,
          threat_white = case_when(
-           (pctnhwhite10p >= 60 & 
-              ((pctnhwhite10p*proj_growth_white)/proj_pop) >= 0.6) ~ "none",
-           (pctnhwhite10p >= 60 & 
-              ((pctnhwhite10p*proj_growth_white)/proj_pop) < 0.6) ~ "loss_solid",
-           (pctnhwhite10p >= 50 & pctnhwhite10p < 60 &
-              ((pctnhwhite10p*proj_growth_white)/proj_pop) < 0.5) ~ "loss_competitive",
-           pctnhwhite10p < 50 ~ "maj-min",
+           (pctnhwhite00p >= 60 & 
+              ((pctnhwhite00p*proj_growth_white)/proj_pop) >= 0.6) ~ "none",
+           (pctnhwhite00p >= 60 & 
+              ((pctnhwhite00p*proj_growth_white)/proj_pop) < 0.6) ~ "loss_solid",
+           (pctnhwhite00p >= 50 & pctnhwhite00p < 60 &
+              ((pctnhwhite00p*proj_growth_white)/proj_pop) < 0.5) ~ "loss_competitive",
+           pctnhwhite00p < 50 ~ "maj-min",
            TRUE ~ NA_character_
          ),
          threat_white_vap = case_when(
-           (nhwhitevap10p >= 60 & 
-              ((nhwhitevap10p*proj_growth_whitevap)/proj_vap) >= 0.6) ~ "none",
-           (nhwhitevap10p >= 60 & 
-              ((nhwhitevap10p*proj_growth_whitevap)/proj_vap) < 0.6) ~ "loss_solid",
-           (nhwhitevap10p >= 50 & nhwhitevap10p < 60 &
-              ((nhwhitevap10p*proj_growth_whitevap)/proj_vap) < 0.5) ~ "loss_competitive",
-           nhwhitevap10p < 50 ~ "maj-min",
+           (nhwhitevap00p >= 60 & 
+              ((nhwhitevap00p*proj_growth_whitevap)/proj_vap) >= 0.6) ~ "none",
+           (nhwhitevap00p >= 60 & 
+              ((nhwhitevap00p*proj_growth_whitevap)/proj_vap) < 0.6) ~ "loss_solid",
+           (nhwhitevap00p >= 50 & nhwhitevap00p < 60 &
+              ((nhwhitevap00p*proj_growth_whitevap)/proj_vap) < 0.5) ~ "loss_competitive",
+           nhwhitevap00p < 50 ~ "maj-min",
            TRUE ~ NA_character_
          ),
          densifying = ifelse(is.na(densification), NA,
                              ifelse(densification > 0, 1, 0)),
-         economic_need = ifelse(is.na(hinc10p), NA,
-                                ifelse(((hinc10p-hinc00p*1.25)/(hinc00p*1.25)) < 0, 1, 0))
+         economic_need = ifelse(is.na(hinc00p), NA,
+                                ifelse(((hinc00p-hinc00p*1.25)/(hinc00p*1.25)) < 0, 1, 0))
   )
 
 table(aa$threat_white)
@@ -248,7 +245,7 @@ table(aa$densifying)
 table(aa$economic_need)
 
 aa %<>%
-  select(-c(contains("00p")))
+  select(-c(contains("90p")))
 names(aa)
 # we can't have places that annexed all their blocks, 
 # nor places that only had 1 contiguous block
@@ -276,9 +273,9 @@ aa %<>%
   ))
 
 # prep for rbind 
-names(aa) <- gsub("10p", "_p", names(aa))
-aa$period <- "1013"
-write_csv(aa, "analyticalfiles/annexedblocks1013dem_pl00_newsample_unincorp.csv") # 280122
+names(aa) <- gsub("00p", "_p", names(aa))
+aa$period <- "0010"
+write_csv(aa, "analyticalfiles/annexedblocks0010dem_pl00_newsample_unincorp.csv") # 280122
 
 # repeat for 2010-2013 ####
 blocks2010 <- fread("ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv", 

@@ -278,14 +278,120 @@ places2000 %<>%
          hpov00p = (SE_T193_002/SE_T193_001)*100, 
          nhwhitepov00p = (SE_T194_002/SE_T194_001)*100, 
          minpov00p = ((SE_T187_002 + SE_T188_002 + SE_T189_002 + SE_T190_002 + SE_T191_002 + SE_T192_002 + SE_T193_002)/(SE_T187_001 + SE_T188_001 + SE_T189_001 + SE_T190_001 + SE_T191_001 + SE_T192_001 + SE_T193_001))*100,
-         nhwhitevap00p = (SF1_P006005/SF1_P006001)*100, #nh stands for non-Hispanic
-         nhblackvap00p = (SF1_P006006/SF1_P006001)*100,
-         hispvap00p = (SF1_P006002/SF1_P006001)*100,
-         minvap00p = ((SF1_P006001 - SF1_P006005)/SF1_P006001)*100) %>%
-  select(Geo_QName, plid, pop00p:minvap00p)
+         vap00p = SF1_P006001,
+         nhwhitevap00p = SF1_P006005,
+         pctnhwhitevap00p = (nhwhitevap00p/vap00p)*100, #nh stands for non-Hispanic
+         nhblackvap00p = SF1_P006006,
+         pctnhblackvap00p = (nhblackvap00p/vap00p)*100,
+         hispvap00p = SF1_P006002,
+         pcthispvap00p = (hispvap00p/vap00p)*100,
+         minvap00p = (vap00p - nhwhitevap00p),
+         pctminvap00p = (minvap00p/vap00p)*100) %>%
+  select(Geo_QName, plid, pop00p:pctminvap00p)
 
 write_csv(places2000, "pl2000_cleaned.csv")
 rm(places2000)
+
+# 1990 places ####
+# cpi to 2016$, which is ACS$ 
+# 1990(1989)
+cpi <- c(1.93)
+places1990 <- read_csv(file = "seplaces_allstates/1990places.csv") # notice that place-level data is much smaller
+vap1990  <- read_csv(file = "seplaces_allstates/vap1990.csv")
+
+places1990 %<>%
+  mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+         PLACE = str_pad(Geo_PLACECE, 5, side = "left", pad = "0"), 
+         plid = paste0(STATE, PLACE))
+
+vap1990 %<>%
+  mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+         PLACE = str_pad(Geo_PLACECE, 5, side = "left", pad = "0"), 
+         plid = paste0(STATE, PLACE))
+
+places1990 %<>%
+  left_join(vap1990 %>% select(plid, STF3_P014_001:STF3_P015_065), by = "plid")
+rm(vap1990)
+
+# 2. create variables needed 
+places1990 %<>%
+  mutate(pop90p = SE_T001_001, 
+         #pcturb90p = (SE_T002_002/pop90p)*100, 
+         #pctrur90p = 100-pcturb90p,
+         popdensity90p = SE_T002_001,
+         nhblack90p = SE_T013_004, 
+         nhwhite90p = SE_T013_003, 
+         h90p = SE_T013_008, 
+         min90p = rowSums(across(SE_T013_004:SE_T013_008)), 
+         pctnhblack90p = (nhblack90p/pop90p) * 100,
+         pctnhwhite90p = (nhwhite90p/pop90p) * 100, 
+         pcth90p = (h90p/pop90p) * 100, 
+         pctmin90p = (min90p/pop90p) * 100, 
+         pctrecimm90p = (SE_T111_002/pop90p) * 100,
+         unemp90p = (SE_T029_003/SE_T029_001)*100,
+         hinc90p = SE_T043_001 * cpi[1], 
+         pctowneroccupied90p = (SE_T073_002/SE_T073_001) * 100,
+         pctvacancy90p = (SE_T074_003/SE_T074_001) * 100,
+         mhmval90p = SE_T080_001*cpi[1],
+         blackpov90p = (SE_T101_003/SE_T101_001)*100,
+         hpov90p = (SE_T105_003/SE_T105_003)*100, 
+         nhwhitepov90p = (SE_T100_003/SE_T100_001)*100, 
+         minpov90p = ((SE_T099_008 - SE_T099_009)/(SE_T099_001-SE_T099_002))*100,
+         vap90p = rowSums(across(c(STF3_P014_016:STF3_P014_034, STF3_P014_048:STF3_P014_066,
+                                                STF3_P014_081:STF3_P014_099, STF3_P014_113:STF3_P014_131,
+                                                STF3_P014_146:STF3_P014_164, STF3_P014_178:STF3_P014_196,
+                                                STF3_P014_211:STF3_P014_229, STF3_P014_243:STF3_P014_261,
+                                                STF3_P014_276:STF3_P014_294, STF3_P014_308:STF3_P014_326), na.rm = T)),
+         nhwhitevap90p = rowSums(across(c(STF3_P014_016:STF3_P014_034, STF3_P014_048:STF3_P014_066))),
+         nhblackvap90p = rowSums(across(c(STF3_P014_081:STF3_P014_099, STF3_P014_113:STF3_P014_131))),
+         hispvap90p = rowSums(across(c(STF3_P015_015:STF3_P015_033, STF3_P015_047:STF3_P015_065))),
+         minvap90p = rowSums(across(c(STF3_P014_146:STF3_P014_164, STF3_P014_178:STF3_P014_196,
+                                                   STF3_P014_211:STF3_P014_229, STF3_P014_243:STF3_P014_261,
+                                                   STF3_P014_276:STF3_P014_294, STF3_P014_308:STF3_P014_326))),
+         pctnhwhitevap90p = (nhwhitevap90p/vap90p)*100, #nh stands for non-Hispanic
+         pctnhblackvap90p = (nhblackvap90p/vap90p)*100,
+         pcthispvap90p = (hispvap90p/vap90p)*100,
+         pctminvap90p = ((vap90p - nhwhitevap90p)/vap90p)*100) %>%
+  select(Geo_QName, plid, pop90p:pctminvap90p)
+
+write_csv(places1990, "pl1990_cleaned.csv")
+
+# merge for 1990-2000
+pl2000 <- read_csv("pl2000_cleaned.csv")
+table(places1990$plid %in% pl2000$plid)
+table(places1990$Geo_QName %in% pl2000$Geo_QName)
+
+pl9000 <- left_join(
+  places1990 %>% rename(plid90 = plid),
+  pl2000,
+  by = "Geo_QName"
+)
+
+rm(pl2000, places1990)
+
+# make change variables 
+pl9000 %<>% 
+  mutate_at(all_of(c("pop90p", "popdensity90p", "nhwhite90p", "nhblack90p", "h90p", "min90p",
+                     "hinc90p", "nhwhitevap90p", "nhblackvap90p", "hispvap90p", "minvap90p")), 
+            ~ifelse((is.na(.) | . == 0), 1, .)) %>%
+  mutate(popgrowth = ((pop00p-pop90p)/pop90p) * 100,
+         densification = (popdensity00p - popdensity90p),
+         nhwhitegrowth = ((nhwhite00p-nhwhite90p)/nhwhite90p) * 100, 
+         nhblackgrowth = ((nhblack00p-nhblack90p)/nhblack90p) * 100,
+         hgrowth = ((h00p-h90p)/h90p) * 100,
+         mingrowth = ((min00p-min90p)/min90p) * 100,
+         recimmgrowth = (pctrecimm00p - pctrecimm90p),
+         incomegrowth = ((hinc00p - hinc90p*cpi[1])/hinc00p)*100, 
+         blackpovgrowth = (blackpov00p - blackpov90p),
+         whitepovgrowth = (nhwhitepov00p - nhwhitepov90p),
+         hpovgrowth = (hpov00p - hpov90p),
+         minpovgrowth = (minpov00p - minpov90p), 
+         nhwhitevapgrowth = ((nhwhitevap00p - nhwhitevap90p)/nhwhitevap90p)*100,
+         nhblackvapgrowth = ((nhblackvap00p - nhblackvap90p)/nhblackvap90p)*100,
+         hispvapgrowth = ((hispvap00p - hispvap90p)/hispvap90p)*100,
+         minvapgrowth = ((minvap00p - minvap90p)/minvap90p)*100)
+
+write_csv(pl0010, "pl9000_var.csv")
 
 # 2010 places ####
 places2010 <- read_csv(file = "seplaces_allstates/2010places.csv")
@@ -328,11 +434,16 @@ places2010 %<>%
          blackpov10p = (SE_A13001B_002/SE_A13001B_001)*100,
          hpov10p = (SE_A13001H_002/SE_A13001H_001)*100,
          minpov10p =  ((hpov10p + blackpov10p + SE_A13001G_002 + SE_A13001F_002 + SE_A13001E_002 + SE_A13001D_002 + SE_A13001C_002)/(SE_A13001B_001 + SE_A13001B_001 + SE_A13001G_001 + SE_A13001F_001 + SE_A13001E_001 + SE_A13001D_001 + SE_A13001C_001))*100,
-         popover18 = SF1_P0110001,
-         nhwhitevap10p = (SF1_P0110005/popover18)*100,
-         nhblackvap10p = (SF1_P0110006/popover18)*100,
-         hispvap10p = (SF1_P0110002/popover18)*100,
-         minvap10p = ((popover18-SF1_P0110005)/popover18)*100)
+         vap10p = SF1_P0110001,
+         nhwhitevap10p = SF1_P0110005,
+         pctnhwhitevap10p = (nhwhitevap10p/vap10p)*100,
+         nhblackvap10p = SF1_P0110006,
+         pctnhblackvap10p = (nhblackvap10p/vap10p)*100,
+         hispvap10p = SF1_P0110002,
+         pcthispvap10p = (hispvap10p/vap10p)*100,
+         minvap10p = (vap10p - nhwhitevap10p),
+         pctminvap10p = ((minvap10p)/vap10p)*100) %>%
+  select(plid, pop10p:pctminvap10p)
 
 write_csv(places2010, "pl2010_cleaned.csv")
 
@@ -346,12 +457,14 @@ pl0010 <-
     places2000 %>% select(
       c(plid, pop00p:minvap00p)), 
     places2010 %>% select(
-      c(plid, Geo_COUNTY, pop10p:minvap10p)), 
+      c(plid, pop10p:minvap10p)), 
     by = "plid")
 
-pl0010 <- 
-  mutate(pl0010, 
-         popgrowth = ((pop10p-pop00p)/pop00p) * 100,
+pl0010 %<>%
+  mutate_at(all_of(c("pop00p", "popdensity00p", "nhwhite00p", "nhblack00p", "h00p", "min00p",
+                     "hinc00p", "nhwhitevap00p", "nhblackvap00p", "hispvap00p", "minvap00p")), 
+            ~ifelse((is.na(.) | . == 0), 1, .)) %>%
+  mutate(popgrowth = ((pop10p-pop00p)/pop00p) * 100,
          densification = (popdensity10p - popdensity00p),
          nhwhitegrowth = ((nhwhite10p-nhwhite00p)/nhwhite00p) * 100, 
          nhblackgrowth = ((nhblack10p-nhblack00p)/nhblack00p) * 100,
@@ -363,10 +476,10 @@ pl0010 <-
          whitepovgrowth = (whitepov10p - nhwhitepov00p),
          hpovgrowth = (hpov10p - hpov00p),
          minpovgrowth = (minpov10p - minpov00p), 
-         nhwhitevapgrowth = nhwhitevap10p - nhwhitevap00p,
-         nhblackvapgrowth = nhblackvap10p - nhblackvap00p,
-         hispvapgrowth = hispvap10p - hispvap00p,
-         minvapgrowth = minvap10p - minvap00p)
+         nhwhitevapgrowth = ((nhwhitevap10p - nhwhitevap00p)/nhwhitevap00p)*100,
+         nhblackvapgrowth = ((nhblackvap10p - nhblackvap00p)/nhblackvap00p)*100,
+         hispvapgrowth = ((hispvap10p - hispvap00p)/hispvap00p)*100,
+         minvapgrowth = ((minvap10p - minvap00p)/minvap00p)*100)
 
 write_csv(pl0010, "pl0010_var.csv")
 #rm(list = ls())
@@ -445,12 +558,15 @@ places2014 %<>%
            blackpov14p = (SE_A13001B_002/SE_A13001B_001)*100,
            hpov14p = (SE_A13001H_002/SE_A13001H_001)*100,
            minpov14p =  ((hpov14p + blackpov14p + SE_A13001G_002 + SE_A13001F_002 + SE_A13001E_002 + SE_A13001D_002 + SE_A13001C_002)/(SE_A13001B_001 + SE_A13001B_001 + SE_A13001G_001 + SE_A13001F_001 + SE_A13001E_001 + SE_A13001D_001 + SE_A13001C_001))*100,
-           popover18 = SE_T003_001,
-           nhwhitevap14p = (SE_T003_003/popover18)*100,
-           nhblackvap14p = (SE_T003_004/popover18)*100,
-           hispvap14p = (SE_T003_014/popover18)*100,
-           minvap14p = ((popover18-SE_T003_003)/popover18)*100) %>%
-    select(-popover18)
+           vap14p = SE_T003_001,
+           nhwhitevap14p = SE_T003_003,
+           pctnhwhitevap14p = (nhwhitevap14p/vap14p)*100,
+           nhblackvap14p = SE_T003_004,
+           pctnhblackvap14p = (nhblackvap14p/vap14p)*100,
+           hispvap14p = SE_T003_014,
+           pcthispvap14p = (hispvap14p/vap14p)*100,
+           minvap14p = (vap14p - nhwhitevap14p),
+           pctminvap14p = (minvap14p/vap14p)*100) 
 
 write_csv(places2014, "places2014_cleaned.csv")
 rm(emp2014, hu2014, places2014, vap2014)
@@ -468,6 +584,9 @@ pl1014 <-
     by = "plid")
 
 pl1014 %<>%
+  mutate_at(all_of(c("pop10p", "popdensity10p", "nhwhite10p", "nhblack10p", "h10p", "min10p",
+                   "hinc10p", "nhwhitevap10p", "nhblackvap10p", "hispvap10p", "minvap10p")), 
+            ~ifelse((is.na(.) | . == 0), 1, .)) %>%
   mutate(popgrowth = ((pop14p-pop10p)/pop10p) * 100,
          densification = (popdensity14p - popdensity10p),
          nhwhitegrowth = ((nhwhite14p-nhwhite10p)/nhwhite10p) * 100, 
@@ -480,10 +599,10 @@ pl1014 %<>%
          whitepovgrowth = (whitepov14p - whitepov10p),
          hpovgrowth = (hpov14p - hpov10p),
          minpovgrowth = (minpov14p - minpov10p), 
-         nhwhitevapgrowth = nhwhitevap14p - nhwhitevap10p,
-         nhblackvapgrowth = nhblackvap14p - nhblackvap10p,
-         hispvapgrowth = hispvap14p - hispvap10p,
-         minvapgrowth = minvap14p - minvap10p)
+         nhwhitevapgrowth = ((nhwhitevap14p - nhwhitevap10p)/nhwhitevap10p)*100,
+         nhblackvapgrowth = ((nhblackvap14p - nhblackvap10p)/nhblackvap10p)*100,
+         hispvapgrowth = ((hispvap14p - hispvap10p)/hispvap10p)*100,
+         minvapgrowth = ((minvap14p - minvap10p)/minvap10p)*100)
 
 write_csv(pl1014, "pl1014_var.csv")
 
