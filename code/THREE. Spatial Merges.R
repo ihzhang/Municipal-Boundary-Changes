@@ -135,7 +135,7 @@ write_csv(aa, "annexedblocks0010_base_unincorp.csv")
 aa <- read_csv("annexedblocks0010_base_unincorp.csv")
 
 #clean up and get ready for Census data 
-# 2013 block data 
+# 2000 block data 
 blocks2000 <- read_csv("blocks2000_var.csv")
 blocks2000 %<>%
   mutate(STATEA = str_pad(STATEA, 2, side = "left", pad = "0"),
@@ -207,10 +207,10 @@ aa %<>%
 
 # places that would have gone from majority-white to majority-minority  
 aa %<>%
-  mutate(proj_growth_white = (((nhwhitegrowth/10)*3)/100)+1,
-         proj_growth_whitevap = (((nhwhitevapgrowth/10)*3)/100)+1, 
-         proj_growth_minvap = (((minvapgrowth/10)*3)/100)+1,
-         proj_pop = pop00p*((((popgrowth/10)*3)/100)+1),
+  mutate(proj_growth_white = (nhwhitegrowth/100)+1,
+         proj_growth_whitevap = (nhwhitevapgrowth/100)+1, 
+         proj_growth_minvap = (minvapgrowth/100)+1,
+         proj_pop = pop00p*((popgrowth/100)+1),
          proj_vap = nhwhitevap00p*proj_growth_whitevap + 
            minvap00p*proj_growth_minvap,
          threat_white = case_when(
@@ -247,6 +247,7 @@ table(aa$economic_need)
 aa %<>%
   select(-c(contains("90p")))
 names(aa)
+
 # we can't have places that annexed all their blocks, 
 # nor places that only had 1 contiguous block
 aa %<>%

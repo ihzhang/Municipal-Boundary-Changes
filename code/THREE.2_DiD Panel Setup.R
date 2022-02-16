@@ -146,9 +146,29 @@ pl0010 %<>%
          densifying = ifelse(is.na(densification), NA,
                              ifelse(densification > 0, 1, 0)),
          economic_need = ifelse(is.na(hinc10p), NA,
-                                ifelse(((hinc10p-hinc00p*1.25)/(hinc00p*1.25)) < 0, 1, 0))
+                                ifelse(((hinc10p-hinc00p*1.25)/(hinc00p*1.25)) < 0, 1, 0)),
+         threat_white = case_when(
+           (pctnhwhite10p >= 60 & 
+              ((pctnhwhite10p*proj_growth_white)/proj_pop) >= 0.6) ~ "none",
+           (pctnhwhite10p >= 60 & 
+              ((pctnhwhite10p*proj_growth_white)/proj_pop) < 0.6) ~ "loss_solid",
+           (pctnhwhite10p >= 50 & pctnhwhite10p < 60 &
+              ((pctnhwhite10p*proj_growth_white)/proj_pop) < 0.5) ~ "loss_competitive",
+           pctnhwhite10p < 50 ~ "maj-min",
+           TRUE ~ NA_character_
+         ),
+         threat_white_vap = case_when(
+           (nhwhitevap10p >= 60 & 
+              ((nhwhitevap10p*proj_growth_whitevap)/proj_vap) >= 0.6) ~ "none",
+           (nhwhitevap10p >= 60 & 
+              ((nhwhitevap10p*proj_growth_whitevap)/proj_vap) < 0.6) ~ "loss_solid",
+           (nhwhitevap10p >= 50 & nhwhitevap10p < 60 &
+              ((nhwhitevap10p*proj_growth_whitevap)/proj_vap) < 0.5) ~ "loss_competitive",
+           nhwhitevap10p < 50 ~ "maj-min",
+           TRUE ~ NA_character_
+         )
   ) %>%
-  select(plid, c(contains("proj")), densifying, economic_need, c(contains("growth")), -c(contains("_growth")))
+  select(plid, c(contains("proj")), densifying, economic_need, c(contains("growth")), c(contains("threat")), -c(contains("_growth")))
 
 table(pl_annex_var_1013$plid %in% pl0010$plid) #4695 false
 
@@ -158,6 +178,7 @@ pl_annex_var_1013 %<>%
   mutate(post = 0)
 
 table(pl_annex_var_1013$annexing)
+table(pl_annex_var_1013$threat_white)
 
 # make underbound variable
 pl_annex_var_1013 %<>%
@@ -335,9 +356,29 @@ pl1014 %<>%
          densifying = ifelse(is.na(densification), NA,
                              ifelse(densification > 0, 1, 0)),
          economic_need = ifelse(is.na(hinc14p), NA,
-                                ifelse(((hinc14p-hinc10p*1.25)/(hinc10p*1.25)) < 0, 1, 0))
+                                ifelse(((hinc14p-hinc10p*1.25)/(hinc10p*1.25)) < 0, 1, 0)),
+         threat_white = case_when(
+           (pctnhwhite14p >= 60 & 
+              ((pctnhwhite14p*proj_growth_white)/proj_pop) >= 0.6) ~ "none",
+           (pctnhwhite14p >= 60 & 
+              ((pctnhwhite14p*proj_growth_white)/proj_pop) < 0.6) ~ "loss_solid",
+           (pctnhwhite14p >= 50 & pctnhwhite14p < 60 &
+              ((pctnhwhite14p*proj_growth_white)/proj_pop) < 0.5) ~ "loss_competitive",
+           pctnhwhite14p < 50 ~ "maj-min",
+           TRUE ~ NA_character_
+         ),
+         threat_white_vap = case_when(
+           (nhwhitevap14p >= 60 & 
+              ((nhwhitevap14p*proj_growth_whitevap)/proj_vap) >= 0.6) ~ "none",
+           (nhwhitevap14p >= 60 & 
+              ((nhwhitevap14p*proj_growth_whitevap)/proj_vap) < 0.6) ~ "loss_solid",
+           (nhwhitevap14p >= 50 & nhwhitevap14p < 60 &
+              ((nhwhitevap14p*proj_growth_whitevap)/proj_vap) < 0.5) ~ "loss_competitive",
+           nhwhitevap14p < 50 ~ "maj-min",
+           TRUE ~ NA_character_
+         )
   ) %>%
-  select(plid, c(contains("proj")), densifying, economic_need, c(contains("growth")), -c(contains("_growth")))
+  select(plid, c(contains("proj")), densifying, economic_need, c(contains("growth")), c(contains("threat")), -c(contains("_growth")))
 
 table(pl_annex_var_1420$plid %in% pl1014$plid) #5 false 
 
@@ -347,7 +388,7 @@ pl_annex_var_1420 %<>%
   mutate(post = 1)
 
 table(pl_annex_var_1420$annexing)
-
+table(pl_annex_var_1420$threat_white)
 # make underbound variable
 pl_annex_var_1420 %<>%
   mutate(
@@ -488,11 +529,10 @@ pl_annex_var_0010 %<>%
 # have been, i.e. pctwhite given growth rate by 2013
 # or if pcth after annex < pcth before annex compared to what would have been,
 # i.e. pcth given growth rate by 2013 
-pl0010 <- read_csv("pl9000_var.csv")
+pl9000 <- read_csv("pl9000_var.csv")
 
-pl1014 %<>%
-  filter(
-    is.finite(popgrowth) & 
+pl9000 %<>%
+  filter(is.finite(popgrowth) & 
       is.finite(nhwhitegrowth) & 
       is.finite(nhwhitevapgrowth) &
       is.finite(nhblackgrowth) & 
@@ -502,43 +542,64 @@ pl1014 %<>%
       is.finite(mingrowth) & 
       is.finite(minvapgrowth) 
   ) %>%
-  mutate(proj_growth_white = (((nhwhitegrowth/10)*3)/100)+1,
-         proj_growth_black = (((nhblackgrowth/10)*3)/100)+1,
-         proj_growth_h = (((hgrowth/10)*3)/100)+1,
-         proj_growth_min = (((mingrowth/10)*3)/100)+1,
-         proj_growth_whitevap = (((nhwhitevapgrowth/10)*3)/100)+1, 
-         proj_growth_blackvap = (((nhblackvapgrowth/10)*3)/100)+1,
-         proj_growth_hvap = (((hispvapgrowth/10)*3)/100)+1,
-         proj_growth_minvap = (((minvapgrowth/10)*3)/100)+1,
-         proj_pop = pop14p*((((popgrowth/10)*3)/100)+1),
-         proj_vap = nhwhitevap14p*proj_growth_whitevap + 
-           minvap14p*proj_growth_minvap,
-         proj_nhwhite = nhwhite14p*proj_growth_white,
-         proj_nhblack = nhblack14p*proj_growth_black,
-         proj_h = h14p*proj_growth_h,
-         proj_min = min14p*proj_growth_min,
-         proj_nhwhitevap = nhwhitevap14p*proj_growth_whitevap,
-         proj_nhblackvap = nhblackvap14p*proj_growth_blackvap,
-         proj_hvap = hispvap14p*proj_growth_hvap,
-         proj_minvap = minvap14p*proj_growth_minvap,
+  mutate(proj_growth_white = (nhwhitegrowth/100)+1,
+         proj_growth_black = (nhblackgrowth/100)+1,
+         proj_growth_h = (hgrowth/100)+1,
+         proj_growth_min = (mingrowth/100)+1,
+         proj_growth_whitevap = (nhwhitevapgrowth/100)+1, 
+         proj_growth_blackvap = (nhblackvapgrowth/100)+1,
+         proj_growth_hvap = (hispvapgrowth/100)+1,
+         proj_growth_minvap = (minvapgrowth/100)+1,
+         proj_pop = pop00p*((popgrowth/100)+1),
+         proj_vap = nhwhitevap00p*proj_growth_whitevap + 
+           minvap00p*proj_growth_minvap,
+         proj_nhwhite = nhwhite00p*proj_growth_white,
+         proj_nhblack = nhblack00p*proj_growth_black,
+         proj_h = h00p*proj_growth_h,
+         proj_min = min00p*proj_growth_min,
+         proj_nhwhitevap = nhwhitevap00p*proj_growth_whitevap,
+         proj_nhblackvap = nhblackvap00p*proj_growth_blackvap,
+         proj_hvap = hispvap00p*proj_growth_hvap,
+         proj_minvap = minvap00p*proj_growth_minvap,
          densifying = ifelse(is.na(densification), NA,
                              ifelse(densification > 0, 1, 0)),
-         economic_need = ifelse(is.na(hinc14p), NA,
-                                ifelse(((hinc14p-hinc10p*1.25)/(hinc10p*1.25)) < 0, 1, 0))
+         economic_need = ifelse(is.na(hinc00p), NA,
+                                ifelse(((hinc00p-hinc90p*1.25)/(hinc90p*1.25)) < 0, 1, 0)),
+         threat_white = case_when(
+           (pctnhwhite00p >= 60 & 
+              ((pctnhwhite00p*proj_growth_white)/proj_pop) >= 0.6) ~ "none",
+           (pctnhwhite00p >= 60 & 
+              ((pctnhwhite00p*proj_growth_white)/proj_pop) < 0.6) ~ "loss_solid",
+           (pctnhwhite00p >= 50 & pctnhwhite00p < 60 &
+              ((pctnhwhite00p*proj_growth_white)/proj_pop) < 0.5) ~ "loss_competitive",
+           pctnhwhite00p < 50 ~ "maj-min",
+           TRUE ~ NA_character_
+         ),
+         threat_white_vap = case_when(
+           (nhwhitevap00p >= 60 & 
+              ((nhwhitevap00p*proj_growth_whitevap)/proj_vap) >= 0.6) ~ "none",
+           (nhwhitevap00p >= 60 & 
+              ((nhwhitevap00p*proj_growth_whitevap)/proj_vap) < 0.6) ~ "loss_solid",
+           (nhwhitevap00p >= 50 & nhwhitevap00p < 60 &
+              ((nhwhitevap00p*proj_growth_whitevap)/proj_vap) < 0.5) ~ "loss_competitive",
+           nhwhitevap00p < 50 ~ "maj-min",
+           TRUE ~ NA_character_
+         )
   ) %>%
-  select(plid, c(contains("proj")), densifying, economic_need, c(contains("growth")), -c(contains("_growth")))
+  select(plid, c(contains("proj")), densifying, economic_need, c(contains("growth")), c(contains("threat")), -c(contains("_growth")))
 
-table(pl_annex_var_1420$plid %in% pl1014$plid) #7828 false (damn)
+table(pl_annex_var_0010$plid %in% pl9000$plid) 
 
-pl_annex_var_1420 %<>%
-  filter(plid %in% pl1014$plid) %>%
-  left_join(pl1014, by = "plid") %>%
-  mutate(post = 1)
+pl_annex_var_0010 %<>%
+  filter(plid %in% pl9000$plid) %>%
+  left_join(pl9000, by = "plid") %>%
+  mutate(post = -1)
 
-table(pl_annex_var_1420$annexing)
+table(pl_annex_var_0010$annexing)
+table(pl_annex_var_0010$threat_white)
 
 # make underbound variable
-pl_annex_var_1420 %<>%
+pl_annex_var_0010 %<>%
   mutate(
     underbound_black = ifelse(
       (annexing == 1 & (((nhblack_total_1 + proj_nhblack)/(proj_pop + pop_total_1)) < (proj_nhblack/proj_pop))), 1, 
@@ -574,51 +635,90 @@ pl_annex_var_1420 %<>%
     )
   )
 
-table(pl_annex_var_1420$underbound_black)
-table(pl_annex_var_1420$underbound_hisp)
-table(pl_annex_var_1420$underbound_minority)
-table(pl_annex_var_1420$overbound_white)
-table(pl_annex_var_1420$underbound_blackvap)
-table(pl_annex_var_1420$underbound_hispvap)
-table(pl_annex_var_1420$underbound_minorityvap)
-table(pl_annex_var_1420$overbound_whitevap)
+table(pl_annex_var_0010$underbound_black)
+table(pl_annex_var_0010$underbound_hisp)
+table(pl_annex_var_0010$underbound_minority)
+table(pl_annex_var_0010$overbound_white)
+table(pl_annex_var_0010$underbound_blackvap)
+table(pl_annex_var_0010$underbound_hispvap)
+table(pl_annex_var_0010$underbound_minorityvap)
+table(pl_annex_var_0010$overbound_whitevap)
 
-write_csv(pl_annex_var_1420, "analyticalfiles/pl_annex_var_1420.csv")
-
-table(pl_annex_var_1420$vra, pl_annex_var_1420$underbound_black)
-table(pl_annex_var_1420$vra, pl_annex_var_1420$underbound_hisp)
-table(pl_annex_var_1420$vra, pl_annex_var_1420$underbound_minority)
-table(pl_annex_var_1420$vra, pl_annex_var_1420$overbound_white)
-table(pl_annex_var_1420$vra, pl_annex_var_1420$underbound_blackvap)
-table(pl_annex_var_1420$vra, pl_annex_var_1420$underbound_hispvap)
-table(pl_annex_var_1420$vra, pl_annex_var_1420$underbound_minorityvap)
-table(pl_annex_var_1420$vra, pl_annex_var_1420$overbound_whitevap)
+write_csv(pl_annex_var_0010, "analyticalfiles/pl_annex_var_0010.csv")
 
 rm(list = ls())
 
 # make panel data!!!!! ####
-pl1013 <- read_csv("analyticalfiles/pl_annex_var_1013.csv")
-pl1420 <- read_csv("analyticalfiles/pl_annex_var_1420.csv")
+# take out ne and hawaii
+NE <- c("09", "23", "25", "33", "34", "36", "42", "24", "44", "50", "15")
+pl0010 <- read_csv("analyticalfiles/pl_annex_var_0010.csv") %>%
+  mutate(STATE = substr(plid, 1, 2)) %>%
+  filter(!(STATE %in% NE)) %>%
+  filter(annexing==1)
+pl1013 <- read_csv("analyticalfiles/pl_annex_var_1013.csv") %>%
+  mutate(STATE = substr(plid, 1, 2)) %>%
+  filter(!(STATE %in% NE)) %>%
+  filter(annexing==1)
+pl1420 <- read_csv("analyticalfiles/pl_annex_var_1420.csv") %>%
+  mutate(STATE = substr(plid, 1, 2)) %>%
+  filter(!(STATE %in% NE)) %>%
+  filter(annexing==1)
 
+plids <- Reduce(intersect, list(unique(pl0010$plid), unique(pl1013$plid), unique(pl1420$plid)))
+
+pl0010 %<>% 
+  filter(plid %in% plids)
+pl0010 %<>%
+  filter(!duplicated(plid))
 pl1013 %<>%
-  filter(plid %in% pl1420$plid)
-
+  filter(plid %in% plids)
 pl1420 %<>%
-  filter(plid %in% pl1013$plid)
+  filter(plid %in% plids)
 
-panel1020_did <- base::rbind(
-    pl1013, pl1420
+panel0020_did <- base::rbind(
+    pl0010, pl1013, pl1420
 )
 
-write_csv(panel1020_did, "analyticalfiles/panel1020_did.csv")
+panel0020_did %<>%
+  mutate(
+    nhblack_proj_dem = (proj_nhblack/proj_pop),
+    nhblack_annex = ((nhblack_total_1 + proj_nhblack)/(proj_pop + pop_total_1)),
+    nhblack_diff = nhblack_annex - nhblack_proj_dem,
+    nhblack_diff_ann = nhblack_mean_1 - nhblack_mean_0,
+    hisp_annex = ((h_total_1 + proj_h)/(proj_pop + pop_total_1)),
+    hisp_proj_dem = (proj_h/proj_pop),
+    hisp_diff = hisp_annex - hisp_proj_dem,
+    min_annex = ((min_total_1 + proj_min)/(proj_pop + pop_total_1)),
+    min_proj_dem = (proj_min/proj_pop),
+    min_diff = min_annex - min_proj_dem,
+    white_annex = ((nhwhite_total_1 + proj_nhwhite)/(proj_pop + pop_total_1)) ,
+    white_proj_dem = (proj_nhwhite/proj_pop),
+    white_diff = white_annex - white_proj_dem,
+    nhblackvap_proj_dem = (proj_nhblackvap/proj_vap),
+    nhblackvap_annex = ((nhblackvap_total_1 + proj_nhblackvap)/(proj_vap + vap_total_1)),
+    nhblackvap_diff = nhblackvap_annex - nhblackvap_proj_dem,
+    hispvap_annex = ((hvap_total_1 + proj_hvap)/(proj_vap + pop_total_1)),
+    hispvap_proj_dem = (proj_hvap/proj_vap),
+    hispvap_diff = hispvap_annex - hispvap_proj_dem,
+    minvap_annex = ((minorityvap_total_1 + proj_minvap)/(proj_vap + pop_total_1)),
+    minvap_proj_dem = (proj_minvap/proj_vap),
+    minvap_diff = minvap_annex - minvap_proj_dem,
+    whitevap_annex = ((nhwhitevap_total_1 + proj_nhwhitevap)/(proj_vap + pop_total_1)),
+    whitevap_proj_dem = (proj_nhwhitevap/proj_vap),
+    whitevap_diff = whitevap_annex - whitevap_proj_dem
+  )
+
+
+write_csv(panel0020_did, "analyticalfiles/panel0020_did.csv")
 
 z <- function(var_name) {
   (var_name - mean(var_name, na.rm = T))/sd(var_name, na.rm = T)
 }
 
-panel1020_did %<>%
+panel0020_did %<>%
   mutate(STATEA = as.character(substr(plid, 1, 2)),
          recimmgrowth_b = ifelse(recimmgrowth > 0, 1, 0),
+         nhblackgrowth_b = ifelse(nhblackgrowth > 0, 1, 0),
          pct_annexed_z = z(pct_annexed),
          incomegrowth_z = z(incomegrowth),
          recimmgrowth_z = z(recimmgrowth),
@@ -632,53 +732,330 @@ panel1020_did %<>%
          hispvapgrowth_z = z(hispvapgrowth),
          popgrowth_z = z(popgrowth))
 
+
+panel0020_did %<>% 
+  filter(post >= 0) %>%
+  mutate(vra = as.factor(vra),
+         post = as.factor(post), 
+         recimmgrowth_b = as.factor(recimmgrowth_b),
+         nhblackgrowth_b = as.factor(nhblackgrowth_b))
+
 # test reg
-testdid <- fixest::feols(underbound_black ~ vra + post + vra*post + 
-                           pct_annexed_z + popgrowth_z + recimmgrowth_z +
-                           incomegrowth_z + nhblackgrowth_z | plid + STATEA, data = panel1020_did)
-testdid2 <- fixest::feols(underbound_hisp ~ vra + post + vra*post | plid + STATEA, data = panel1020_did)
-testdid3 <- fixest::feols(underbound_minority ~ vra + post + vra*post | plid + STATEA, data = panel1020_did)
-testdid4 <- fixest::feols(overbound_white ~ vra + post + vra*post | plid, data = panel1020_did)
+testdid <- fixest::feols(underbound_black ~ as.factor(vra) + as.factor(post) + as.factor(vra)*as.factor(post) | plid, data = panel0020_did)
+testdid <- fixest::feols(underbound_black ~ vra*post*recimmgrowth_b | plid, data = panel0020_did)
+testdid <- fixest::feols(underbound_black ~ vra*post*nhblackgrowth_b | plid, data = panel0020_did)
+testdid <- fixest::feols(nhblack_mean_1 ~ vra*post*recimmgrowth_b | plid, data = panel0020_did)
+testdid <- fixest::feols(nhblack_mean_1 ~ vra*post*nhblackgrowth_b | plid, data = panel0020_did)
+
+testdid2 <- fixest::feols(underbound_hisp ~ vra + post + vra*post | plid, data = panel0020_did)
+testdid2 <- fixest::feols(underbound_hisp ~ vra*post*recimmgrowth_b | plid, data = panel0020_did)
+testdid2 <- fixest::feols(h_mean_1 ~ vra + post + vra*post | plid, data = panel0020_did)
+testdid2 <- fixest::feols(h_mean_1 ~ vra*post*recimmgrowth_b | plid, data = panel0020_did)
+
+testdid3 <- fixest::feols(underbound_minority ~ vra*post | plid, data = panel0020_did)
+testdid3 <- fixest::feols(underbound_minority ~ vra*post*recimmgrowth_b | plid, data = panel0020_did)
+testdid3 <- fixest::feols(min_mean_1 ~ vra + post + vra*post | plid, data = panel0020_did)
+testdid3 <- fixest::feols(min_diff ~ vra + post + vra*post | plid, data = panel0020_did)
+
+testdid3 <- fixest::feols(underbound_minority ~ vra + post + vra*post | plid + STATEA, data = panel0020_did)
+testdid4 <- fixest::feols(overbound_white ~ vra + post + vra*post | plid, data = panel0020_did)
 
 summary(testdid)
 summary(testdid2)
 summary(testdid3)
 summary(testdid4)
 
-vapdid <- fixest::feols(underbound_blackvap ~ vra + post + vra*post + 
-                          log(pop_total + 1) + pct_annexed + log(popgrowth + 1) + log(recimmgrowth + 1) +
-                          log(incomegrowth + 1) + log(blackpovgrowth + 1) + log(nhblackgrowth + 1) | plid, data = panel1020_did)
-vapdid2 <- fixest::feols(underbound_hispvap ~ vra + post + vra*post | plid, data = panel1020_did)
-vapdid3 <- fixest::feols(underbound_minorityvap ~ vra + post + vra*post | plid, data = panel1020_did)
-vapdid4 <- fixest::feols(overbound_whitevap ~ vra + post + vra*post | plid, data = panel1020_did)
+vapdid <- fixest::feols(nhblackvap_diff ~ vra + post + vra*post + 
+                           pct_annexed_z + popgrowth_z + recimmgrowth_z +
+                           incomegrowth_z + nhblackvapgrowth_z | plid, data = panel0020_did)
 
 summary(vapdid)
 summary(vapdid2)
 summary(vapdid3)
 summary(vapdid4)
 
-indices <- c(grep("underbound", names(panel1020_did)), grep("overbound", names(panel1020_did)))
-indices <- names(panel1020_did)[indices]
+indices <- c(grep("_diff", names(panel0020_did)))
+indices <- names(panel0020_did)[indices]
+indices <- indices[!grepl("vap_diff", indices)]
+indices <- indices[!grepl("diff_ann", indices)]
 
-did_vis <- panel1020_did %>%
+did_vis <- panel0020_did %>%
+  #filter(annexing==1) %>%
   group_by(vra, post) %>%
   summarise_at(all_of(indices), 
-               ~mean(., na.rm = T))
-  
+               ~mean(., na.rm = T)) %>%
+  ungroup() %>%
+  pivot_longer(cols = contains("_diff"),
+               names_to = "Race", 
+               values_to = "mean") %>%
+  mutate(Race = case_when(
+    grepl("nhblack", Race) ~ "Non-Hispanic Black",
+    grepl("hisp", Race) ~ "Hispanic",
+    grepl("min", Race) ~ "All Non-White",
+    grepl("white", Race) ~ "Non-Hispanic White"
+  ),
+  vra = as.character(vra),
+  # Time = case_when(
+  #   grepl("-1", post) ~ "2000-2010",
+  #   grepl("0", post) ~ "2010-2013",
+  #   grepl("1", post) ~ "2014-2020"
+  # ),
+  # Time = factor(Time, levels = c("2000-2010", "2010-2013", "2014-2020"))
+  Race = factor(Race, levels = c("Non-Hispanic Black", "Hispanic", "All Non-White", "Non-Hispanic White")))
 
-ggplot(did_vis %>%
-           select(vra, post, contains("black")) %>%
-           pivot_longer(cols = starts_with("underbound"),
-                        names_to = "underbound", 
-                        values_to = "mean") %>%
-           mutate(underbound = gsub("underbound_", "", underbound),
-                  vra = as.character(vra)), 
+did_vis_total <- ggplot(did_vis,
          aes(y = mean, x = post, color = vra)) + 
-  geom_line() + 
-  facet_wrap(~underbound)
-  
-  
-  
-  
-  
+  geom_line() + scale_x_continuous(breaks = c(-1, 0, 1)) + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_vline(xintercept = 0, linetype="dotted", 
+             color = "red", size=0.5) +
+  facet_grid(~Race, scales = "free") + 
+  labs(color = "Covered Under \n Section V",
+       x = "Period Relative to Shelby v. Holder", 
+       y = "Mean Difference", 
+       title = "Differences in Post-Annexation Demographic Composition and 
+Projected Compositions Without Annexation, 
+Pre- and Post-Shelby Trends by Race")
+did_vis_total
+ggsave(filename = "analyticalfiles/did_vis_total.png",
+       plot = did_vis_total,
+       dpi = 300)
 
+# add in immigration 
+did_vis <- panel0020_did %>%
+  filter(!is.na(recimmgrowth_b)) %>%
+  group_by(vra, post, recimmgrowth_b) %>%
+  summarise_at(all_of(indices), 
+               ~mean(., na.rm = T)) %>%
+  ungroup() %>%
+  pivot_longer(cols = contains("_diff"),
+               names_to = "Race", 
+               values_to = "mean") %>%
+  mutate(Race = case_when(
+    grepl("nhblack", Race) ~ "Non-Hispanic Black",
+    grepl("hisp", Race) ~ "Hispanic",
+    grepl("min", Race) ~ "All Non-White",
+    grepl("white", Race) ~ "Non-Hispanic White"
+  ),
+  vra = as.character(vra),
+  # Time = case_when(
+  #   grepl("-1", post) ~ "2000-2010",
+  #   grepl("0", post) ~ "2010-2013",
+  #   grepl("1", post) ~ "2014-2020"
+  # ),
+  # Time = factor(Time, levels = c("2000-2010", "2010-2013", "2014-2020"))
+  Race = factor(Race, levels = c("Non-Hispanic Black", "Hispanic", "All Non-White", "Non-Hispanic White")))
+
+did_vis_total <- ggplot(did_vis,
+                        aes(y = mean, x = post, color = vra)) + 
+  geom_line() + scale_x_continuous(breaks = c(-1, 0, 1)) + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_vline(xintercept = 0, linetype="dotted", 
+             color = "red", size=0.5) +
+  facet_grid(recimmgrowth_b~Race, scales = "free") + 
+  labs(color = "Covered Under \n Section V",
+       x = "Period Relative to Shelby v. Holder", 
+       y = "Mean Difference", 
+       title = "Differences in Post-Annexation Demographic Composition and 
+Projected Compositions Without Annexation, 
+Pre- and Post-Shelby Trends by Race")
+did_vis_total
+ggsave(filename = "analyticalfiles/did_vis_total.png",
+       plot = did_vis_total,
+       dpi = 300)
+
+vapindices <- c(grep("*vap_diff", names(panel0020_did)))
+vapindices <- names(panel0020_did)[vapindices]
+
+did_vis_vap <- panel0020_did %>%
+  #filter(annexing==1) %>%
+  group_by(vra, post) %>%
+  summarise_at(all_of(vapindices), 
+               ~mean(., na.rm = T)) %>%
+  ungroup() %>%
+  pivot_longer(cols = contains("_diff"),
+               names_to = "Race", 
+               values_to = "mean") %>%
+  mutate(Race = case_when(
+    grepl("nhblack", Race) ~ "Non-Hispanic Black",
+    grepl("hisp", Race) ~ "Hispanic",
+    grepl("min", Race) ~ "All Non-White",
+    grepl("white", Race) ~ "Non-Hispanic White"
+  ),
+  vra = as.character(vra),
+  # Time = case_when(
+  #   grepl("-1", post) ~ "2000-2010",
+  #   grepl("0", post) ~ "2010-2013",
+  #   grepl("1", post) ~ "2014-2020"
+  # ),
+  # Time = factor(Time, levels = c("2000-2010", "2010-2013", "2014-2020"))
+  Race = factor(Race, levels = c("Non-Hispanic Black", "Hispanic", "All Non-White", "Non-Hispanic White")))
+
+did_vis_vap <- ggplot(did_vis_vap,
+                        aes(y = mean, x = post, color = vra)) + 
+  geom_line() + scale_x_continuous(breaks = c(-1, 0, 1)) + 
+  geom_vline(xintercept = 0, linetype="dotted", 
+             color = "red", size=0.5) +
+  facet_grid(~Race, scales = "free") + 
+  labs(color = "Covered Under \n Section V",
+       x = "Period Relative to Shelby v. Holder", 
+       y = "Mean Difference", 
+       title = "Differences in Post-Annexation Demographic Composition and 
+Projected Compositions Without Annexation, VAP,
+Pre- and Post-Shelby Trends by Race")
+did_vis_vap
+ggsave(filename = "analyticalfiles/did_vis_total.png",
+       plot = did_vis_total,
+       dpi = 300)
+
+# keep NE, take out HI ####
+NE <- c("15")
+pl0010 <- read_csv("analyticalfiles/pl_annex_var_0010.csv") %>%
+  mutate(STATE = substr(plid, 1, 2)) %>%
+  filter(!(STATE %in% NE)) %>%
+  filter(annexing==1)
+pl1013 <- read_csv("analyticalfiles/pl_annex_var_1013.csv") %>%
+  mutate(STATE = substr(plid, 1, 2)) %>%
+  filter(!(STATE %in% NE)) %>%
+  filter(annexing==1)
+pl1420 <- read_csv("analyticalfiles/pl_annex_var_1420.csv") %>%
+  mutate(STATE = substr(plid, 1, 2)) %>%
+  filter(!(STATE %in% NE)) %>%
+  filter(annexing==1)
+
+plids <- Reduce(intersect, list(unique(pl0010$plid), unique(pl1013$plid), unique(pl1420$plid)))
+
+pl0010 %<>% 
+  filter(plid %in% plids)
+pl0010 %<>%
+  filter(!duplicated(plid))
+pl1013 %<>%
+  filter(plid %in% plids)
+pl1420 %<>%
+  filter(plid %in% plids)
+
+panel0020_did <- base::rbind(
+  pl0010 %>% mutate(post = -1), pl1013, pl1420
+)
+
+panel0020_did %<>%
+  mutate(
+    nhblack_proj_dem = (proj_nhblack/proj_pop),
+    nhblack_annex = ((nhblack_total_1 + proj_nhblack)/(proj_pop + pop_total_1)),
+    nhblack_diff = nhblack_annex - nhblack_proj_dem,
+    hisp_annex = ((h_total_1 + proj_h)/(proj_pop + pop_total_1)),
+    hisp_proj_dem = (proj_h/proj_pop),
+    hisp_diff = hisp_annex - hisp_proj_dem,
+    min_annex = ((min_total_1 + proj_min)/(proj_pop + pop_total_1)),
+    min_proj_dem = (proj_min/proj_pop),
+    min_diff = min_annex - min_proj_dem,
+    white_annex = ((nhwhite_total_1 + proj_nhwhite)/(proj_pop + pop_total_1)) ,
+    white_proj_dem = (proj_nhwhite/proj_pop),
+    white_diff = white_annex - white_proj_dem,
+    nhblackvap_proj_dem = (proj_nhblackvap/proj_vap),
+    nhblackvap_annex = ((nhblackvap_total_1 + proj_nhblackvap)/(proj_vap + vap_total_1)),
+    nhblackvap_diff = nhblackvap_annex - nhblackvap_proj_dem,
+    hispvap_annex = ((hvap_total_1 + proj_hvap)/(proj_vap + pop_total_1)),
+    hispvap_proj_dem = (proj_hvap/proj_vap),
+    hispvap_diff = hispvap_annex - hispvap_proj_dem,
+    minvap_annex = ((minorityvap_total_1 + proj_minvap)/(proj_vap + pop_total_1)),
+    minvap_proj_dem = (proj_minvap/proj_vap),
+    minvap_diff = minvap_annex - minvap_proj_dem,
+    whitevap_annex = ((nhwhitevap_total_1 + proj_nhwhitevap)/(proj_vap + pop_total_1)),
+    whitevap_proj_dem = (proj_nhwhitevap/proj_vap),
+    whitevap_diff = whitevap_annex - whitevap_proj_dem
+  )
+
+indices <- c(grep("_diff", names(panel0020_did)))
+indices <- names(panel0020_did)[indices]
+indices <- indices[!grepl("vap_diff", indices)]
+
+did_vis <- panel0020_did %>%
+  #filter(annexing==1) %>%
+  group_by(vra, post) %>%
+  summarise_at(all_of(indices), 
+               ~mean(., na.rm = T)) %>%
+  ungroup() %>%
+  pivot_longer(cols = contains("_diff"),
+               names_to = "Race", 
+               values_to = "mean") %>%
+  mutate(Race = case_when(
+    grepl("nhblack", Race) ~ "Non-Hispanic Black",
+    grepl("hisp", Race) ~ "Hispanic",
+    grepl("min", Race) ~ "All Non-White",
+    grepl("white", Race) ~ "Non-Hispanic White"
+  ),
+  vra = as.character(vra),
+  # Time = case_when(
+  #   grepl("-1", post) ~ "2000-2010",
+  #   grepl("0", post) ~ "2010-2013",
+  #   grepl("1", post) ~ "2014-2020"
+  # ),
+  # Time = factor(Time, levels = c("2000-2010", "2010-2013", "2014-2020"))
+  Race = factor(Race, levels = c("Non-Hispanic Black", "Hispanic", "All Non-White", "Non-Hispanic White")))
+
+did_vis_total <- ggplot(did_vis,
+                        aes(y = mean, x = post, color = vra)) + 
+  geom_line() + scale_x_continuous(breaks = c(-1, 0, 1)) + 
+  scale_y_continuous(labels = scales::percent) +
+  geom_vline(xintercept = 0, linetype="dotted", 
+             color = "red", size=0.5) +
+  facet_grid(~Race, scales = "free") + 
+  labs(color = "Covered Under \n Section V",
+       x = "Period Relative to Shelby v. Holder", 
+       y = "Mean Difference", 
+       title = "Differences in Post-Annexation Demographic Composition and 
+Projected Compositions Without Annexation, 
+Pre- and Post-Shelby Trends by Race, Including NE States")
+did_vis_total
+ggsave(filename = "analyticalfiles/did_vis_total_NE.png",
+       plot = did_vis_total,
+       dpi = 300)
+
+vapindices <- c(grep("*vap_diff", names(panel0020_did)))
+vapindices <- names(panel0020_did)[vapindices]
+
+did_vis_vap <- panel0020_did %>%
+  #filter(annexing==1) %>%
+  group_by(vra, post) %>%
+  summarise_at(all_of(vapindices), 
+               ~mean(., na.rm = T)) %>%
+  ungroup() %>%
+  pivot_longer(cols = contains("_diff"),
+               names_to = "Race", 
+               values_to = "mean") %>%
+  mutate(Race = case_when(
+    grepl("nhblack", Race) ~ "Non-Hispanic Black",
+    grepl("hisp", Race) ~ "Hispanic",
+    grepl("min", Race) ~ "All Non-White",
+    grepl("white", Race) ~ "Non-Hispanic White"
+  ),
+  vra = as.character(vra),
+  # Time = case_when(
+  #   grepl("-1", post) ~ "2000-2010",
+  #   grepl("0", post) ~ "2010-2013",
+  #   grepl("1", post) ~ "2014-2020"
+  # ),
+  # Time = factor(Time, levels = c("2000-2010", "2010-2013", "2014-2020"))
+  Race = factor(Race, levels = c("Non-Hispanic Black", "Hispanic", "All Non-White", "Non-Hispanic White")))
+
+did_vis_vap <- ggplot(did_vis_vap,
+                      aes(y = mean, x = post, color = vra)) + 
+  geom_line() + scale_x_continuous(breaks = c(-1, 0, 1)) + 
+  geom_vline(xintercept = 0, linetype="dotted", 
+             color = "red", size=0.5) +
+  facet_grid(~Race, scales = "free") + 
+  labs(color = "Covered Under \n Section V",
+       x = "Period Relative to Shelby v. Holder", 
+       y = "Mean Difference", 
+       title = "Differences in Post-Annexation Demographic Composition and 
+Projected Compositions Without Annexation, VAP,
+Pre- and Post-Shelby Trends by Race")
+did_vis_vap
+ggsave(filename = "analyticalfiles/did_vis_total.png",
+       plot = did_vis_total,
+       dpi = 300)
+
+NE <- c("09", "23", "25", "33", "34", "36", "42", "24", "44", "50", "15")
+table(panel0020_did$STATE %in% NE)
+# 1869 annexing cities 
