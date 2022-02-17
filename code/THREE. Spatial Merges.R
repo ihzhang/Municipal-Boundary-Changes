@@ -286,8 +286,16 @@ rm(blkids)
 # 1. first, for each place, we get a list of their blocks in 2010 and 2020 
 # 2. then, we only retain the blocks that weren't part of that place in 2010 
 # @RA: Would love your thoughts on how to make this process faster
-annexedblocks <- data.frame()
-plids <- unique(blocks2013$plid)
+annexedblocks <- list()
+blocks <- split(blocks2013, f = blocks2013$plid)
+foreach (i = 1:length(blocks)) %do% {
+  block10 <- blocks2010 %>% filter(plid %in% blocks[[i]]$plid)
+  blocks[[i]] %<>%
+    filter(!blkid %in% block10$blkid) %>%
+    left_join(blocks2010 %>% select(-plid), by = "blkid") %>%
+    filter (PLACEA=="99999" | is.na(PLACEA)) 
+}
+
 for (i in 1:length(plids)) {
   block10 <- blocks2010 %>% filter(plid==plids[i])
   block13 <- blocks2013 %>% filter(plid==plids[i])
@@ -295,6 +303,11 @@ for (i in 1:length(plids)) {
     filter(!blkid %in% block10$blkid) %>%
     left_join(blocks2010 %>% select(-plid), by = "blkid") %>%
     filter (PLACEA=="99999" | is.na(PLACEA)) 
+  if (nrow(block) < 1) {
+    next
+  } else {
+  annexedblocks[[i]] <- block
+  }
 }
 
 write_csv(annexedblocks, "aa_baseline_full_1013.csv")

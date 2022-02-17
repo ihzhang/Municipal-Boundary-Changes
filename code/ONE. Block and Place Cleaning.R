@@ -50,6 +50,7 @@ foreach (i = 1:length(dat_use)) %do% {
              pctnhwhite00b = (nhwhite00b/pop00b)*100, 
              pcth00b = (h00b/pop00b)*100, 
              pctmin00b = (min00b/pop00b)*100, 
+             hu00b = FV5001,
              dependants00b = rowSums(across(c(28:31, 51:54, 45:50, 68:73), na.rm = T)),
              workingage00b = rowSums(across(c(32:44, 55:67), na.rm = T)), 
              dependencyratio00b = dependants00b/workingage00b,
@@ -69,15 +70,19 @@ vap2000block <- vap2000block %>%
          hispvap00b = FX9001,
          nhwvap00b = FYB001,
          nhbvap00b = FYB002,
-         minorityvap00b = vap00b - nhwvap00b) %>%
+         nativevap00b = FYB003,
+         asianvap00b = FYB004 + FYB005,
+         othervap00b = FYB006 + FYC001) %>%
   dplyr::select(STATEA, COUNTYA, TRACTA, BLOCKA, vap00b, hispvap00b, nhwvap00b, nhbvap00b, minorityvap00b) %>%
   mutate(pcthispvap00b = (hispvap00b/vap00b)*100,
          pctnhwvap00b = (nhwvap00b/vap00b)*100,
          pctnhbvap00b = (nhbvap00b/vap00b)*100,
-         pctminvap00b = (minorityvap00b/vap00b)*100,
+         pctasianvap00b = (asianvap00b/vap00b)*100,
+         pctnativevap00b = (nativevap00b/vap00b)*100,
+         pctothervap00b = (othervap00b/vap00b)*100,
          blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
                         str_pad(TRACTA, 6, side = "left", pad = "0"), sprintf("%04.0f", BLOCKA))) %>%
-  dplyr::select(blkid, vap00b:pctminvap00b)
+  dplyr::select(blkid, vap00b:pctotherap00b)
 # by selecting the variables we need, we significantly reduce the file size of the data. 
 
 # turn list into dataframe 
@@ -149,19 +154,24 @@ clean_dat_10 <- function(datuse) {
                 dependencyratio10b = dependants10b/workingage10b,
                 pctowneroccupied10b = ((IFF002+IFF003)/IFF001)*100,
                 vacancy10b = ((IFC001-IFF001)/IFC001)*100,
+                hu10b = IFC001,
                 urbunits10b = (IFD002/IFD001)*100,
                 vap10b = H75001,
                 nhwvap10b = H75005,
                 nhbvap10b = H75006,
                 hispvap10b = H75002,
-                minorityvap10b = (vap10b-nhwvap10b),
+                nativevap10b = H75007,
+                asianvap10b = H75008 + H75009,
+                othervap10b = H75010 + H75011,
                 pcthispvap10b = (H75002/H75001)*100,
                 pctnhwvap10b = (H75005/H75001)*100,
                 pctnhbvap10b = (H75006/H75001)*100,
-                pctminorityvap10b = ((H75001 - H75005)/H75001)*100
+                pctnativevap10b = (nativevap10b/vap10b)*100,
+                pctasianvap10b = (asianvap10b/vap10b)*100,
+                pctothervap10b = (othervap10b/vap10b)*100
             ) %>% 
             dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
-                STATEA, COUNTYA, TRACTA, BLOCKA, PLACEA, pop10b:pctminorityvap10b)
+                STATEA, COUNTYA, TRACTA, BLOCKA, PLACEA, pop10b:pctothervap10b)
         return(NULL)
     }
     
@@ -738,8 +748,13 @@ foreach (i = 1:length(dat_use)) %do% {
             pctnhwvap20b = (U7E005/U7E001)*100,
             nhbvap20b = U7E006,
             pctnhbvap20b = (U7E006/U7E001)*100,
-            minorityvap20b = (vap20b - nhwvap20b),
-            pctminorityvap20b = ((U7E001 - U7E005)/U7E001)*100,
+            asianvap20b = U7C008 + U7C009,
+            pctasianvap20b = (asianvap20b/vap20b)*100,
+            nativevap20b = U7C007,
+            pctnativevap20b = (nativevap20b/vap20b)*100,
+            othervap20b =  U7C010 + U7C011,
+            pctothervap20b = (othervap20b/vap20b)*100,
+            hu20b = U7G001,
             vacancy20b = (U7G003/U7G001)*100
         ) %>% 
         dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
