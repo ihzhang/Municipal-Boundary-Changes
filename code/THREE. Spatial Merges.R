@@ -20,7 +20,7 @@ library("magrittr")
 # a) blocks in 2010 places that were not in those places in 2000, on 2010 boundaries
 # b) blocks that were previously not part of any place and are now in 2010 places 
 # this is done place by place; first isolate the place in 2000 and 2010, then compare the blocks in each list
-blocks2000 <- read_csv("blocks2000_var.csv")
+blocks2000 <- read_csv("blocks2000_var.csv") 
 blocks2010 <- fread("ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv",
                        select = c("PLACEA", "STATEA", "GISJOIN", "COUNTYA", "TRACTA", "BLOCKA"))
 
@@ -32,7 +32,8 @@ blocks2000 <- blocks2000 %>%
          STATEA = str_pad(STATEA, 2, side = "left", pad = "0"),
          PLACEA = str_pad(PLACEA, 5, side = "left", pad = "0"),
          plid = paste0(STATEA, PLACEA) # this 7-digit number is the unique place ID for each Census place 
-)
+) %>%
+  select(plid, blkid, PLACEA)
 
 # 2010 block data 
 # we repeat this process for 2010 data
@@ -41,11 +42,18 @@ blocks2010 <- blocks2010 %>%
          STATEA = as.character(STATEA), 
          STATEA = str_pad(STATEA, 2, side = "left", pad = "0"),
          PLACEA = str_pad(PLACEA, 5, side = "left", pad = "0"),
-         plid = paste0(STATEA, PLACEA)
-  )
+         plid = paste0(STATEA, PLACEA),
+         blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
+                        str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0"))
+  ) %>% # we don't want to bother with null places in 2010; also, 0199999 is not a unique place ID, for e.g.
+  filter(PLACEA!="99999" & !is.na(PLACEA)) %>% 
+  select(plid, blkid)
 
-blocks2010 <- blocks2010 %>% # we don't want to bother with null places in 2010; also, 0199999 is not a unique place ID, for e.g.
-  filter(PLACEA!="99999" & !is.na(PLACEA))
+blkids <- Reduce(intersect, list(unique(blocks2000$blkid), unique(blocks2010$blkid)))
+blocks2010 %<>%
+  filter(blkid %in% blkids)
+blocks2000 %<>%
+  filter(blkid %in% blkids)
 
 # 1. first, for each place, we get a list of their blocks in 2000 and 2010 
 # 2. then, we only retain the blocks that weren't part of that place in 2000 
@@ -55,14 +63,17 @@ plids <- unique(blocks2010$plid)
 for (i in 1:length(plids)) {
   block00 <- blocks2000 %>% filter(plid==plids[i])
   block10 <- blocks2010 %>% filter(plid==plids[i])
-  block <- block10 %>% filter(!GISJOIN %in% block00$GISJOIN) # which blocks part of 2010 places were not part of those places in 2000?
+  block <- block10 %>% 
+    filter(!blkid %in% block00$blkid) %>%
+    left_join(blocks2000 %>% select(-plid), by = "blkid") %>%
+    filter (PLACEA=="99999" | is.na(PLACEA)) %>%
+    select(-PLACEA)
   annexedblocks <- base::rbind(annexedblocks, block)
 }
 
 write_csv(annexedblocks, "aa_baseline_full_0010.csv")
 
 rm(block, block00, block10, blocks2010, plids, i)
-length(unique(annexedblocks$GISJOIN)) # check that every entry is unique
 length(unique(annexedblocks$plid)) # how many places does this cover?
 
 # clean: 
@@ -77,8 +88,8 @@ annexedblocks %<>%
     dplyr::select("blkid", "plid")
 names(annexedblocks) <- c("blkid", "plid_annexed")
 annexedblocks$annexed <- 1
-
 # if annexed, annex = 1
+
 pl0010_var <- read_csv("pl0010_var.csv")
 
 pl0010_var %<>%
@@ -100,6 +111,7 @@ contigall2000 <- rbindlist(contig_list, use.names = TRUE)
 rm(contig_list, state_list)
 table(contigall2000$State)
 write_csv(contigall2000, file = "allcontigblocks2000.csv")
+contigall2000 <- read_csv("allcontigblocks2000.csv")
 
 # identify contiguous blocks and actually annexed blocks in the all-block file ####
 contigall2000 %<>%
@@ -110,23 +122,11 @@ aa <- contigall2000 %>%
     left_join(annexedblocks, by = "blkid")
 
 aa %<>%
-    mutate(plid = ifelse(is.na(plid_annexed), contigplace, plid_annexed),
-           annexed = ifelse(is.na(annexed), 0, annexed)) %>%
+    mutate(annexed = ifelse(is.na(plid), 1, 0), 
+           plid = ifelse(is.na(plid), contigplace, plid)) %>%
     dplyr::select(blkid, plid, annexed)
 
 table(aa$annexed)
-length(unique(aa$plid))
-
-# we don't want places that didn't annex at all 
-no_annex <- aa %>% 
-    group_by(plid) %>%
-    summarize(n = sum(annexed==1)) %>%
-    filter(n==0) %>%
-    dplyr::select(plid) #13912. this would leave us with 
-length(unique(aa$plid)) - nrow(no_annex) #13912 places 
-
-aa %<>%
-    filter(!plid %in% no_annex$plid)
 length(unique(aa$plid))
 
 write_csv(aa, "annexedblocks0010_base_unincorp.csv")
@@ -157,17 +157,10 @@ names(aa) <- gsub("00b", "", names(aa))
 
 # drop missing values
 aa %<>% 
-  filter(!is.na(pop) & pop > 0 & 
-           !is.na(pctnhblack) & 
-           !is.na(pctnhwhite) & 
-           !is.na(pcth) & 
-           !is.na(pctmin) & 
-           !is.na(hispvap) & 
-           !is.na(nhwvap) & 
-           !is.na(minorityvap) & 
-           !is.na(nhbvap) & 
-           !is.na(vacancy))
-
+  mutate(keep = ifelse((annexed == 0 | (annexed == 1 & (!is.na(pop) & pop > 0 & vap > 0))), 1, 0))
+table(aa$keep)
+aa %<>%
+  filter(keep==1)
 table(aa$annexed)
 
 aa %<>% 
@@ -193,57 +186,11 @@ aa %<>%
 pl9000 <- read_csv("pl9000_var.csv")
 table(aa$plid %in% pl9000$plid) 
 
-pl9000 %<>%
-  filter(
-    is.finite(popgrowth) & 
-      is.finite(nhwhitegrowth) & 
-      is.finite(nhwhitegrowth) & 
-      hinc00p > 0
-  )
-
 aa %<>%
   filter(plid %in% pl9000$plid) %>%
   left_join(pl9000, by = "plid")
 
 # places that would have gone from majority-white to majority-minority  
-aa %<>%
-  mutate(proj_growth_white = (nhwhitegrowth/100)+1,
-         proj_growth_whitevap = (nhwhitevapgrowth/100)+1, 
-         proj_growth_minvap = (minvapgrowth/100)+1,
-         proj_pop = pop00p*((popgrowth/100)+1),
-         proj_vap = nhwhitevap00p*proj_growth_whitevap + 
-           minvap00p*proj_growth_minvap,
-         threat_white = case_when(
-           (pctnhwhite00p >= 60 & 
-              ((pctnhwhite00p*proj_growth_white)/proj_pop) >= 0.6) ~ "none",
-           (pctnhwhite00p >= 60 & 
-              ((pctnhwhite00p*proj_growth_white)/proj_pop) < 0.6) ~ "loss_solid",
-           (pctnhwhite00p >= 50 & pctnhwhite00p < 60 &
-              ((pctnhwhite00p*proj_growth_white)/proj_pop) < 0.5) ~ "loss_competitive",
-           pctnhwhite00p < 50 ~ "maj-min",
-           TRUE ~ NA_character_
-         ),
-         threat_white_vap = case_when(
-           (nhwhitevap00p >= 60 & 
-              ((nhwhitevap00p*proj_growth_whitevap)/proj_vap) >= 0.6) ~ "none",
-           (nhwhitevap00p >= 60 & 
-              ((nhwhitevap00p*proj_growth_whitevap)/proj_vap) < 0.6) ~ "loss_solid",
-           (nhwhitevap00p >= 50 & nhwhitevap00p < 60 &
-              ((nhwhitevap00p*proj_growth_whitevap)/proj_vap) < 0.5) ~ "loss_competitive",
-           nhwhitevap00p < 50 ~ "maj-min",
-           TRUE ~ NA_character_
-         ),
-         densifying = ifelse(is.na(densification), NA,
-                             ifelse(densification > 0, 1, 0)),
-         economic_need = ifelse(is.na(hinc00p), NA,
-                                ifelse(((hinc00p-hinc00p*1.25)/(hinc00p*1.25)) < 0, 1, 0))
-  )
-
-table(aa$threat_white)
-table(aa$threat_white_vap)
-table(aa$densifying)
-table(aa$economic_need)
-
 aa %<>%
   select(-c(contains("90p")))
 names(aa)
@@ -281,21 +228,44 @@ write_csv(aa, "analyticalfiles/annexedblocks0010dem_pl00_newsample_unincorp.csv"
 # repeat for 2010-2013 ####
 blocks2010 <- fread("ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv", 
                     select = c("PLACEA", "STATEA", "COUNTYA", "TRACTA", "BLOCKA"))
+state_list <- list.files("SHP_blk_0010/2013/", all.files = FALSE, full.names = FALSE)
+blocks2013_plids <- list()
+for (i in 1:length(state_list)) {
+  blocks2013_plids[[i]] <- read_csv(file = paste0("SHP_blk_0010/2013/", state_list[[i]], "/", substr(state_list[[i]], 1, 2), "_block_plids.csv")) %>%
+    mutate(State = substr(state_list[[i]], 4, 5))
+} 
+
+#names(blocks2013) <- state_list
+blocks2013_plids <- rbindlist(blocks2013_plids, use.names = TRUE)
+rm(state_list)
+write_csv(blocks2013_plids, file = "blocks2013_plids.csv")
 
 state_list <- list.files("SHP_blk_0010/2013/", all.files = FALSE, full.names = FALSE)
 blocks2013 <- list()
 for (i in 1:length(state_list)) {
-  blocks2013[[i]] <- read_csv(file = paste0("SHP_blk_0010/2013/", state_list[[i]], "/", substr(state_list[[i]], 1, 2), "_block_plids.csv")) %>%
-    mutate(State = substr(state_list[[i]], 4, 5))
+  blocks2013[[i]] <- st_read(paste0("SHP_blk_0010/2013/", state_list[[i]], "/tl_2013_", substr(state_list[[i]], 4, 5), "_tabblock.shp")) %>%
+    as.data.frame() %>%
+    select(STATEFP10, COUNTYFP10, TRACTCE10, BLOCKCE10) %>%
+    mutate(blkid = paste0(str_pad(as.character(STATEFP10), 2, side = "left", pad = "0"), str_pad(as.character(COUNTYFP10), 3, side = "left", pad = "0"),
+                          str_pad(as.character(TRACTCE10), 6, side = "left", pad = "0"), str_pad(as.character(BLOCKCE10), 4, side = "left", pad = "0"))) %>%
+    select(blkid)
 } 
 
 #names(blocks2013) <- state_list
 blocks2013 <- rbindlist(blocks2013, use.names = TRUE)
 rm(state_list)
-write_csv(blocks2013, file = "blocks2013_plids.csv")
+write_csv(blocks2013, file = "blocks2013.csv")
+
+blocks2013 %<>%
+  left_join(blocks2013_plids) %>%
+  select(blkid, plid)
+rm(blocks2013_plids)
+write_csv(blocks2013, file = "blocks2013.csv")
 
 # 2010 block data 
 # we need to generate unique place IDs (e.g., place 6238 exists in both state 1 and 2, so we need to differentiate those places)
+blocks2013 <- read_csv("blocks2013.csv") %>%
+  select(blkid, plid)
 blocks2010 <- blocks2010 %>%
   mutate(PLACEA = as.character(PLACEA),
          STATEA = as.character(STATEA), 
@@ -305,8 +275,14 @@ blocks2010 <- blocks2010 %>%
          blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
                         str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0"))
   ) %>%
-  select(plid, blkid)
+  select(plid, blkid, PLACEA)
 
+blkids <- Reduce(intersect, list(unique(blocks2010$blkid), unique(blocks2013$blkid)))
+blocks2010 %<>%
+  filter(blkid %in% blkids)
+blocks2013 %<>%
+  filter(blkid %in% blkids)
+rm(blkids)
 # 1. first, for each place, we get a list of their blocks in 2010 and 2020 
 # 2. then, we only retain the blocks that weren't part of that place in 2010 
 # @RA: Would love your thoughts on how to make this process faster
@@ -315,9 +291,10 @@ plids <- unique(blocks2013$plid)
 for (i in 1:length(plids)) {
   block10 <- blocks2010 %>% filter(plid==plids[i])
   block13 <- blocks2013 %>% filter(plid==plids[i])
-  block <- block13 %>% filter(!blkid %in% block10$blkid) # which blocks part of 2010 places were not part of those places in 2000?
-  annexedblocks <- base::rbind(annexedblocks, block)
-  print(i)
+  block <- block13 %>% 
+    filter(!blkid %in% block10$blkid) %>%
+    left_join(blocks2010 %>% select(-plid), by = "blkid") %>%
+    filter (PLACEA=="99999" | is.na(PLACEA)) 
 }
 
 write_csv(annexedblocks, "aa_baseline_full_1013.csv")
@@ -403,7 +380,6 @@ aa %<>%
              !is.na(pctmin) & 
              !is.na(hispvap) & 
              !is.na(nhwvap) & 
-             !is.na(minorityvap) & 
              !is.na(nhbvap) & 
              !is.na(vacancy))
 
@@ -430,61 +406,13 @@ aa %<>%
   select(-n_annexed, -n)
 
 table(aa$annexed)
-5524/nrow(aa)
 
 # merge in place data for 2010, as well as 2000-2010 trends 
 pl0010 <- read_csv("pl0010_var.csv")
 table(aa$plid %in% pl0010$plid) 
 
-pl0010 %<>%
-  filter(
-    is.finite(popgrowth) & 
-      is.finite(nhwhitegrowth) & 
-      is.finite(nhwhitevapgrowth) & 
-      hinc00p > 0
-  )
-
 aa %<>%
     left_join(pl0010, by = "plid")
-
-# places that would have gone from majority-white to majority-minority  
-aa %<>%
-  mutate(proj_growth_white = (((nhwhitegrowth/10)*3)/100)+1,
-         proj_growth_whitevap = (((nhwhitevapgrowth/10)*3)/100)+1, 
-         proj_growth_minvap = (((minvapgrowth/10)*3)/100)+1,
-         proj_pop = pop10p*((((popgrowth/10)*3)/100)+1),
-         proj_vap = nhwhitevap10p*proj_growth_whitevap + 
-           minvap10p*proj_growth_minvap,
-    threat_white = case_when(
-      (pctnhwhite10p >= 60 & 
-        ((pctnhwhite10p*proj_growth_white)/proj_pop) >= 0.6) ~ "none",
-      (pctnhwhite10p >= 60 & 
-        ((pctnhwhite10p*proj_growth_white)/proj_pop) < 0.6) ~ "loss_solid",
-      (pctnhwhite10p >= 50 & pctnhwhite10p < 60 &
-         ((pctnhwhite10p*proj_growth_white)/proj_pop) < 0.5) ~ "loss_competitive",
-      pctnhwhite10p < 50 ~ "maj-min",
-      TRUE ~ NA_character_
-    ),
-    threat_white_vap = case_when(
-      (nhwhitevap10p >= 60 & 
-         ((nhwhitevap10p*proj_growth_whitevap)/proj_vap) >= 0.6) ~ "none",
-      (nhwhitevap10p >= 60 & 
-         ((nhwhitevap10p*proj_growth_whitevap)/proj_vap) < 0.6) ~ "loss_solid",
-      (nhwhitevap10p >= 50 & nhwhitevap10p < 60 &
-         ((nhwhitevap10p*proj_growth_whitevap)/proj_vap) < 0.5) ~ "loss_competitive",
-      nhwhitevap10p < 50 ~ "maj-min",
-      TRUE ~ NA_character_
-    ),
-    densifying = ifelse(is.na(densification), NA,
-                        ifelse(densification > 0, 1, 0)),
-    economic_need = ifelse(is.na(hinc10p), NA,
-                           ifelse(((hinc10p-hinc00p*1.25)/(hinc00p*1.25)) < 0, 1, 0))
-  )
-
-table(aa$threat_white)
-table(aa$threat_white_vap)
-table(aa$densifying)
-table(aa$economic_need)
 
 aa %<>%
   select(-c(contains("00p")))
@@ -520,6 +448,82 @@ aa$period <- "1013"
 write_csv(aa, "analyticalfiles/annexedblocks1013dem_pl00_newsample_unincorp.csv") # 280122
 
 # repeat for 2014 to 2020 #### 
+state_list <- list.files("SHP_blk_0010/2014/", all.files = FALSE, full.names = FALSE)
+blocks2013 <- list()
+for (i in 1:length(state_list)) {
+  blocks2013[[i]] <- read_csv(file = paste0("SHP_blk_0010/2014/", state_list[[i]], "/", substr(state_list[[i]], 1, 2), "_block_plids.csv")) %>%
+    mutate(State = substr(state_list[[i]], 4, 5))
+} 
+
+#names(blocks2013) <- state_list
+blocks2014 <- rbindlist(blocks2014, use.names = TRUE)
+rm(state_list)
+write_csv(blocks2014, file = "blocks2014_plids.csv")
+blocks2014 <- read_csv("blocks2014_plids.csv")
+
+state_list <- list.files("SHP_blk_0010/2014/", all.files = FALSE, full.names = FALSE)
+blocks2014 <- list()
+for (i in 1:length(state_list)) {
+  blocks2013[[i]] <- st_read(paste0("SHP_blk_0010/2014/", state_list[[i]], "/tl_2014_", substr(state_list[[i]], 4, 5), "_tabblock.shp")) %>%
+    as.data.frame() %>%
+    select(STATEFP10, COUNTYFP10, TRACTCE10, BLOCKCE10) %>%
+    mutate(blkid = paste0(str_pad(as.character(STATEFP10), 2, side = "left", pad = "0"), str_pad(as.character(COUNTYFP10), 3, side = "left", pad = "0"),
+                          str_pad(as.character(TRACTCE10), 6, side = "left", pad = "0"), str_pad(as.character(BLOCKCE10), 4, side = "left", pad = "0"))) %>%
+    select(blkid)
+} 
+
+blocks2014 <- rbindlist(blocks2014, use.names = TRUE)
+rm(state_list)
+write_csv(blocks2014, file = "blocks2014.csv")
+blocks2014 %<>%
+  left_join(blocks2014_plids) %>%
+  filter(is.na(plid)) %>%
+  select(blkid, plid)
+rm(blocks2014_plids)
+
+# 2010 block data 
+# we need to generate unique place IDs (e.g., place 6238 exists in both state 1 and 2, so we need to differentiate those places)
+blocks2020 <- fread("ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv", 
+                    select = c("PLACEA", "STATEA", "COUNTYA", "TRACTA", "BLOCKA"))
+blocks2020 <- blocks2020 %>%
+  mutate(PLACEA = as.character(PLACEA),
+         STATEA = as.character(STATEA), 
+         STATEA = str_pad(STATEA, 2, side = "left", pad = "0"),
+         PLACEA = str_pad(PLACEA, 5, side = "left", pad = "0"),
+         plid = paste0(STATEA, PLACEA),
+         blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
+                        str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0"))
+  ) %>%
+  select(plid, blkid)
+
+blkids <- Reduce(intersect, list(unique(blocks2014$blkid), unique(blocks2020$blkid)))
+blocks2014 %<>%
+  filter(blkid %in% blkids)
+blocks2020 %<>%
+  filter(blkid %in% blkids)
+
+# 1. first, for each place, we get a list of their blocks in 2010 and 2020 
+# 2. then, we only retain the blocks that weren't part of that place in 2010 
+# @RA: Would love your thoughts on how to make this process faster
+annexedblocks <- data.frame()
+plids <- unique(blocks2014$plid)
+for (i in 1:length(plids)) {
+  block14 <- blocks2014 %>% filter(plid==plids[i])
+  block20 <- blocks2020 %>% filter(plid==plids[i])
+  block <- block20 %>% 
+         filter(!blkid %in% block14$blkid) %>%
+         left_join(blocks2014 %>% rename(plid14 = plid), by = "blkid") %>%
+         filter(is.na(plid14)) %>%
+        select(-plid14)
+}
+annexedblocks <- base::rbind(annexedblocks, block)
+
+write_csv(annexedblocks, "aa_baseline_full_1420.csv")
+
+rm(block, block10, block13, blocks2013, blocks2010, plids, i)
+length(unique(annexedblocks$GISJOIN)) # check that every entry is unique
+length(unique(annexedblocks$plid)) # how many places does this cover?
+
 annexedblocks <- read_csv("aa_baseline_full_1420.csv")
 annexedblocks %<>%
   mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
@@ -587,8 +591,7 @@ aa %<>%
   filter(!is.na(pop) & pop > 0 & 
            !is.na(pctnhblack) & 
            !is.na(pctnhwhite) & 
-           !is.na(pcth) & 
-           !is.na(pctmin))
+           !is.na(pcth))
 
 table(aa$annexed)
 
@@ -620,55 +623,8 @@ table(aa$plid %in% pl1014$plid)
 aa %<>%
   filter(plid %in% pl1014$plid)
 
-pl1014 %<>%
-  filter(
-    is.finite(popgrowth) & 
-      is.finite(nhwhitegrowth) & 
-      is.finite(nhwhitevapgrowth) & 
-      hinc14p > 0
-  )
-
 aa %<>%
   left_join(pl1014, by = "plid")
-
-# places that would have gone from majority-white to majority-minority  
-aa %<>%
-  mutate(proj_growth_white = (((nhwhitegrowth/10)*3)/100)+1,
-         proj_growth_whitevap = (((nhwhitevapgrowth/10)*3)/100)+1, 
-         proj_growth_minvap = (((minvapgrowth/10)*3)/100)+1,
-         proj_pop = pop14p*((((popgrowth/10)*3)/100)+1),
-         proj_vap = nhwhitevap14p*proj_growth_whitevap + 
-           minvap14p*proj_growth_minvap,
-         threat_white = case_when(
-           (pctnhwhite14p >= 60 & 
-              ((pctnhwhite14p*proj_growth_white)/proj_pop) >= 0.60) ~ "none",
-           (pctnhwhite14p >= 60 & 
-              ((pctnhwhite14p*proj_growth_white)/proj_pop) < 0.6) ~ "loss_solid",
-           (pctnhwhite14p >= 50 & pctnhwhite14p < 60 &
-              ((pctnhwhite14p*proj_growth_white)/proj_pop) < 0.5) ~ "loss_competitive",
-           pctnhwhite14p < 50 ~ "maj-min",
-           TRUE ~ NA_character_
-         ),
-         threat_white_vap = case_when(
-           (nhwhitevap14p >= 60 & 
-              ((nhwhitevap14p*proj_growth_whitevap)/proj_vap) >= 0.6) ~ "none",
-           (nhwhitevap14p >= 60 & 
-              ((nhwhitevap14p*proj_growth_whitevap)/proj_vap) < 0.6) ~ "loss_solid",
-           (nhwhitevap14p >= 50 & nhwhitevap14p < 60 &
-              ((nhwhitevap14p*proj_growth_whitevap)/proj_vap) < 0.5) ~ "loss_competitive",
-           nhwhitevap14p < 50 ~ "maj-min",
-           TRUE ~ NA_character_
-         ),
-         densifying = ifelse(is.na(densification), NA,
-                             ifelse(densification > 0, 1, 0)),
-         economic_need = ifelse(is.na(incomegrowth), NA,
-                                ifelse(incomegrowth > 0, 1, 0))
-  )
-
-table(aa$threat_white)
-table(aa$threat_white_vap)
-table(aa$densifying)
-table(aa$economic_need)
 
 aa %<>%
   select(-c(contains("10p")))
