@@ -377,7 +377,6 @@ head(aa$blkid)
 head(blocks2010$blkid)
 
 # check they seem to be in comparable formats
-
 aa %<>%
     left_join(blocks2010, by = "blkid")
 rm(blocks2010)

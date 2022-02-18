@@ -27,3 +27,9 @@ rac_2010$Year <- 2010
 write_csv(rac_2010, file = "Demography/LODES data/rac_2010.csv")
 
 # repeat for 2010 WAC (double-check variables needed in Google Doc), and 2014. 
+# output: 
+# 2 files -- one for 2010, one for 2014 that has block IDs, the pct_hincome variable and the # of jobs variable
+# look into the left_join function 
+
+
+
