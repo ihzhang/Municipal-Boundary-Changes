@@ -195,17 +195,17 @@ place_all <- aa1420 %>%
             nhwhite_mean = mean((nhwhite_total/pop_total)*100, na.rm = T),
             h_total = sum((pcth*pop)),
             h_mean = mean((h_total/pop_total)*100, na.rm = T),
-            min_total = sum((pctmin*pop)),
-            min_mean = mean((min_total/pop_total)*100, na.rm = T),
-            vap_total = sum(sum(nhwvap), sum(minorityvap)),
-            nhblackvap_total = sum(nhbvap),
+            vap_total = sum(vap, na.rm = T),
+            hu_total = sum(hu, na.rm = T),
+            nhblackvap_total = sum(nhbvap, na.rm = T),
             nhblackvap_mean = mean((nhblackvap_total/vap_total)*100),
-            nhwhitevap_total = sum(nhwvap),
+            nhwhitevap_total = sum(nhwvap, na.rm = T),
             nhwhitevap_mean = mean((nhwhitevap_total/vap_total)*100),
-            hvap_total = sum(hispvap),
+            hvap_total = sum(hispvap, na.rm = T),
             hvap_mean = mean((hvap_total/vap_total)*100),
-            minorityvap_total = sum(minorityvap),
-            minorityvap_mean = mean((minorityvap_total/vap_total)*100),
+            nativevap_total = sum(nativevap, na.rm = T),
+            asianvap_total = sum(asianvap, na.rm = T),
+            othervap_total = sum(othervap, na.rm = T),
             pct_annexed = mean(annexed, na.rm = T)) %>%
   ungroup()
 
@@ -218,22 +218,22 @@ place_by_annex <- aa1420 %>%
             nhwhite_mean = mean((nhwhite_total/pop_total)*100, na.rm = T),
             h_total = sum(h),
             h_mean = mean((h_total/pop_total)*100, na.rm = T),
-            min_total = sum(min),
-            min_mean = mean((min_total/pop_total)*100, na.rm = T),
-            vap_total = sum(sum(nhwvap), sum(minorityvap)),
-            nhblackvap_total = sum(nhbvap),
+            vap_total = sum(vap, na.rm = T),
+            hu_total = sum(hu, na.rm = T),
+            nhblackvap_total = sum(nhbvap, na.rm = T),
             nhblackvap_mean = mean((nhblackvap_total/vap_total)*100),
-            nhwhitevap_total = sum(nhwvap),
+            nhwhitevap_total = sum(nhwvap, na.rm = T),
             nhwhitevap_mean = mean((nhwhitevap_total/vap_total)*100),
-            hvap_total = sum(hispvap),
+            hvap_total = sum(hispvap, na.rm = T),
             hvap_mean = mean((hvap_total/vap_total)*100),
-            minorityvap_total = sum(minorityvap),
-            minorityvap_mean = mean((minorityvap_total/vap_total)*100)) %>%
+            nativevap_total = sum(nativevap, na.rm = T),
+            asianvap_total = sum(asianvap, na.rm = T),
+            othervap_total = sum(othervap, na.rm = T)) %>%
   ungroup() %>%
   pivot_wider(
     id_cols = plid,
     names_from = annexed,
-    values_from = c(pop_total:minorityvap_mean)
+    values_from = c(pop_total:othervap_total)
   )
 
 pl_annex_var_1420 <- left_join(
@@ -322,11 +322,20 @@ pl_annex_var_1420 %<>%
     underbound_blackvap = ifelse(
       (annexing == 1 & ((((nhblackvap_total_1 + nhblackvap14p)/(vap14p + vap_total_1)) < (nhblackvap14p/vap14p)))), 1, 0), 
     underbound_hispvap = ifelse(
-      (annexing == 1 & ((((hvap_total_1 + hispvap14p)/(vap14p + vap_total_1)) < (hispvap14p/vap14p)))), 1, 0)
+      (annexing == 1 & ((((hvap_total_1 + hispvap14p)/(vap14p + vap_total_1)) < (hispvap14p/vap14p)))), 1, 0),
+    underbound_asianvap = ifelse(
+      (annexing == 1 & ((((asianvap_total_1 + asianvap14p)/(vap14p + vap_total_1)) < (asianvap14p/vap14p)))), 1, 0), 
+    underbound_nativevap = ifelse(
+      (annexing == 1 & ((((nativevap_total_1 + nativevap14p)/(vap14p + vap_total_1)) < (nativevap14p/vap14p)))), 1, 0),
+    underbound_othervap = ifelse(
+      (annexing == 1 & ((((othervap_total_1 + othervap14p)/(vap14p + vap_total_1)) < (othervap14p/vap14p)))), 1, 0)
   )
 
 table(pl_annex_var_1420$underbound_blackvap)
 table(pl_annex_var_1420$underbound_hispvap)
+table(pl_annex_var_1420$underbound_nativevap)
+table(pl_annex_var_1420$underbound_asianvap)
+table(pl_annex_var_1420$underbound_othervap)
 
 write_csv(pl_annex_var_1420, "analyticalfiles/pl_annex_var_1420.csv")
 

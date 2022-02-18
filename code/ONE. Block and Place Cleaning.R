@@ -73,7 +73,7 @@ vap2000block <- vap2000block %>%
          nativevap00b = FYB003,
          asianvap00b = FYB004 + FYB005,
          othervap00b = FYB006 + FYC001) %>%
-  dplyr::select(STATEA, COUNTYA, TRACTA, BLOCKA, vap00b, hispvap00b, nhwvap00b, nhbvap00b, minorityvap00b) %>%
+  dplyr::select(STATEA, COUNTYA, TRACTA, BLOCKA, vap00b:othervap00b) %>%
   mutate(pcthispvap00b = (hispvap00b/vap00b)*100,
          pctnhwvap00b = (nhwvap00b/vap00b)*100,
          pctnhbvap00b = (nhbvap00b/vap00b)*100,
@@ -82,7 +82,7 @@ vap2000block <- vap2000block %>%
          pctothervap00b = (othervap00b/vap00b)*100,
          blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
                         str_pad(TRACTA, 6, side = "left", pad = "0"), sprintf("%04.0f", BLOCKA))) %>%
-  dplyr::select(blkid, vap00b:pctotherap00b)
+  dplyr::select(blkid, vap00b:pctothervap00b)
 # by selecting the variables we need, we significantly reduce the file size of the data. 
 
 # turn list into dataframe 
@@ -779,9 +779,6 @@ blocks2020 %<>%
     mutate(Year = 2020)
 
 blocks2000 <- read_csv("blocks2000_var.csv")
-blocks2000 %<>%
-    select(blkid, pop00b, pctnhblack00b, pctnhwhite00b, pcth00b, pctmin00b,
-           hispvap00b, nhwvap00b, nhbvap00b, minorityvap00b, vacancy00b) 
 names(blocks2000) <- gsub("00b", "", names(blocks2000))
 blocks2000 %<>%
     mutate(Year = "2000")
@@ -791,8 +788,7 @@ blocks2010 %<>%
     mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"),
                           str_pad(COUNTYA, 3, side = "left", pad = "0"),
                           str_pad(TRACTA, 6, side = "left", pad = "0"),
-                          str_pad(BLOCKA, 4, side = "left", pad = "0"))) %>%
-    select(blkid, pop10b:pctmin10b, vacancy10b, vap10b:pctminorityvap10b) 
+                          str_pad(BLOCKA, 4, side = "left", pad = "0")))
 
 names(blocks2010) <- gsub("10b", "", names(blocks2010))
 blocks2010 %<>%
@@ -807,86 +803,85 @@ blocks2010 %<>%
 # blocks2020 %<>%
 #     filter(blkid %in% blocks2000$blkid)
 
+blkids <- Reduce(intersect, list(unique(blocks2000$blkid), unique(blocks2010$blkid), unique(blocks2020$blkid)))
+names_list <- Reduce(intersect, list(names(blocks2000), names(blocks2010), names(blocks2020)))
+
+blocks2000 %<>%
+  filter(blkid %in% blkids) %>%
+  select(all_of(names_list))
+
 blocks2010 %<>%
-  filter(blkid %in% blocks2020$blkid) 
+  filter(blkid %in% blkids) %>%
+  select(all_of(names_list))
 
 blocks2020 %<>%
-  filter(blkid %in% blocks2010$blkid)
+  filter(blkid %in% blkids) %>%
+  select(all_of(names_list))
 
-blocks2010 %<>%
-  filter(blkid %in% blocks2020$blkid) 
+blocks <- base::rbind(blocks2000, blocks2010, blocks2020)
+rm(blocks2000, blocks2020)
 
-blocks <- base::rbind(blocks2010, blocks2020)
-rm(blocks2010, blocks2020)
-
-blocks2013 <- read_csv("blocks2010_var.csv")
-blocks2013 %<>%
-    mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"),
-                          str_pad(COUNTYA, 3, side = "left", pad = "0"),
-                          str_pad(TRACTA, 6, side = "left", pad = "0"),
-                          str_pad(BLOCKA, 4, side = "left", pad = "0"))) %>%
-    select(blkid, pop10b, pctnhblack10b, pctnhwhite10b, pcth10b, pctmin10b,
-           hispvap10b, nhwvap10b, nhbvap10b, minorityvap10b, vacancy10b) 
-names(blocks2013) <- gsub("10b", "", names(blocks2013))
-blocks2013 %<>%
-    mutate(Year = "2013")
-
-blocks2013 %<>%
-    mutate(pop = NA,
-           pctnhblack = NA,
-           pctnhwhite = NA,
-           pcth = NA,
-           pctmin = NA,
-           hispvap = NA,
-           nhwvap = NA,
-           nhbvap = NA,
-           minorityvap = NA,
-           vacancy = NA)
-
-blocks <- base::rbind(blocks, blocks2013)
-rm(blocks2013)
-
-blocks %<>%
-    mutate(Year = as.numeric(as.character(Year))) 
-
-blocks %<>%
-    group_by(blkid) %>%
-    arrange(Year) %>%
-    mutate_at(c(names(blocks)[2:11]), zoo::na.approx, na.rm = F) %>%
-    ungroup()
-
-blocks13 <- blocks %>%
-    filter(Year=="2013")
-
-write_csv(blocks13, "blocks2013_int.csv")
-rm(blocks13)
+# blocks2013 <- blocks2010 %>%
+#     mutate(Year = "2013")
+# 
+# blocks2013 %<>%
+#     mutate(pop = NA,
+#            pctnhblack = NA,
+#            pctnhwhite = NA,
+#            pcth = NA,
+#            pctmin = NA,
+#            hispvap = NA,
+#            nhwvap = NA,
+#            nhbvap = NA,
+#            minorityvap = NA,
+#            vacancy = NA)
+# 
+# blocks <- base::rbind(blocks, blocks2013)
+# rm(blocks2013)
+# 
+# blocks %<>%
+#     mutate(Year = as.numeric(as.character(Year))) 
+# 
+# blocks %<>%
+#     group_by(blkid) %>%
+#     arrange(Year) %>%
+#     mutate_at(c(names(blocks)[2:11]), zoo::na.approx, na.rm = F) %>%
+#     ungroup()
+# 
+# blocks13 <- blocks %>%
+#     filter(Year=="2013")
+# 
+# write_csv(blocks13, "blocks2013_int.csv")
+# rm(blocks13)
 
 # do 2014 
-blocks2014 <- blocks2010
-
-blocks2014 %<>%
-    mutate_at(all_of(names(blocks2014)[2:20]), ~NA) %>%
+blocks2014 <- blocks2010 %>%
   mutate(Year = 2014)
 
-blocks <- base::rbind(blocks2010, blocks2014, blocks2020)
+blocks2014 %<>%
+    mutate_at(all_of(names(blocks2014)[2:25]), ~NA) %>%
+  mutate(Year = 2014)
 
-rm(blocks2010, blocks2014, blocks2020)
+blocks <- base::rbind(blocks, blocks2014)
 
-test <- blocks %>% filter(blkid %in% unique(blkid)[1:50])
+rm(blocks2010, blocks2014)
+
+test <- blocks %>% filter(blkid %in% blkids[1:50])
 
 test %<>%
     group_by(blkid) %>%
     arrange(Year) %>%
-    mutate_at(all_of(names(blocks)[2:20]), zoo::na.approx, na.rm = F) %>%
+    mutate_at(all_of(names(blocks)[2:25]), zoo::na.approx, na.rm = F) %>%
     ungroup() 
+
+rm(test)
+rm(blkids)
 
 blocks %<>%
   group_by(blkid) %>%
   arrange(Year) %>%
-  mutate_at(all_of(names(blocks)[2:20]), zoo::na.approx, na.rm = F) %>%
+  mutate_at(all_of(names(blocks)[2:25]), zoo::na.approx, na.rm = F) %>%
   ungroup() 
-
-rm(test)
 
 blocks14 <- blocks %>%
     filter(Year == "2014")

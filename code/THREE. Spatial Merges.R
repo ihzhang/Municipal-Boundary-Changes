@@ -581,7 +581,7 @@ rm(annexedblocks, contigall2014)
 aa <- read_csv("annexedblocks1420_base_unincorp.csv")
 
 #clean up and get ready for Census data 
-# 2013 block data 
+# 2014 block data 
 blocks2014 <- read_csv("blocks2014_int.csv")
 blocks2014 %<>%
   mutate(STATEA = substr(blkid, 1, 2),

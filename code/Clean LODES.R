@@ -12,15 +12,18 @@ library("data.table")
 #library("readstata13")
 library("magrittr")
 
-state_list <- list.files("SHP_blk_0010/2000/", all.files = FALSE, full.names = FALSE)
-contig_list <- list()
+
+state_list <- list.files("Demography/LODES data/2010/rac/", all.files = FALSE, full.names = FALSE) # read in all files, saves file names in a vector
+file_list <- list() # initiate an empty list 
 for (i in 1:length(state_list)) {
-  contig_list[[i]] <- read_csv(file = paste0("SHP_blk_0010/2000/", state_list[[i]], "/", substr(state_list[[i]], 1, 2), "_contig.csv")) %>%
-    mutate(State = substr(state_list[[i]], 4, 5))
+  file_list[[i]] <- read_csv(file = paste0("Demography/LODES data/2010/rac/", state_list[[i]])) %>%
+    mutate(pct_hincome = (CE03/C000)*100) %>%
+    select(h_geocode, pct_hincome)
 } 
 
-names(contig_list) <- state_list
-contigall2000 <- rbindlist(contig_list, use.names = TRUE)
-rm(contig_list, state_list)
-table(contigall2000$State)
-write_csv(contigall2000, file = "allcontigblocks2000.csv")
+rac_2010 <- rbindlist(file_list, use.names = TRUE)
+rm(file_list, state_list) # I like to remove useless objects from the environment ASAP to avoid clutter
+rac_2010$Year <- 2010
+write_csv(rac_2010, file = "Demography/LODES data/rac_2010.csv")
+
+# repeat for 2010 WAC (double-check variables needed in Google Doc), and 2014. 
