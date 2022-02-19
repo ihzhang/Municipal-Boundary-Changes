@@ -321,10 +321,12 @@ length(unique(annexedblocks$plid)) # how many places does this cover?
 # 2. for annexed blocks, keep only eligible blocks 
 # we just need the blockids of blocks that are annexed
 annexedblocks <- read_csv("aa_baseline_full_1013.csv")
+annexedblocks <- read_csv("annexed1013.csv")
 annexedblocks %<>%
   mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
                         str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0"))) %>%
   dplyr::select("blkid", "plid")
+annexedblocks %<>% select(blkid, plid)
 names(annexedblocks) <- c("blkid", "plid_annexed")
 annexedblocks$annexed <- 1
 
@@ -352,7 +354,7 @@ aa <- contigall2010 %>%
   left_join(annexedblocks, by = "blkid")
 
 aa %<>%
-  mutate(plid = ifelse(is.na(plid), contigplace, plid),
+  mutate(plid = ifelse(is.na(plid_annexed), contigplace, plid_annexed),
          annexed = ifelse(is.na(annexed), 0, annexed)) %>%
   dplyr::select(blkid, plid, annexed)
 
@@ -360,6 +362,7 @@ table(aa$annexed)
 length(unique(aa$plid))
 
 write_csv(aa, "annexedblocks1013_base_unincorp.csv")
+rm(list = ls())
 aa <- read_csv("annexedblocks1013_base_unincorp.csv")
 
 #clean up and get ready for Census data 
@@ -384,19 +387,18 @@ rm(blocks2010)
 names(aa) <- gsub("10b", "", names(aa))
 
 # drop missing values
-aa %<>% 
-    filter(!is.na(pop) & pop > 0 & 
-             !is.na(pctnhblack) & 
-             !is.na(pctnhwhite) & 
-             !is.na(pcth) & 
-             !is.na(pctmin) & 
-             !is.na(hispvap) & 
-             !is.na(nhwvap) & 
-             !is.na(nhbvap) & 
-             !is.na(vacancy))
+# aa %<>% 
+#     filter(!is.na(pop) & pop > 0 & 
+#              !is.na(pctnhblack) & 
+#              !is.na(pctnhwhite) & 
+#              !is.na(pcth) & 
+#              !is.na(pctmin) & 
+#              !is.na(hispvap) & 
+#              !is.na(nhwvap) & 
+#              !is.na(nhbvap) & 
+#              !is.na(vacancy))
 
 table(aa$annexed)
-table(aa$annexing_place)
 
 aa %<>% 
   group_by(plid) %>%
@@ -476,7 +478,7 @@ blocks2014 <- read_csv("blocks2014_plids.csv")
 state_list <- list.files("SHP_blk_0010/2014/", all.files = FALSE, full.names = FALSE)
 blocks2014 <- list()
 for (i in 1:length(state_list)) {
-  blocks2013[[i]] <- st_read(paste0("SHP_blk_0010/2014/", state_list[[i]], "/tl_2014_", substr(state_list[[i]], 4, 5), "_tabblock.shp")) %>%
+  blocks2014[[i]] <- st_read(paste0("SHP_blk_0010/2014/", state_list[[i]], "/tl_2014_", substr(state_list[[i]], 4, 5), "_tabblock10.shp")) %>%
     as.data.frame() %>%
     select(STATEFP10, COUNTYFP10, TRACTCE10, BLOCKCE10) %>%
     mutate(blkid = paste0(str_pad(as.character(STATEFP10), 2, side = "left", pad = "0"), str_pad(as.character(COUNTYFP10), 3, side = "left", pad = "0"),
@@ -489,9 +491,10 @@ rm(state_list)
 write_csv(blocks2014, file = "blocks2014.csv")
 blocks2014 %<>%
   left_join(blocks2014_plids) %>%
-  filter(is.na(plid)) %>%
+  #filter(is.na(plid)) %>%
   select(blkid, plid)
 rm(blocks2014_plids)
+write_csv(blocks2014, "blocks2014.csv")
 
 # 2010 block data 
 # we need to generate unique place IDs (e.g., place 6238 exists in both state 1 and 2, so we need to differentiate those places)

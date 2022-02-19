@@ -44,17 +44,16 @@ place_all <- aa1013 %>%
          nhwhite_mean = mean((nhwhite_total/pop_total)*100, na.rm = T),
          h_total = sum(h),
          h_mean = mean((h_total/pop_total)*100, na.rm = T),
-         min_total = sum(min),
-         min_mean = mean((min_total/pop_total)*100, na.rm = T),
-         vap_total = sum(sum(nhwvap), sum(minorityvap)),
+         vap_total = sum(vap, na.rm = T),
          nhblackvap_total = sum(nhbvap),
          nhblackvap_mean = mean((nhblackvap_total/vap_total)*100),
          nhwhitevap_total = sum(nhwvap),
          nhwhitevap_mean = mean((nhwhitevap_total/vap_total)*100),
          hvap_total = sum(hispvap),
          hvap_mean = mean((hvap_total/vap_total)*100),
-         minorityvap_total = sum(minorityvap),
-         minorityvap_mean = mean((minorityvap_total/vap_total)*100),
+         nativevap_total = sum(nativevap, na.rm = T),
+         asianvap_total = sum(asianvap, na.rm = T),
+         othervap_total = sum(othervap, na.rm = T),
          pct_annexed = mean(annexed, na.rm = T)) %>%
   ungroup()
   
@@ -67,22 +66,21 @@ place_by_annex <- aa1013 %>%
             nhwhite_mean = mean((nhwhite_total/pop_total)*100, na.rm = T),
             h_total = sum(h),
             h_mean = mean((h_total/pop_total)*100, na.rm = T),
-            min_total = sum(min),
-            min_mean = mean((min_total/pop_total)*100, na.rm = T),
-            vap_total = sum(sum(nhwvap), sum(minorityvap)),
+            vap_total = sum(vap, na.rm = T),
             nhblackvap_total = sum(nhbvap),
             nhblackvap_mean = mean((nhblackvap_total/vap_total)*100),
             nhwhitevap_total = sum(nhwvap),
             nhwhitevap_mean = mean((nhwhitevap_total/vap_total)*100),
             hvap_total = sum(hispvap),
             hvap_mean = mean((hvap_total/vap_total)*100),
-            minorityvap_total = sum(minorityvap),
-            minorityvap_mean = mean((minorityvap_total/vap_total)*100)) %>%
+            nativevap_total = sum(nativevap, na.rm = T),
+            asianvap_total = sum(asianvap, na.rm = T),
+            othervap_total = sum(othervap, na.rm = T)) %>%
   ungroup() %>%
   pivot_wider(
     id_cols = plid,
     names_from = annexed,
-    values_from = c(pop_total:minorityvap_mean)
+    values_from = c(pop_total:othervap_total)
   )
   
 pl_annex_var_1013 <- left_join(
@@ -170,13 +168,32 @@ pl_annex_var_1013 %<>%
     underbound_blackvap = ifelse(
       (annexing == 1 & ((((nhblackvap_total_1 + nhblackvap10p)/(vap_total_1 + vap10p)) < (nhblackvap10p/vap10p)))), 1, 0), 
     underbound_hispvap = ifelse(
-      (annexing == 1 & ((((hvap_total_1 + hispvap10p)/(vap_total_1 + vap10p)) < (hispvap10p/vap10p)))), 1, 0)
+      (annexing == 1 & ((((hvap_total_1 + hispvap10p)/(vap_total_1 + vap10p)) < (hispvap10p/vap10p)))), 1, 0),
+    underbound_asianvap = ifelse(
+      (annexing == 1 & ((((asianvap_total_1 + asianvap10p)/(vap10p + vap_total_1)) < (asianvap10p/vap10p)))), 1, 0), 
+    underbound_nativevap = ifelse(
+      (annexing == 1 & ((((nativevap_total_1 + nativevap10p)/(vap10p + vap_total_1)) < (nativevap10p/vap10p)))), 1, 0),
+    underbound_othervap = ifelse(
+      (annexing == 1 & ((((othervap_total_1 + othervap10p)/(vap10p + vap_total_1)) < (othervap10p/vap10p)))), 1, 0)
   )
 
 table(pl_annex_var_1013$underbound_blackvap)
 table(pl_annex_var_1013$underbound_hispvap)
+table(pl_annex_var_1013$underbound_asianvap)
+table(pl_annex_var_1013$underbound_nativevap)
+table(pl_annex_var_1013$underbound_othervap)
 
 write_csv(pl_annex_var_1013, "analyticalfiles/pl_annex_var_1013.csv")
+
+pl_annex_var_1013 %<>%
+  mutate(drop = ifelse(
+  vap_total == 0, 1, 0
+  ))
+table(pl_annex_var_1013$drop)
+
+pl_annex_var_1013 %<>%
+  filter(drop==0) %>%
+  select(-drop)
 
 rm(list = ls())
 
@@ -494,29 +511,28 @@ table(pl_annex_var_0010$underbound_blackvap)
 table(pl_annex_var_0010$underbound_hispvap)
 
 write_csv(pl_annex_var_0010, "analyticalfiles/pl_annex_var_0010.csv")
-
-rm(list = ls())
+pl_annex_var_0010 <- read_csv("analyticalfiles/pl_annex_var_0010.csv")
 
 # make panel data!!!!! ####
 # take out ne and hawaii
-indices <- grep("^vap_total_", names(pl_annex_var_0010))
+indices <- grep("^vap_total$", names(pl_annex_var_0010))
 indices <- names(pl_annex_var_0010)[indices]
 
 NE <- c("09", "23", "25", "33", "34", "36", "42", "24", "44", "50", "15")
 pl0010 <- read_csv("analyticalfiles/pl_annex_var_0010.csv") %>%
   mutate(STATE = substr(plid, 1, 2)) %>%
   filter(!(STATE %in% NE)) %>%
-  filter(annexing==1) #%>%
+  filter(annexing==1) %>%
   filter_at(all_of(indices), ~(.>0))
 pl1013 <- read_csv("analyticalfiles/pl_annex_var_1013.csv") %>%
   mutate(STATE = substr(plid, 1, 2)) %>%
   filter(!(STATE %in% NE)) %>%
-  filter(annexing==1) #%>%
+  filter(annexing==1) %>%
   filter_at(all_of(indices), ~(.>0))
 pl1420 <- read_csv("analyticalfiles/pl_annex_var_1420.csv") %>%
   mutate(STATE = substr(plid, 1, 2)) %>%
   filter(!(STATE %in% NE)) %>%
-  filter(annexing==1) #%>%
+  filter(annexing==1) %>%
   filter_at(all_of(indices), ~(.>0))
 
 plids <- Reduce(intersect, list(unique(pl0010$plid), unique(pl1013$plid), unique(pl1420$plid)))
@@ -600,16 +616,10 @@ summary(testdid2)
 testdid2 <- fixest::feols(underbound_hispvap ~ as.factor(vra)*as.factor(post) | plid, data = panel0020_did)
 summary(testdid2)
 
-testdid3 <- fixest::feols(underbound_minority ~ vra*post | plid, data = panel0020_did)
+testdid3 <- fixest::feols(underbound_hispvap ~ as.factor(vra)*as.factor(post) + recimmgrowth_b + hispvapgrowth_z + popgrowth_z + incomegrowth_z + pct_annexed_z + nhwhitevapgrowth_z  | plid, data = panel0020_did)
 summary(testdid3)
-# testdid3 <- fixest::feols(underbound_minority ~ vra*post*threat_white | plid, data = panel0020_did)
-# summary(testdid3)
-# testdid3 <- fixest::feols(underbound_minority ~ vra*post*recimmgrowth_b | plid, data = panel0020_did)
-# summary(testdid3)
-testdid3 <- fixest::feols(underbound_minorityvap ~ vra*post | plid, data = panel0020_did)
+testdid3 <- fixest::feols(underbound_asianvap ~ as.factor(vra)*as.factor(post) | plid, data = panel0020_did)
 summary(testdid3)
-# testdid3 <- fixest::feols(underbound_minorityvap ~ vra*post*threat_white_vap | plid, data = panel0020_did)
-# summary(testdid3) #collin does not work 
 
 testdid4 <- fixest::feols(overbound_white ~ vra*post | plid, data = panel0020_did)
 summary(testdid4)
@@ -732,7 +742,7 @@ indices <- indices[grepl("vap$", indices)]
 
 did_vis <- panel0020_did %>%
   #filter(annexing==1) %>%
-  group_by(vra, post) %>%
+  group_by(vra, period) %>%
   summarise_at(all_of(indices), 
                ~mean(., na.rm = T)) %>%
   ungroup() %>%
@@ -753,8 +763,9 @@ did_vis <- panel0020_did %>%
   )
 
 did_vis_total <- ggplot(did_vis,
-                        aes(y = mean, x = post, color = vra)) + 
-  geom_line() + scale_x_continuous(breaks = c(-1, 0, 1)) + 
+                        aes(y = mean, x = period, color = vra)) + 
+  geom_point() + geom_line() + 
+  #scale_x_continuous(breaks = c(-1, 0, 1)) + 
   scale_y_continuous(labels = scales::percent) +
   geom_vline(xintercept = 0, linetype="dotted", 
              color = "red", size=0.5) +
