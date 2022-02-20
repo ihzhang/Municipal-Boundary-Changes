@@ -81,6 +81,22 @@ length(unique(annexedblocks$plid)) # how many places does this cover?
 # 2. for annexeed blocks, keep only eligible blocks 
 # we just need the blockids of blocks that are annexed
 annexedblocks <- read_csv("aa_baseline_full_0010.csv")
+# need cross-walk for 2000 place ids 
+
+plids2010cw <- read_csv("seplaces_allstates/2010places.csv") %>%
+  select(Geo_NAME, Geo_FIPS) %>%
+  rename(plid = Geo_FIPS)
+
+annexedblocks %<>%
+  left_join(plids2010cw)
+
+plids2000 <- read_csv("seplaces_allstates/2000places.csv") %>%
+  select(Geo_QName, Geo_FIPS) %>%
+  rename(plid2000 = Geo_FIPS,
+         Geo_NAME = Geo_QName)
+
+annexedblocks %<>%
+  left_join(plids2000, by = "Geo_NAME")
 
 annexedblocks %<>%
     mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
@@ -118,12 +134,15 @@ contigall2000 %<>%
     dplyr::select(blkid, contigplace)
 
 # annexing analytical file "aa"
+table(annexedblocks$blkid %in% contigall2000$blkid)
+table(annexedblocks$plid_annexed %in% contigall2000$contigplace)
+
 aa <- contigall2000 %>% 
     left_join(annexedblocks, by = "blkid")
 
 aa %<>%
-    mutate(annexed = ifelse(is.na(plid), 1, 0), 
-           plid = ifelse(is.na(plid), contigplace, plid)) %>%
+    mutate(annexed = ifelse(is.na(annexed), 0, 1), 
+           plid = ifelse(is.na(plid_annexed), contigplace, plid_annexed)) %>%
     dplyr::select(blkid, plid, annexed)
 
 table(aa$annexed)

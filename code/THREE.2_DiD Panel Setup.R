@@ -763,9 +763,9 @@ did_vis <- panel0020_did %>%
   )
 
 did_vis_total <- ggplot(did_vis,
-                        aes(y = mean, x = period, color = vra)) + 
+                        aes(y = mean, x = as.numeric(as.character(period)), color = vra)) + 
   geom_point() + geom_line() + 
-  #scale_x_continuous(breaks = c(-1, 0, 1)) + 
+  scale_x_continuous(breaks = c(-1, 0, 1)) + 
   scale_y_continuous(labels = scales::percent) +
   geom_vline(xintercept = 0, linetype="dotted", 
              color = "red", size=0.5) +

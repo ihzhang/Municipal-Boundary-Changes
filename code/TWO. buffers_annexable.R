@@ -16,7 +16,7 @@ library("magrittr")
 library("crsuggest")
 library("tigris")
 
-setwd("~/Google Drive/Stanford/QE2")
+setwd("~/Google Drive/My Drive/Stanford/QE2")
 
 # 1. 2000 blocks in buffers of 2000 places 
 # 2. 2010 blocks in buffers of 2010 places 
@@ -66,18 +66,15 @@ get_buffers <- function(state_code, year) {
     mutate(plid = paste0(str_pad(as.character(.[[1]]), 2, side = "left", pad = "0"), str_pad(as.character(.[[2]]), 5, side = "left", pad = "0")))
   
   datalist <- list()
-  for (i in 1:length(unique(places$plid))) {
-    p1 <- places[i,]
-    p1buffer <- st_buffer(p1, 0)
+  places_df <- split(places, f = places$plid)
+  foreach (i = 1:length(places_df)) %do% {
+    p1buffer <- st_buffer(places_df[[i]], 400)
     p1buffer_intersects <- st_intersects(p1buffer, blocks)
-    if(nrow(as.data.frame(blocks[p1buffer_intersects[[1]],])) < 1) {
-      next
-    } else {
+    if(nrow(as.data.frame(blocks[p1buffer_intersects[[1]],])) < 1) return(NULL)
       test <- as.data.frame(blocks[p1buffer_intersects[[1]],])
-      test$bufferplace <- unique(places$plid)[i]
+      test$bufferplace <- places_df[[i]]$plid[[1]]
       datalist[[i]] <- test %>% 
         select(c(1:4), blkid, bufferplace)
-    }
   }
   
   non.null.list <- lapply(datalist, Filter, f = Negate(is.null))
@@ -97,8 +94,14 @@ state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09",
                  )
 
 for (state_code in state_codes) {
+  start_time <- Sys.time()
+  print(start_time)
   get_buffers(state_code, 2000)
+  end_time <- Sys.time()
   print(state_code)
+  print(end_time - start_time)
+  print(end_time)
+  Sys.sleep(5)
 }
 
 # 2. 2010-2020 ####
@@ -208,25 +211,21 @@ get_buffers_14 <- function(state_code) {
             str_pad(as.character(PLACEFP), 5, side = "left", pad = "0"))) 
     
     datalist <- list()
-    for (i in 1:length(unique(places$plid))) {
-        p1 <- places[i,]
-        p1buffer <- st_buffer(p1, 0)
-        p1buffer_intersects <- st_intersects(p1buffer, blocks)
-        if(nrow(as.data.frame(blocks[p1buffer_intersects[[1]],])) < 1) {
-            next
-        } else {
-            test <- as.data.frame(blocks[p1buffer_intersects[[1]],])
-            test$bufferplace <- unique(places$plid)[i]
-            datalist[[i]] <- test %>% 
-                select(c(1:4), blkid, bufferplace)
-        }
+    places_df <- split(places, f = places$plid)
+    foreach (i = 1:length(places_df)) %do% {
+      p1buffer <- st_buffer(places_df[[i]], 400)
+      p1buffer_intersects <- st_intersects(p1buffer, blocks)
+      if(nrow(as.data.frame(blocks[p1buffer_intersects[[1]],])) < 1) return(NULL)
+      test <- as.data.frame(blocks[p1buffer_intersects[[1]],])
+      test$bufferplace <- places_df[[i]]$plid[[1]]
+      datalist[[i]] <- test %>% 
+        select(c(1:4), blkid, bufferplace)
     }
     
     non.null.list <- lapply(datalist, Filter, f = Negate(is.null))
     rm(datalist)
     buffers <- plyr::rbind.fill(lapply(non.null.list, as.data.frame))
-    write_csv(buffers, file = paste0("SHP_blk_0010/2014/", state_code, "/", substr(state_code, 1, 2), "_buffers.csv"))
-    
+    write_csv(buffers, file = paste0("SHP_blk_0010/2014", state_code, "/", substr(state_code, 1, 2), "_buffers.csv"))
 }
 
 state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09", 
