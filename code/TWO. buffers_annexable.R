@@ -113,8 +113,14 @@ for (state_code in state_codes) {
 
 # 2. 2010-2020 ####
 for (state_code in state_codes) {
+  start_time <- Sys.time()
+  print(start_time)
   get_buffers(state_code, 2010)
+  end_time <- Sys.time()
   print(state_code)
+  print(end_time - start_time)
+  print(end_time)
+  Sys.sleep(5)
 }
 
 # get place-to-block crosswalk for 2013 ####
