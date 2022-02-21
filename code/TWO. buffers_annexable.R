@@ -67,21 +67,28 @@ get_buffers <- function(state_code, year) {
   
   datalist <- list()
   places_df <- split(places, f = places$plid)
-  foreach (i = 1:length(places_df)) %do% {
-    p1buffer <- st_buffer(places_df[[i]], 400)
-    p1buffer_intersects <- st_intersects(p1buffer, blocks)
+  cl <- makeCluster(detectCores())
+  registerDoParallel(cl)
+  getDoParWorkers()
+
+  datalist <- foreach (i = 1:length(places_df), 
+           .packages = c("sf", "dplyr", "data.table", "readr", "magrittr")) %dopar% {
+    p1buffer <- sf::st_buffer(places_df[[i]], 400)
+    p1buffer_intersects <- sf::st_intersects(p1buffer, blocks)
     if(nrow(as.data.frame(blocks[p1buffer_intersects[[1]],])) < 1) return(NULL)
-      test <- as.data.frame(blocks[p1buffer_intersects[[1]],])
-      test$bufferplace <- places_df[[i]]$plid[[1]]
-      datalist[[i]] <- test %>% 
-        select(c(1:4), blkid, bufferplace)
-  }
+    test <- as.data.frame(blocks[p1buffer_intersects[[1]],])
+    test$bufferplace <- places_df[[i]]$plid[[1]]
+    test %<>% 
+      select(c(1:4), blkid, bufferplace)
+    return(test)
+           }
   
-  non.null.list <- lapply(datalist, Filter, f = Negate(is.null))
-  rm(datalist)
-  buffers <- plyr::rbind.fill(lapply(non.null.list, as.data.frame))
-  write_csv(buffers, file = paste0("SHP_blk_0010/", year, "/", state_code, "/", substr(state_code, 1, 2), "_buffers.csv"))
-}
+  buffers <- data.table::rbindlist(datalist) 
+  readr::write_csv(buffers, file = paste0("SHP_blk_0010/", year, "/", state_code, "/", substr(state_code, 1, 2), "_buffers.csv"))
+  stopCluster(cl)
+  rm(list=ls(name=foreach:::.foreachGlobals), pos=foreach:::.foreachGlobals)
+  
+  }
 
 state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09", 
                  "DE_10", "FL_12", "GA_13", "HI_15", "IA_19", "ID_16", "IL_17", "IN_18",
