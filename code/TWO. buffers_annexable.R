@@ -13,8 +13,9 @@ library("sf")
 library("data.table")
 library("tidyverse")
 library("magrittr")
-library("crsuggest")
-library("tigris")
+library("foreach")
+library("doParallel")
+#library("tigris")
 
 setwd("~/Google Drive/My Drive/Stanford/QE2")
 
@@ -67,7 +68,7 @@ get_buffers <- function(state_code, year) {
   
   datalist <- list()
   places_df <- split(places, f = places$plid)
-  cl <- makeCluster(detectCores())
+  cl <- makeCluster(6)
   registerDoParallel(cl)
   getDoParWorkers()
 
