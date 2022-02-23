@@ -161,73 +161,6 @@ get_block_ids <- function (state_code, year) {
     write_csv(contig, file = paste0("SHP_blk_0010/", year, "/", state_code, "/", substr(state_code, 1, 2), "_block_plids.csv"))
 }
 
-get_block_ids_2014 <- function (state_code, year) {
-  blocks <- tigris::blocks(state = substr(state_code, 4, 5), year = year)
-  blocks <- st_transform(blocks, 3488)
-  blocks %<>%
-    mutate(blkid = paste0(str_pad(as.character(STATEFP10), 2, side = "left", pad = "0"), str_pad(as.character(COUNTYFP10), 3, side = "left", pad = "0"),
-                          str_pad(as.character(TRACTCE10), 6, side = "left", pad = "0"), str_pad(as.character(BLOCKCE10), 4, side = "left", pad = "0")))
-  Sys.sleep(120)
-  places <- tigris::places(state = substr(state_code, 4, 5), year = year)
-  places <- st_transform(places, 3488)
-  
-  places %<>% 
-    mutate(plid = paste0(
-      str_pad(as.character(STATEFP), 2, side = "left", pad = "0"), 
-      str_pad(as.character(PLACEFP), 5, side = "left", pad = "0")))
-  
-  datalist <- list()
-  places_df <- split(places, f = places$plid)
-  cl <- makeCluster(5)
-  registerDoParallel(cl)
-  getDoParWorkers()
-  
-  datalist <- foreach (i = 1:length(places_df), 
-                       .packages = c("sf", "dplyr", "data.table", "readr", "magrittr")) %dopar% {
-    p1 <- places[i,]
-    p1blocks <- st_contains(p1, blocks)
-    if(nrow(as.data.frame(blocks[p1blocks[[1]],])) < 1) return(NULL)
-      test <- as.data.frame(blocks[p1blocks[[1]],])
-      test$plid <- p1$plid
-      datalist[[i]] <- test %>% 
-        select(c(1:6), blkid, plid, GEOID10)
-    }
-
-  plids <- data.table::rbindlist(datalist) 
-  readr::write_csv(plids, file = paste0("SHP_blk_0010/", year, "/", substr(state_code, 1, 2), "_blocks_plids.csv"))
-  stopCluster(cl)
-  rm(list=ls(name=foreach:::.foreachGlobals), pos=foreach:::.foreachGlobals)
-}
-
-
-# blocks <- st_read(paste0("SHP_blk_0010/", "2014", "/", "AL_01", "/tl_2014_", substr("AL_01", 4, 5), "_tabblock10.shp"))
-# blocks <- st_transform(blocks, 3488)
-# places <- st_read(paste0("SHP_pl/", "2014", "/", "AL_01", "/tl_2014_", substr("AL_01", 4, 5), "_place.shp"))
-# places <- st_transform(places, 3488)
-
-state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09", 
-                 "DE_10", "FL_12", "GA_13", "HI_15", "IA_19", "ID_16", "IL_17", "IN_18",
-                 "KS_20", "KY_21", "LA_22", 
-                 "MA_25", "MD_24", "ME_23", "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
-                 "NC_37", "ND_38", "NE_31", "NH_33", "NJ_34", "NM_35", "NV_32", "NY_36",
-                 "OH_39", "OK_40", "OR_41", "PA_42", "RI_44",
-                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VT_50", "VA_51",
-                 "WA_53", "WV_54", "WI_55", "WY_56"
-)
-
-for (state_code in state_codes) {
-  start_time <- Sys.time()
-  print(start_time)
-  get_block_ids_14(state_code, 2015)
-  print(state_code)
-  end_time <- Sys.time()
-  print(end_time - start_time)
-  print(end_time)
-  Sys.sleep(5)
-}
-
-get_block_ids(AL_01, 2014)
-
 # get contiguity for 2014 #### 
 # first have to filter out by plid; we want is.na or 99999 only 
 # note sometimes tigris will fail, likely because of a firewall block on repeated calls
@@ -235,8 +168,8 @@ get_block_ids(AL_01, 2014)
 # switch the lines on and off using # 
 
 get_buffers_14 <- function(state_code) {
-    #blocks <- st_read(paste0("SHP_blk_0010/2014/", state_code, "/tl_2014_", substr(state_code, 4, 5), "_tabblock10.shp"))
-    blocks <- tigris::blocks(state = substr(state_code, 4, 5), year = 2014)
+    blocks <- st_read(paste0("SHP_blk_0010/2014/", state_code, "/tl_2014_", substr(state_code, 4, 5), "_tabblock10.shp"))
+    #blocks <- tigris::blocks(state = substr(state_code, 4, 5), year = 2014)
     blocks <- st_transform(blocks, 3488)
     blocks %<>%
             mutate(blkid = paste0(str_pad(as.character(STATEFP10), 2, side = "left", pad = "0"), 
