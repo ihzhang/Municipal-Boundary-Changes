@@ -68,7 +68,7 @@ get_buffers <- function(state_code, year) {
   
   datalist <- list()
   places_df <- split(places, f = places$plid)
-  cl <- makeCluster(6)
+  cl <- makeCluster(3)
   registerDoParallel(cl)
   getDoParWorkers()
 
@@ -161,6 +161,46 @@ get_block_ids <- function (state_code, year) {
     write_csv(contig, file = paste0("SHP_blk_0010/", year, "/", state_code, "/", substr(state_code, 1, 2), "_block_plids.csv"))
 }
 
+get_block_ids_2014 <- function (state_code, year) {
+  blocks <- tigris::blocks(state = substr(state_code, 4, 5), year = 2015)
+  blocks <- st_transform(blocks, 3488)
+  blocks %<>%
+    mutate(blkid = paste0(str_pad(as.character(STATEFP10), 2, side = "left", pad = "0"), str_pad(as.character(COUNTYFP10), 3, side = "left", pad = "0"),
+                          str_pad(as.character(TRACTCE10), 6, side = "left", pad = "0"), str_pad(as.character(BLOCKCE10), 4, side = "left", pad = "0")))
+  Sys.sleep(60)
+  places <- tigris::places(state = substr(state_code, 4, 5), year = 2015)
+  places <- st_transform(places, 3488)
+  
+  places %<>% 
+    mutate(plid = paste0(
+      str_pad(as.character(STATEFP), 2, side = "left", pad = "0"), 
+      str_pad(as.character(PLACEFP), 5, side = "left", pad = "0")))
+  
+  datalist <- list()
+  places_df <- split(places, f = places$plid)
+  cl <- makeCluster(5)
+  registerDoParallel(cl)
+  getDoParWorkers()
+  
+  datalist <- foreach (i = 1:length(places_df), 
+                       .packages = c("sf", "dplyr", "data.table", "readr", "magrittr")) %dopar% {
+    p1 <- places[i,]
+    p1blocks <- st_contains(p1, blocks)
+    if(nrow(as.data.frame(blocks[p1blocks[[1]],])) < 1) return(NULL)
+      test <- as.data.frame(blocks[p1blocks[[1]],])
+      test$plid <- p1$plid
+      datalist[[i]] <- test %>% 
+        select(c(1:6), blkid, plid, GEOID10)
+    }
+
+  plids <- data.table::rbindlist(datalist) 
+  readr::write_csv(plids, file = paste0("SHP_blk_0010/", year, "/", substr(state_code, 1, 2), "_buffers.csv"))
+  stopCluster(cl)
+  rm(list=ls(name=foreach:::.foreachGlobals), pos=foreach:::.foreachGlobals)
+}
+
+
+
 # blocks <- st_read(paste0("SHP_blk_0010/", "2014", "/", "AL_01", "/tl_2014_", substr("AL_01", 4, 5), "_tabblock10.shp"))
 # blocks <- st_transform(blocks, 3488)
 # places <- st_read(paste0("SHP_pl/", "2014", "/", "AL_01", "/tl_2014_", substr("AL_01", 4, 5), "_place.shp"))
@@ -171,7 +211,7 @@ ggplot() +
     geom_sf(data = blocks %>% 
                 filter(blkid %in% contig$blkid), fill="#CCFFCC") 
 
-years <- c(2013, 2014)
+years <- c(2013, 2015)
 state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09", 
                  "DE_10", "FL_12", "GA_13", "HI_15", "IA_19", "ID_16", "IL_17", "IN_18",
                  "KS_20", "KY_21", "LA_22", 
@@ -183,7 +223,7 @@ state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09",
 )
 
 for (state_code in state_codes) {
-        get_block_ids(state_code, 2014)
+        get_block_ids(state_code, 2015)
     print(state_code)
 }
 
@@ -196,8 +236,8 @@ get_block_ids(AL_01, 2014)
 # switch the lines on and off using # 
 
 get_buffers_14 <- function(state_code) {
-    blocks <- st_read(paste0("SHP_blk_0010/2014/", state_code, "/tl_2014_", substr(state_code, 4, 5), "_tabblock10.shp"))
-    #blocks <- tigris::blocks(state = substr(state_code, 4, 5), year = 2014)
+    #blocks <- st_read(paste0("SHP_blk_0010/2014/", state_code, "/tl_2014_", substr(state_code, 4, 5), "_tabblock10.shp"))
+    blocks <- tigris::blocks(state = substr(state_code, 4, 5), year = 2014)
     blocks <- st_transform(blocks, 3488)
     blocks %<>%
             mutate(blkid = paste0(str_pad(as.character(STATEFP10), 2, side = "left", pad = "0"), 
@@ -226,20 +266,26 @@ get_buffers_14 <- function(state_code) {
     
     datalist <- list()
     places_df <- split(places, f = places$plid)
-    foreach (i = 1:length(places_df)) %do% {
-      p1buffer <- st_buffer(places_df[[i]], 400)
-      p1buffer_intersects <- st_intersects(p1buffer, blocks)
-      if(nrow(as.data.frame(blocks[p1buffer_intersects[[1]],])) < 1) return(NULL)
-      test <- as.data.frame(blocks[p1buffer_intersects[[1]],])
-      test$bufferplace <- places_df[[i]]$plid[[1]]
-      datalist[[i]] <- test %>% 
-        select(c(1:4), blkid, bufferplace)
-    }
+    cl <- makeCluster(5)
+    registerDoParallel(cl)
+    getDoParWorkers()
     
-    non.null.list <- lapply(datalist, Filter, f = Negate(is.null))
-    rm(datalist)
-    buffers <- plyr::rbind.fill(lapply(non.null.list, as.data.frame))
-    write_csv(buffers, file = paste0("SHP_blk_0010/2014", state_code, "/", substr(state_code, 1, 2), "_buffers.csv"))
+    datalist <- foreach (i = 1:length(places_df), 
+                         .packages = c("sf", "dplyr", "data.table", "readr", "magrittr")) %dopar% {
+                           p1buffer <- sf::st_buffer(places_df[[i]], 400)
+                           p1buffer_intersects <- sf::st_intersects(p1buffer, blocks)
+                           if(nrow(as.data.frame(blocks[p1buffer_intersects[[1]],])) < 1) return(NULL)
+                           test <- as.data.frame(blocks[p1buffer_intersects[[1]],])
+                           test$bufferplace <- places_df[[i]]$plid[[1]]
+                           test %<>% 
+                             select(c(1:4), blkid, bufferplace)
+                           return(test)
+                         }
+    
+    buffers <- data.table::rbindlist(datalist) 
+    readr::write_csv(buffers, file = paste0("SHP_blk_0010/2014/", state_code, "/", substr(state_code, 1, 2), "_buffers.csv"))
+    stopCluster(cl)
+    rm(list=ls(name=foreach:::.foreachGlobals), pos=foreach:::.foreachGlobals)
 }
 
 state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09", 
@@ -262,3 +308,5 @@ for (state_code in state_codes) {
     print(end_time)
     Sys.sleep(60)
 }
+
+# plotting maps https://rpubs.com/walkerke/tigris01

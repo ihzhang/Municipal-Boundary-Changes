@@ -556,7 +556,7 @@ rm(acs13)
 
 # 2014 ACS places ####
 places2014 <- read_csv("seplaces_allstates/2014places.csv")
-vap2014 <- read_csv("seplaces_allstates/acs1014vap.csv")
+vap2014 <- read_csv("seplaces_allstates/acs1216vap.csv")
 emp2014 <- read_csv("seplaces_allstates/acs14_emp.csv")
 hu2014 <- read_csv("seplaces_allstates/acs14_hu.csv")
 
@@ -615,7 +615,7 @@ places2014 %<>%
            pctnhblackvap14p = (nhblackvap14p/vap14p)*100,
            hispvap14p = SE_T003_014,
            pcthispvap14p = (hispvap14p/vap14p)*100,
-           nativevap14p = SE_T003_007,
+           nativevap14p = SE_T003_005,
            pctnativevap14p = (nativevap14p/vap14p)*100,
            asianvap14p = (SE_T003_006 + SE_T003_007),
            pctasianvap14p = (asianvap14p/vap14p)*100,
