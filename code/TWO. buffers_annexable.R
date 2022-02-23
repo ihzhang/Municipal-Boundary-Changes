@@ -162,13 +162,13 @@ get_block_ids <- function (state_code, year) {
 }
 
 get_block_ids_2014 <- function (state_code, year) {
-  blocks <- tigris::blocks(state = substr(state_code, 4, 5), year = 2015)
+  blocks <- tigris::blocks(state = substr(state_code, 4, 5), year = year)
   blocks <- st_transform(blocks, 3488)
   blocks %<>%
     mutate(blkid = paste0(str_pad(as.character(STATEFP10), 2, side = "left", pad = "0"), str_pad(as.character(COUNTYFP10), 3, side = "left", pad = "0"),
                           str_pad(as.character(TRACTCE10), 6, side = "left", pad = "0"), str_pad(as.character(BLOCKCE10), 4, side = "left", pad = "0")))
-  Sys.sleep(60)
-  places <- tigris::places(state = substr(state_code, 4, 5), year = 2015)
+  Sys.sleep(120)
+  places <- tigris::places(state = substr(state_code, 4, 5), year = year)
   places <- st_transform(places, 3488)
   
   places %<>% 
@@ -194,11 +194,10 @@ get_block_ids_2014 <- function (state_code, year) {
     }
 
   plids <- data.table::rbindlist(datalist) 
-  readr::write_csv(plids, file = paste0("SHP_blk_0010/", year, "/", substr(state_code, 1, 2), "_buffers.csv"))
+  readr::write_csv(plids, file = paste0("SHP_blk_0010/", year, "/", substr(state_code, 1, 2), "_blocks_plids.csv"))
   stopCluster(cl)
   rm(list=ls(name=foreach:::.foreachGlobals), pos=foreach:::.foreachGlobals)
 }
-
 
 
 # blocks <- st_read(paste0("SHP_blk_0010/", "2014", "/", "AL_01", "/tl_2014_", substr("AL_01", 4, 5), "_tabblock10.shp"))
@@ -206,12 +205,6 @@ get_block_ids_2014 <- function (state_code, year) {
 # places <- st_read(paste0("SHP_pl/", "2014", "/", "AL_01", "/tl_2014_", substr("AL_01", 4, 5), "_place.shp"))
 # places <- st_transform(places, 3488)
 
-ggplot() + 
-    geom_sf(data = places, fill = "black") +
-    geom_sf(data = blocks %>% 
-                filter(blkid %in% contig$blkid), fill="#CCFFCC") 
-
-years <- c(2013, 2015)
 state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09", 
                  "DE_10", "FL_12", "GA_13", "HI_15", "IA_19", "ID_16", "IL_17", "IN_18",
                  "KS_20", "KY_21", "LA_22", 
@@ -223,8 +216,14 @@ state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09",
 )
 
 for (state_code in state_codes) {
-        get_block_ids(state_code, 2015)
-    print(state_code)
+  start_time <- Sys.time()
+  print(start_time)
+  get_block_ids_14(state_code, 2015)
+  print(state_code)
+  end_time <- Sys.time()
+  print(end_time - start_time)
+  print(end_time)
+  Sys.sleep(5)
 }
 
 get_block_ids(AL_01, 2014)
