@@ -198,7 +198,7 @@ get_buffers_14 <- function(state_code) {
     
     datalist <- list()
     places_df <- split(places, f = places$plid)
-    cl <- makeCluster(5)
+    cl <- makeCluster(3)
     registerDoParallel(cl)
     getDoParWorkers()
     
