@@ -199,6 +199,7 @@ get_buffers_14 <- function(state_code) {
     datalist <- list()
     places_df <- split(places, f = places$plid)
     # I have 8 cores; using anything more than 5 will crash computer if using multiple apps
+    
     cl <- makeCluster(3) 
     registerDoParallel(cl)
     getDoParWorkers()

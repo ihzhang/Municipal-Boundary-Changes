@@ -98,13 +98,16 @@ plids2000 <- read_csv("seplaces_allstates/2000places.csv") %>%
 annexedblocks %<>%
   left_join(plids2000, by = "Geo_NAME")
 
+table(annexedblocks$plid == annexedblocks$plid2000)
+
 annexedblocks %<>%
-    mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
-                          str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0"))) %>%
-    dplyr::select("blkid", "plid")
-names(annexedblocks) <- c("blkid", "plid_annexed")
+    #mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
+    #                      str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0"))) %>%
+    dplyr::select("blkid", "plid", "plid2000")
+names(annexedblocks) <- c("blkid", "plid_annexed", "plid2000")
 annexedblocks$annexed <- 1
 # if annexed, annex = 1
+rm(plids2010cw)
 
 pl0010_var <- read_csv("pl0010_var.csv")
 
@@ -143,7 +146,7 @@ aa <- contigall2000 %>%
 aa %<>%
     mutate(annexed = ifelse(is.na(annexed), 0, 1), 
            plid = ifelse(is.na(plid_annexed), contigplace, plid_annexed)) %>%
-    dplyr::select(blkid, plid, annexed)
+    dplyr::select(blkid, plid, annexed, plid2000)
 
 table(aa$annexed)
 length(unique(aa$plid))
@@ -176,13 +179,14 @@ names(aa) <- gsub("00b", "", names(aa))
 
 # drop missing values
 aa %<>% 
-  mutate(keep = ifelse((annexed == 0 | (annexed == 1 & (!is.na(pop) & pop > 0 & vap > 0))), 1, 0))
+  mutate(keep = ifelse((annexed == 0 | (annexed == 1 & (!is.na(pop) & pop > 0 & !is.na(vap) & vap > 0))), 1, 0))
 table(aa$keep)
 aa %<>%
   filter(keep==1)
 table(aa$annexed)
 
 aa %<>% 
+  select(-plid2000) %>%
   group_by(plid) %>%
   mutate(n = sum(annexed==1),
          annexing_place = ifelse(n==0, 0, 1)) %>%
@@ -243,6 +247,7 @@ aa %<>%
 names(aa) <- gsub("00p", "_p", names(aa))
 aa$period <- "0010"
 write_csv(aa, "analyticalfiles/annexedblocks0010dem_pl00_newsample_unincorp.csv") # 280122
+rm(list = ls())
 
 # repeat for 2010-2013 ####
 blocks2010 <- fread("ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv", 
@@ -342,8 +347,8 @@ length(unique(annexedblocks$plid)) # how many places does this cover?
 annexedblocks <- read_csv("aa_baseline_full_1013.csv")
 annexedblocks <- read_csv("annexed1013.csv")
 annexedblocks %<>%
-  mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
-                        str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0"))) %>%
+  #mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
+  #                      str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0"))) %>%
   dplyr::select("blkid", "plid")
 annexedblocks %<>% select(blkid, plid)
 names(annexedblocks) <- c("blkid", "plid_annexed")
@@ -475,10 +480,17 @@ aa %<>%
     TRUE ~ 0
   ))
 
+aa %<>% 
+  mutate(keep = ifelse((annexed == 0 | (annexed == 1 & (!is.na(pop) & pop > 0 & !is.na(vap) & vap > 0))), 1, 0))
+table(aa$keep)
+aa %<>%
+  filter(keep==1)
+
 # prep for rbind 
 names(aa) <- gsub("10p", "_p", names(aa))
 aa$period <- "1013"
 write_csv(aa, "analyticalfiles/annexedblocks1013dem_pl00_newsample_unincorp.csv") # 280122
+rm (list = ls())
 
 # repeat for 2014 to 2020 #### 
 state_list <- list.files("SHP_blk_0010/2014/", all.files = FALSE, full.names = FALSE)
@@ -569,15 +581,15 @@ annexedblocks$annexed <- 1
 state_list <- list.files("SHP_blk_0010/2014/", all.files = FALSE, full.names = FALSE)
 contig_list <- list()
 for (i in 1:length(state_list)) {
-  contig_list[[i]] <- read_csv(file = paste0("SHP_blk_0010/2014/", state_list[[i]], "/", substr(state_list[[i]], 1, 2), "_contig.csv")) %>%
+  contig_list[[i]] <- read_csv(file = paste0("SHP_blk_0010/2014/", state_list[[i]], "/", substr(state_list[[i]], 1, 2), "_buffers.csv")) %>%
     mutate(State = substr(state_list[[i]], 4, 5))
 } 
 
 names(contig_list) <- state_list
-contigall2010 <- rbindlist(contig_list, use.names = TRUE)
+contigall2014 <- rbindlist(contig_list, use.names = TRUE)
 rm(contig_list, state_list)
-table(contigall2010$State)
-write_csv(contigall2010, file = "allcontigblocks2014.csv")
+table(contigall2014$State)
+write_csv(contigall2014, file = "allcontigblocks2014.csv")
 
 # identify contiguous blocks and actually annexed blocks in the all-block file ####
 contigall2014 <- read_csv("allcontigblocks2014.csv")
@@ -622,10 +634,10 @@ rm(blocks2014)
 
 # drop missing values
 aa %<>% 
-  filter(!is.na(pop) & pop > 0 & 
-           !is.na(pctnhblack) & 
-           !is.na(pctnhwhite) & 
-           !is.na(pcth))
+  mutate(keep = ifelse((annexed == 0 | (annexed == 1 & (!is.na(pop) & pop > 0 & !is.na(vap) & vap > 0))), 1, 0))
+table(aa$keep)
+aa %<>%
+  filter(keep==1)
 
 table(aa$annexed)
 
@@ -649,7 +661,7 @@ aa %<>%
   select(-n_annexed, -n)
 
 table(aa$annexed)
-60084/nrow(aa)
+107354/nrow(aa)
 
 # merge in place data for 2014, as well as 2010-2014 trends 
 pl1014 <- read_csv("pl1014_var.csv")
