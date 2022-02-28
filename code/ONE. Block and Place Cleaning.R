@@ -854,6 +854,10 @@ rm(blocks2000, blocks2020)
 # write_csv(blocks13, "blocks2013_int.csv")
 # rm(blocks13)
 
+# make a version that turns NAs to 0s for interpolation
+blocks %<>%
+  mutate_at(all_of(names(blocks2010)[2:25]), ~ifelse(is.na(.), 0, .))
+
 # do 2014 
 blocks2014 <- blocks2010 %>%
   mutate(Year = 2014)
@@ -864,7 +868,16 @@ blocks2014 %<>%
 
 blocks <- base::rbind(blocks, blocks2014)
 
-rm(blocks2010, blocks2014)
+blocks2017 <- blocks2010 %>%
+  mutate(Year = 2017)
+
+blocks2017 %<>%
+  mutate_at(all_of(names(blocks2017)[2:25]), ~NA) %>%
+  mutate(Year = 2017)
+
+blocks <- base::rbind(blocks, blocks2017)
+
+rm(blocks2010, blocks2017, blocks2014)
 
 test <- blocks %>% filter(blkid %in% blkids[1:50])
 
@@ -886,6 +899,10 @@ blocks %<>%
 blocks14 <- blocks %>%
     filter(Year == "2014")
 write_csv(blocks14, "blocks2014_int.csv")
+
+blocks17 <- blocks %>%
+  filter(Year == "2017")
+write_csv(blocks14, "blocks2017_int.csv")
 
 rm(list = ls())
 
