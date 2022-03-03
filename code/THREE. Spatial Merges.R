@@ -561,9 +561,9 @@ for (i in 1:length(plids)) {
          left_join(blocks2014 %>% rename(plid14 = plid), by = "blkid") %>%
          filter(is.na(plid14)) %>%
         select(-plid14)
-}
-annexedblocks <- base::rbind(annexedblocks, block)
 
+annexedblocks <- base::rbind(annexedblocks, block)
+}
 write_csv(annexedblocks, "aa_baseline_full_1420.csv")
 
 rm(block, block10, block13, blocks2013, blocks2010, plids, i)

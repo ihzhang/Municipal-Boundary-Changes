@@ -109,47 +109,50 @@ pl_annex_var_1013 %<>%
 # i.e. pcth given growth rate by 2013 
 pl0010 <- read_csv("pl0010_var.csv")
 
-pl0010 %<>%
-  filter(
-    is.finite(popgrowth) & 
-      is.finite(nhwhitegrowth) & 
-      is.finite(nhwhitevapgrowth) &
-      is.finite(nhblackgrowth) & 
-      is.finite(nhblackvapgrowth) &
-      is.finite(hgrowth) & 
-      is.finite(hispvapgrowth) &
-      is.finite(mingrowth)
-  ) %>%
-  mutate(vapgrowth = ((vap10p-vap00p)/vap10p)*100,
-         proj_growth_vap = (((vapgrowth/10)*3)/100)+1,
-    proj_growth_white = (((nhwhitegrowth/10)*3)/100)+1,
-         proj_growth_black = (((nhblackgrowth/10)*3)/100)+1,
-         proj_growth_h = (((hgrowth/10)*3)/100)+1,
-         proj_growth_min = (((mingrowth/10)*3)/100)+1,
-         proj_growth_whitevap = (((nhwhitevapgrowth/10)*3)/100)+1, 
-         proj_growth_blackvap = (((nhblackvapgrowth/10)*3)/100)+1,
-         proj_growth_hvap = (((hispvapgrowth/10)*3)/100)+1,
-         proj_pop = pop10p*((((popgrowth/10)*3)/100)+1),
-         proj_vap = vap10p*proj_growth_vap,
-         proj_nhwhite = nhwhite10p*proj_growth_white,
-         proj_nhblack = nhblack10p*proj_growth_black,
-         proj_h = h10p*proj_growth_h,
-         proj_nhwhitevap = nhwhitevap10p*proj_growth_whitevap,
-         proj_nhblackvap = nhblackvap10p*proj_growth_blackvap,
-         proj_hvap = hispvap10p*proj_growth_hvap,
-         densifying = ifelse(is.na(densification), NA,
-                             ifelse(densification > 0, 1, 0)),
-         economic_need = ifelse(is.na(hinc10p), NA,
-                                ifelse(((hinc10p-hinc00p*1.25)/(hinc00p*1.25)) < 0, 1, 0))
-  ) %>%
-  select(plid, c(contains("proj")), c(contains("growth")), -c(contains("_growth")), vraa, c(contains("vap")))
+# pl0010 %<>%
+#   filter(
+#     is.finite(popgrowth) & 
+#       is.finite(nhwhitegrowth) & 
+#       is.finite(nhwhitevapgrowth) &
+#       is.finite(nhblackgrowth) & 
+#       is.finite(nhblackvapgrowth) &
+#       is.finite(hgrowth) & 
+#       is.finite(hispvapgrowth) &
+#       is.finite(mingrowth)
+#   ) %>%
+#   mutate(vapgrowth = ((vap10p-vap00p)/vap10p)*100,
+#          proj_growth_vap = (((vapgrowth/10)*3)/100)+1,
+#     proj_growth_white = (((nhwhitegrowth/10)*3)/100)+1,
+#          proj_growth_black = (((nhblackgrowth/10)*3)/100)+1,
+#          proj_growth_h = (((hgrowth/10)*3)/100)+1,
+#          proj_growth_min = (((mingrowth/10)*3)/100)+1,
+#          proj_growth_whitevap = (((nhwhitevapgrowth/10)*3)/100)+1, 
+#          proj_growth_blackvap = (((nhblackvapgrowth/10)*3)/100)+1,
+#          proj_growth_hvap = (((hispvapgrowth/10)*3)/100)+1,
+#          proj_pop = pop10p*((((popgrowth/10)*3)/100)+1),
+#          proj_vap = vap10p*proj_growth_vap,
+#          proj_nhwhite = nhwhite10p*proj_growth_white,
+#          proj_nhblack = nhblack10p*proj_growth_black,
+#          proj_h = h10p*proj_growth_h,
+#          proj_nhwhitevap = nhwhitevap10p*proj_growth_whitevap,
+#          proj_nhblackvap = nhblackvap10p*proj_growth_blackvap,
+#          proj_hvap = hispvap10p*proj_growth_hvap,
+#          densifying = ifelse(is.na(densification), NA,
+#                              ifelse(densification > 0, 1, 0)),
+#          economic_need = ifelse(is.na(hinc10p), NA,
+#                                 ifelse(((hinc10p-hinc00p*1.25)/(hinc00p*1.25)) < 0, 1, 0))
+#   ) %>%
+#   select(plid, c(contains("proj")), c(contains("growth")), -c(contains("_growth")), vraa, c(contains("vap")))
 
 table(pl_annex_var_1013$plid %in% pl0010$plid) #4695 false
 
 pl_annex_var_1013 %<>%
   filter(plid %in% pl0010$plid) %>%
   left_join(pl0010, by = "plid") %>%
-  mutate(post = 0)
+  mutate(post = 0) %>%
+  group_by(STATEA) %>%
+  mutate(pop_quartiles = ntile(pop10p, 4)) %>%
+  ungroup()
 
 table(pl_annex_var_1013$annexing)
 
