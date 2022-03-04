@@ -150,7 +150,7 @@ pl_annex_var_1013 %<>%
   filter(plid %in% pl0010$plid) %>%
   left_join(pl0010, by = "plid") %>%
   mutate(post = 0) %>%
-  group_by(STATEA) %>%
+  group_by(substr(plid, 1, 2)) %>%
   mutate(pop_quartiles = ntile(pop10p, 4)) %>%
   ungroup()
 

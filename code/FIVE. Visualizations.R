@@ -1,0 +1,197 @@
+# get environment ready 
+setwd("~/Google Drive/My Drive/Stanford/QE2")
+
+library("stringr")
+library("dplyr")
+library("stargazer")
+library("tidyverse")
+library("tidycensus")
+library("lme4")
+library("readr")
+library("data.table")
+#library("readstata13")
+library("magrittr")
+library("sf")
+
+# compare place boundaries for 2000 and 2010 for an annexing place 
+# compared to block boundaries for annexable in 2000 and actually annexed in 2010 
+
+pl_annex_var_0010 <- read_csv("analyticalfiles/pl_annex_var_0010.csv")
+indices <- grep("^vap_total$", names(pl_annex_var_0010))
+indices <- names(pl_annex_var_0010)[indices]
+rm(pl_annex_var_0010)
+
+NE <- c("09", "23", "25", "33", "34", "36", "42", "24", "44", "50", "15")
+pl0010 <- read_csv("analyticalfiles/pl_annex_var_0010.csv") %>%
+  mutate(STATE = substr(plid, 1, 2)) %>%
+  filter(!(STATE %in% NE)) %>%
+  filter(annexing==1) %>%
+  filter_at(all_of(indices), ~(.>0)) %>%
+  filter(STATE=="06") %>%
+  filter(pct_annexed == 0.5)
+
+plids_viz <- pl0010$plid
+
+# 2000 places 
+ca_pl00 <- st_read("SHP_pl/2000/CA_06/tl_2010_06_place00.shp") %>%
+  filter(PLCIDFP00 %in% plids_viz) %>%
+  st_transform(., 3488)
+
+# ca_pl10 <- st_read("SHP_pl/2010/CA_06/tl_2010_06_place10.shp") %>%
+#  filter(GEOID10 %in% plids_viz)
+
+# get contig blocks and actually annexed blocks for each of those places
+ca_blks00 <- read_csv("SHP_blk_0010/2000/CA_06/CA_buffers.csv") %>%
+  filter(bufferplace %in% plids_viz) %>%
+  select(blkid, bufferplace) %>%
+  rename(plid = bufferplace)
+
+# # grab placeids 
+# ca_blkplids <- read_csv("blocks2000_var.csv") %>%
+#   mutate(plid = paste0(str_pad(STATEA, 2, "left", "0"), str_pad(PLACEA, 5, "left", "0"))) %>%
+#   filter(plid %in% plids_viz)
+
+ca_blk00 <- st_read("SHP_blk_0010/2000/CA_06/tl_2010_06_tabblock00.shp") %>%
+  filter(BLKIDFP00 %in% ca_blks00$blkid) %>%
+  st_transform(., 3488) %>%
+  left_join(ca_blks00, by = c("BLKIDFP00" = "blkid"))
+
+# get which blocks were annexed 
+aa0010 <- read_csv("analyticalfiles/annexedblocks0010dem_pl00_newsample_unincorp.csv") %>%
+  filter(annexed == 1 & plid %in% plids_viz & blkid %in% ca_blks00$blkid)
+ca_blk00 %<>%
+  mutate(annexed = ifelse(BLKIDFP00 %in% aa0010$blkid, 1, 0))
+table(ca_blk00$annexed)
+
+g <- ggplot() + 
+  geom_sf(data = ca_blk00 %>% filter(plid == plids_viz[[1]]), aes(fill = as.factor(annexed))) + 
+  geom_sf(data = ca_pl00 %>% filter(PLCIDFP00 == plids_viz[[1]]), fill = "black") + 
+  labs(fill='Annexed',
+       title = "Annexations for Orland City, CA, 2000-2010") +
+  scale_fill_grey(start = 0.7, end = 0.4) 
+g
+ggsave(filename = "analyticalfiles/Orland_annex.png",
+       plot = g,
+       dpi = 300)
+
+g <- ggplot() + 
+  geom_sf(data = ca_blk00 %>% filter(plid == plids_viz[[5]]), aes(fill = as.factor(annexed))) + 
+  geom_sf(data = ca_pl00 %>% filter(PLCIDFP00 == plids_viz[[5]]), fill = "black") + 
+  labs(fill='Annexed',
+       title = "Annexations for Live Oak City, CA, 2000-2010") +
+  scale_fill_grey(start = 0.7, end = 0.4) 
+g
+ggsave(filename = "analyticalfiles/LiveOak_annex.png",
+       plot = g,
+       dpi = 300)
+
+#biggest city in TX 
+pl0010 <- read_csv("analyticalfiles/pl_annex_var_0010.csv") %>%
+  mutate(STATE = substr(plid, 1, 2)) %>%
+  filter(!(STATE %in% NE)) %>%
+  filter(annexing==1) %>%
+  filter_at(all_of(indices), ~(.>0)) %>%
+  filter(STATE=="48") %>%
+  filter(plid=="4835000")
+
+plids_viz <- pl0010$plid
+
+# 2000 places 
+tx_pl00 <- st_read("SHP_pl/2000/TX_48/tl_2010_48_place00.shp") %>%
+  filter(PLCIDFP00 %in% plids_viz) %>%
+  st_transform(., 3488)
+
+# ca_pl10 <- st_read("SHP_pl/2010/CA_06/tl_2010_06_place10.shp") %>%
+#  filter(GEOID10 %in% plids_viz)
+
+# get contig blocks and actually annexed blocks for each of those places
+tx_blks00 <- read_csv("SHP_blk_0010/2000/TX_48/TX_buffers.csv") %>%
+  filter(bufferplace %in% plids_viz) %>%
+  select(blkid, bufferplace) %>%
+  rename(plid = bufferplace) %>%
+  mutate(blkid = as.character(blkid))
+
+# # grab placeids 
+# ca_blkplids <- read_csv("blocks2000_var.csv") %>%
+#   mutate(plid = paste0(str_pad(STATEA, 2, "left", "0"), str_pad(PLACEA, 5, "left", "0"))) %>%
+#   filter(plid %in% plids_viz)
+
+tx_blk00 <- st_read("SHP_blk_0010/2000/TX_48/tl_2010_48_tabblock00.shp") %>%
+  filter(BLKIDFP00 %in% tx_blks00$blkid) %>%
+  st_transform(., 3488) %>%
+  left_join(tx_blks00, by = c("BLKIDFP00" = "blkid"))
+
+# get which blocks were annexed 
+aa0010 <- read_csv("analyticalfiles/annexedblocks0010dem_pl00_newsample_unincorp.csv") %>%
+  filter(annexed == 1 & plid %in% plids_viz & blkid %in% tx_blks00$blkid)
+tx_blk00 %<>%
+  mutate(annexed = ifelse(BLKIDFP00 %in% aa0010$blkid, 1, 0))
+table(tx_blk00$annexed)
+
+g <- ggplot() + 
+  geom_sf(data = tx_blk00, aes(fill = as.factor(annexed))) + 
+  scale_fill_grey(start = 0.7, end = 0.4) +
+  labs(fill = "Annexed") +
+  geom_sf(data = tx_pl00, fill = "black", color = "black") +
+  scale_fill_manual(color = "black", name = "Houston") +
+  labs(
+    title = "Annexations for Houston, TX, 2000-2010") 
+g
+ggsave(filename = "analyticalfiles/Houston_annex.png",
+       plot = g,
+       dpi = 300)
+
+# biggest city in CA ####
+pl0010 <- read_csv("analyticalfiles/pl_annex_var_0010.csv") %>%
+  mutate(STATE = substr(plid, 1, 2)) %>%
+  filter(!(STATE %in% NE)) %>%
+  filter(annexing==1) %>%
+  filter_at(all_of(indices), ~(.>0)) %>%
+  filter(STATE=="06") %>%
+  filter(plid=="0603526")
+
+plids_viz <- pl0010$plid
+
+# 2000 places 
+ca_pl00 <- st_read("SHP_pl/2000/CA_06/tl_2010_06_place00.shp") %>%
+  filter(PLCIDFP00 %in% plids_viz) %>%
+  st_transform(., 3488)
+
+# ca_pl10 <- st_read("SHP_pl/2010/CA_06/tl_2010_06_place10.shp") %>%
+#  filter(GEOID10 %in% plids_viz)
+
+# get contig blocks and actually annexed blocks for each of those places
+ca_blks00 <- read_csv("SHP_blk_0010/2000/CA_06/CA_buffers.csv") %>%
+  filter(bufferplace %in% plids_viz) %>%
+  select(blkid, bufferplace) %>%
+  rename(plid = bufferplace)
+
+# # grab placeids 
+# ca_blkplids <- read_csv("blocks2000_var.csv") %>%
+#   mutate(plid = paste0(str_pad(STATEA, 2, "left", "0"), str_pad(PLACEA, 5, "left", "0"))) %>%
+#   filter(plid %in% plids_viz)
+
+ca_blk00 <- st_read("SHP_blk_0010/2000/CA_06/tl_2010_06_tabblock00.shp") %>%
+  filter(BLKIDFP00 %in% ca_blks00$blkid) %>%
+  st_transform(., 3488) %>%
+  left_join(ca_blks00, by = c("BLKIDFP00" = "blkid"))
+
+# get which blocks were annexed 
+aa0010 <- read_csv("analyticalfiles/annexedblocks0010dem_pl00_newsample_unincorp.csv") %>%
+  filter(annexed == 1 & plid %in% plids_viz & blkid %in% ca_blks00$blkid)
+ca_blk00 %<>%
+  mutate(annexed = ifelse(BLKIDFP00 %in% aa0010$blkid, 1, 0))
+table(ca_blk00$annexed)
+
+g <- ggplot() + 
+  geom_sf(data = ca_blk00, aes(fill = as.factor(annexed))) + 
+  geom_sf(data = ca_pl00, fill = "black") + 
+  labs(fill='Annexed',
+       title = "Annexations for Bakersfield, CA, 2000-2010") +
+  scale_fill_grey(start = 0.7, end = 0.4) 
+g
+ggsave(filename = "analyticalfiles/Bakersfield_annex.png",
+       plot = g,
+       dpi = 300)
+
+rm(list = ls())

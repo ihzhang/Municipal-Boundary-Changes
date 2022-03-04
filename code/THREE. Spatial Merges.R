@@ -140,13 +140,14 @@ contigall2000 %<>%
 table(annexedblocks$blkid %in% contigall2000$blkid)
 table(annexedblocks$plid_annexed %in% contigall2000$contigplace)
 
-aa <- contigall2000 %>% 
-    left_join(annexedblocks, by = "blkid")
+aa <- annexedblocks %>% 
+    full_join(contigall2000, by = "blkid")
 
 aa %<>%
     mutate(annexed = ifelse(is.na(annexed), 0, 1), 
-           plid = ifelse(is.na(plid_annexed), contigplace, plid_annexed)) %>%
-    dplyr::select(blkid, plid, annexed, plid2000)
+           plid = ifelse(is.na(plid_annexed), contigplace, plid_annexed),
+           contig = ifelse(is.na(contigplace), 0, 1)) %>%
+    dplyr::select(blkid, plid, annexed, contig) 
 
 table(aa$annexed)
 length(unique(aa$plid))
@@ -186,7 +187,7 @@ aa %<>%
 table(aa$annexed)
 
 aa %<>% 
-  select(-plid2000) %>%
+  #select(-plid2000) %>%
   group_by(plid) %>%
   mutate(n = sum(annexed==1),
          annexing_place = ifelse(n==0, 0, 1)) %>%
@@ -374,13 +375,14 @@ contigall2010 %<>%
   dplyr::select(blkid, contigplace)
 
 # annexing analytical file "aa"
-aa <- contigall2010 %>% 
-  left_join(annexedblocks, by = "blkid")
+aa <- annexedblocks %>% 
+  full_join(contigall2010, by = "blkid")
 
 aa %<>%
   mutate(plid = ifelse(is.na(plid_annexed), contigplace, plid_annexed),
-         annexed = ifelse(is.na(annexed), 0, annexed)) %>%
-  dplyr::select(blkid, plid, annexed)
+         annexed = ifelse(is.na(annexed), 0, 1),
+         contig = ifelse(is.na(contigplace), 0, 1)) %>%
+  dplyr::select(blkid, plid, annexed, contig)
 
 table(aa$annexed)
 length(unique(aa$plid))
@@ -450,6 +452,7 @@ pl0010 <- read_csv("pl0010_var.csv")
 table(aa$plid %in% pl0010$plid) 
 
 aa %<>%
+  filter(plid %in% pl0010$plid) %>%
     left_join(pl0010, by = "plid")
 
 aa %<>%
@@ -492,7 +495,7 @@ aa$period <- "1013"
 write_csv(aa, "analyticalfiles/annexedblocks1013dem_pl00_newsample_unincorp.csv") # 280122
 rm (list = ls())
 
-# repeat for 2014 to 2020 #### 
+# repeat for 2014 to 2017 #### 
 state_list <- list.files("SHP_blk_0010/2014/", all.files = FALSE, full.names = FALSE)
 blocks2013 <- list()
 for (i in 1:length(state_list)) {
@@ -705,6 +708,133 @@ names(aa) <- gsub("14p", "_p", names(aa))
 aa$period <- "1420"
 write_csv(aa, "analyticalfiles/annexedblocks1420dem_pl00_newsample_unincorp.csv") # 156527
 
+rm(list = ls())
+
+# repeat for 2017-2020 ####
+# clean: 
+# 1. for contiguous blocks, keep only eligible blocks 
+# 2. for annexeed blocks, keep only eligible blocks 
+# we just need the blockids of blocks that are annexed
+annexedblocks <- read_csv("aa_baseline_full_1720.csv")
+
+annexedblocks %<>%
+  dplyr::select("blkid", "plid")
+names(annexedblocks) <- c("blkid", "plid_annexed")
+annexedblocks$annexed <- 1
+
+# contiguous blocks 
+contigall2017 <- read_csv("allcontigblocks2017.csv")
+
+# identify contiguous blocks and actually annexed blocks in the all-block file ####
+contigall2017 %<>%
+  dplyr::select(blkid, bufferplace)
+
+# annexing analytical file "aa"
+table(annexedblocks$blkid %in% contigall2017$blkid)
+table(annexedblocks$plid_annexed %in% contigall2017$bufferplace)
+
+aa <- annexedblocks %>% 
+  full_join(contigall2017, by = "blkid")
+
+aa %<>%
+  mutate(annexed = ifelse(is.na(annexed), 0, 1), 
+         plid = ifelse(is.na(plid_annexed), bufferplace, plid_annexed),
+         contig = ifelse(is.na(bufferplace), 0, 1)) %>%
+  dplyr::select(blkid, plid, annexed, contig) 
+
+table(aa$annexed)
+length(unique(aa$plid))
+
+write_csv(aa, "annexedblocks1720_base_unincorp.csv")
+rm(list = ls())
+#clean up and get ready for Census data 
+aa <- read_csv("annexedblocks1720_base_unincorp.csv")
+
+#clean up and get ready for Census data 
+# 2017 block data 
+blocks2017 <- read_csv("blocks2017_int.csv")
+blocks2017 %<>%
+  mutate(STATEA = substr(blkid, 1, 2),
+         county = substr(blkid, 1, 5)) 
+
+head(aa$blkid)
+head(blocks2017$blkid)
+
+# check they seem to be in comparable formats
+aa %<>%
+  left_join(blocks2017, by = "blkid")
+rm(blocks2017)
+
+# drop missing values
+aa %<>% 
+  mutate(keep = ifelse((annexed == 0 | (annexed == 1 & (!is.na(pop) & pop > 0 & !is.na(vap) & vap > 0))), 1, 0))
+table(aa$keep)
+aa %<>%
+  filter(keep==1)
+table(aa$annexed)
+
+aa %<>% 
+  #select(-plid2000) %>%
+  group_by(plid) %>%
+  mutate(n = sum(annexed==1),
+         annexing_place = ifelse(n==0, 0, 1)) %>%
+  ungroup() %>%
+  dplyr::select(-n) 
+table(aa$annexing_place)
+
+# we can't have places that annexed all their blocks, 
+# nor places that only had 1 contiguous block
+aa %<>%
+  group_by(plid) %>%
+  mutate(n_annexed = sum(annexed==1),
+         n = n()) %>%
+  ungroup() %>%
+  filter(n_annexed < n &
+           n >= 2) %>%
+  select(-n_annexed, -n)
+
+# merge in place data for 2010, as well as 2000-2010 trends 
+pl9000 <- read_csv("pl9000_var.csv")
+table(aa$plid %in% pl9000$plid) 
+
+aa %<>%
+  filter(plid %in% pl9000$plid) %>%
+  left_join(pl9000, by = "plid")
+
+# places that would have gone from majority-white to majority-minority  
+aa %<>%
+  select(-c(contains("90p")))
+names(aa)
+
+# we can't have places that annexed all their blocks, 
+# nor places that only had 1 contiguous block
+aa %<>%
+  group_by(plid) %>%
+  mutate(n_annexed = sum(annexed==1),
+         n = n()) %>%
+  ungroup() %>%
+  filter(n_annexed < n &
+           n >= 2) %>%
+  select(-n_annexed, -n)
+
+# merge in vra 
+vrastates <- c("01", "02", "04", "13", "22", "28", "45", "48", "51")
+vra.df <- read_csv("vra_counties.csv")
+vra.df %<>% 
+  mutate(countyfips = str_pad(countyfips, 5, side = "left", pad = "0"),
+         sectionv = 1)
+
+aa %<>%
+  mutate(vra = case_when(
+    STATEA %in% vrastates ~ 1,
+    county %in% vra.df$countyfips ~ 1,
+    TRUE ~ 0
+  ))
+
+# prep for rbind 
+names(aa) <- gsub("00p", "_p", names(aa))
+aa$period <- "0010"
+write_csv(aa, "analyticalfiles/annexedblocks0010dem_pl00_newsample_unincorp.csv") # 280122
 rm(list = ls())
 
 # merge ####
