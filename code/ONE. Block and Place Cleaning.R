@@ -678,7 +678,7 @@ write_csv(pl1014, "pl1014_var.csv")
 #rm(list = ls())
 rm(places2010, vap2010)
 
-# 2020 census ####
+# 2017 census ####
 # only need vap data 
 places2017 <- read_csv("seplaces_allstates/acs1519vap.csv")
 places2017 %<>% 
@@ -733,7 +733,7 @@ pl1417 %<>%
     TRUE ~ "0")
   )
 table(pl1417$vraa)
-write_csv(pl1417, "places1720_var.csv")
+write_csv(pl1417, "places1417_var.csv")
 rm(list = ls())
 
 # now do 2000-2013 and 2013-2020 ####
