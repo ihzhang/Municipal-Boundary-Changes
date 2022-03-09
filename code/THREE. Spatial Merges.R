@@ -573,10 +573,10 @@ rm(block, block10, block13, blocks2013, blocks2010, plids, i)
 length(unique(annexedblocks$GISJOIN)) # check that every entry is unique
 length(unique(annexedblocks$plid)) # how many places does this cover?
 
-annexedblocks <- read_csv("aa_baseline_full_1420.csv")
+annexedblocks <- read_csv("aa_baseline_full_1417.csv")
 annexedblocks %<>%
-  mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
-                        str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0"))) %>%
+  #mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
+  #                      str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0"))) %>%
   dplyr::select("blkid", "plid")
 annexedblocks$annexed <- 1
 
@@ -600,25 +600,26 @@ contigall2014 %<>%
   dplyr::select(blkid, bufferplace)
 
 # annexing analytical file "aa"
-aa <- contigall2014 %>% 
-  left_join(annexedblocks, by = "blkid")
+aa <- annexedblocks %>% 
+  full_join(contigall2014, by = "blkid")
 
 aa %<>%
-  mutate(plid = ifelse(is.na(plid), bufferplace, plid),
-         annexed = ifelse(is.na(annexed), 0, annexed)) %>%
-  dplyr::select(blkid, plid, annexed)
+  mutate(annexed = ifelse(is.na(annexed), 0, 1), 
+         plid = ifelse(is.na(plid), bufferplace, plid),
+         contig = ifelse(is.na(bufferplace), 0, 1)) %>%
+  dplyr::select(blkid, plid, annexed, contig) 
 
 table(aa$annexed)
 length(unique(aa$plid))
 
-write_csv(aa, "annexedblocks1420_base_unincorp.csv")
+write_csv(aa, "annexedblocks1417_base_unincorp.csv")
 
 rm(annexedblocks, contigall2014)
-aa <- read_csv("annexedblocks1420_base_unincorp.csv")
+aa <- read_csv("annexedblocks1417_base_unincorp.csv")
 
 #clean up and get ready for Census data 
-# 2014 block data 
-blocks2014 <- read_csv("blocks2014_int.csv")
+# 2014 block data ####
+blocks2014 <- fread("blocks2014_int.csv")
 blocks2014 %<>%
   mutate(STATEA = substr(blkid, 1, 2),
          county = substr(blkid, 1, 5)
@@ -630,7 +631,6 @@ head(aa$blkid)
 head(blocks2014$blkid)
 
 # check they seem to be in comparable formats
-
 aa %<>%
   left_join(blocks2014, by = "blkid")
 rm(blocks2014)
@@ -664,7 +664,6 @@ aa %<>%
   select(-n_annexed, -n)
 
 table(aa$annexed)
-107354/nrow(aa)
 
 # merge in place data for 2014, as well as 2010-2014 trends 
 pl1014 <- read_csv("pl1014_var.csv")
@@ -705,8 +704,8 @@ aa %<>%
 
 # prep for rbind 
 names(aa) <- gsub("14p", "_p", names(aa))
-aa$period <- "1420"
-write_csv(aa, "analyticalfiles/annexedblocks1420dem_pl00_newsample_unincorp.csv") # 156527
+aa$period <- "1417"
+write_csv(aa, "analyticalfiles/annexedblocks1417dem_pl00_newsample_unincorp.csv") # 156527
 
 rm(list = ls())
 
@@ -752,7 +751,7 @@ aa <- read_csv("annexedblocks1720_base_unincorp.csv")
 
 #clean up and get ready for Census data 
 # 2017 block data 
-blocks2017 <- read_csv("blocks2017_int.csv")
+blocks2017 <- fread("blocks2017_int.csv")
 blocks2017 %<>%
   mutate(STATEA = substr(blkid, 1, 2),
          county = substr(blkid, 1, 5)) 
@@ -772,6 +771,7 @@ table(aa$keep)
 aa %<>%
   filter(keep==1)
 table(aa$annexed)
+rm(annexedblocks, contigall2017)
 
 aa %<>% 
   #select(-plid2000) %>%
@@ -793,17 +793,16 @@ aa %<>%
            n >= 2) %>%
   select(-n_annexed, -n)
 
-# merge in place data for 2010, as well as 2000-2010 trends 
-pl9000 <- read_csv("pl9000_var.csv")
-table(aa$plid %in% pl9000$plid) 
+# merge in place data for 2017, as well as 2014-2017 trends 
+pl1417 <- read_csv("places1417_var.csv")
+table(aa$plid %in% pl1417$plid) 
 
 aa %<>%
-  filter(plid %in% pl9000$plid) %>%
-  left_join(pl9000, by = "plid")
+  filter(plid %in% pl1417$plid) %>%
+  left_join(pl1417, by = "plid")
 
-# places that would have gone from majority-white to majority-minority  
 aa %<>%
-  select(-c(contains("90p")))
+  select(-c(contains("14p")))
 names(aa)
 
 # we can't have places that annexed all their blocks, 
@@ -832,9 +831,9 @@ aa %<>%
   ))
 
 # prep for rbind 
-names(aa) <- gsub("00p", "_p", names(aa))
-aa$period <- "0010"
-write_csv(aa, "analyticalfiles/annexedblocks0010dem_pl00_newsample_unincorp.csv") # 280122
+names(aa) <- gsub("17p", "_p", names(aa))
+aa$period <- "1720"
+write_csv(aa, "analyticalfiles/annexedblocks1720dem_pl00_newsample_unincorp.csv") # 280122
 rm(list = ls())
 
 # merge ####

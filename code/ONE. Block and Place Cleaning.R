@@ -700,6 +700,17 @@ places2017 %<>%
                          str_pad(Geo_PLACE, 5, "left", "0"))) %>%
     select(c(plid, Geo_QName, contains("17p")))
 
+pop2017 <- read_csv("seplaces_allstates/acs1519pop.csv")
+pop2017 %<>%
+  mutate(
+    plid = paste0(str_pad(Geo_STATE, 2, "left", "0"),
+                  str_pad(Geo_PLACE, 5, "left", "0")),
+    pop17p = SE_A00001_001
+  ) %>%
+  select(plid, pop17p)
+places2017 %<>%
+  left_join(pop2017)
+
 write_csv(places2017, "places2017_cleaned.csv")
 
 places2014 <- read_csv("places2014_cleaned.csv")
@@ -714,7 +725,7 @@ pl1417 <-
 pl1417 %<>%
   mutate_at(all_of(c("pop14p", "popdensity14p", "nhwhite14p", "nhblack14p", "h14p", "min14p",
                      "hinc14p", "nhwhitevap14p", "nhblackvap14p", "hispvap14p", "nativevap14p", "asianvap14p", "othervap14p",
-                    "vap17p", "nhwhitevap17p", "nhblackvap17p", "hispvap17p", "nativevap17p", "asianvap17p", "othervap17p")), 
+                    "pop17p", "vap17p", "nhwhitevap17p", "nhblackvap17p", "hispvap17p", "nativevap17p", "asianvap17p", "othervap17p")), 
             ~ifelse((is.na(.) | . == 0), 1, .)) %>%
   mutate(nhwhitevapgrowth = ((nhwhitevap17p - nhwhitevap14p)/nhwhitevap14p)*100,
          nhblackvapgrowth = ((nhblackvap17p - nhblackvap14p)/nhblackvap14p)*100,
@@ -845,73 +856,39 @@ blocks2010 %<>%
 #     filter(blkid %in% blocks2000$blkid)
 
 blkids <- Reduce(intersect, list(unique(blocks2000$blkid), unique(blocks2010$blkid), unique(blocks2020$blkid)))
-names_list <- Reduce(intersect, list(names(blocks2000), names(blocks2010), names(blocks2020)))
+names_list <- Reduce(intersect, list(names(blocks2010), names(blocks2020)))
 
 blocks2000 %<>%
   filter(blkid %in% blkids) %>%
   select(all_of(names_list))
 
 blocks2010 %<>%
-  filter(blkid %in% blkids) %>%
+  #filter(blkid %in% blkids) %>%
   select(all_of(names_list))
 
 blocks2020 %<>%
-  filter(blkid %in% blkids) %>%
+  #filter(blkid %in% blkids) %>%
   select(all_of(names_list))
 
-blocks <- base::rbind(blocks2000, blocks2010, blocks2020)
+blocks <- base::rbind(blocks2010, blocks2020)
 rm(blocks2000, blocks2020)
-
-# blocks2013 <- blocks2010 %>%
-#     mutate(Year = "2013")
-# 
-# blocks2013 %<>%
-#     mutate(pop = NA,
-#            pctnhblack = NA,
-#            pctnhwhite = NA,
-#            pcth = NA,
-#            pctmin = NA,
-#            hispvap = NA,
-#            nhwvap = NA,
-#            nhbvap = NA,
-#            minorityvap = NA,
-#            vacancy = NA)
-# 
-# blocks <- base::rbind(blocks, blocks2013)
-# rm(blocks2013)
-# 
-# blocks %<>%
-#     mutate(Year = as.numeric(as.character(Year))) 
-# 
-# blocks %<>%
-#     group_by(blkid) %>%
-#     arrange(Year) %>%
-#     mutate_at(c(names(blocks)[2:11]), zoo::na.approx, na.rm = F) %>%
-#     ungroup()
-# 
-# blocks13 <- blocks %>%
-#     filter(Year=="2013")
-# 
-# write_csv(blocks13, "blocks2013_int.csv")
-# rm(blocks13)
 
 # make a version that turns NAs to 0s for interpolation
 blocks %<>%
-  mutate_at(all_of(names(blocks2010)[2:25]), ~ifelse(is.na(.), 0, .))
+  mutate_at(all_of(names_list[2:25]), ~ifelse(is.na(.), 0, .))
 
 # do 2014 
 blocks2014 <- blocks2010 %>%
   mutate(Year = 2014)
 
 blocks2014 %<>%
-    mutate_at(all_of(names(blocks2014)[2:25]), ~NA) %>%
-  mutate(Year = 2014)
+    mutate_at(all_of(names(blocks2014)[2:25]), ~NA) 
 
+blocks2014 <- read_csv("blocks2014_int.csv")
 blocks <- base::rbind(blocks, blocks2014)
+rm(blocks2014)
 
-blocks2017 <- blocks2010 %>%
-  mutate(Year = 2017)
-
+blocks2017 <- blocks2010 
 blocks2017 %<>%
   mutate_at(all_of(names(blocks2017)[2:25]), ~NA) %>%
   mutate(Year = 2017)
@@ -919,7 +896,6 @@ blocks2017 %<>%
 blocks <- base::rbind(blocks, blocks2017)
 
 rm(blocks2010, blocks2017, blocks2014)
-
 test <- blocks %>% filter(blkid %in% blkids[1:50])
 
 test %<>%
@@ -934,7 +910,7 @@ rm(blkids)
 blocks %<>%
   group_by(blkid) %>%
   arrange(Year) %>%
-  mutate_at(all_of(names(blocks)[2:25]), zoo::na.approx, na.rm = F) %>%
+  mutate_at(all_of(names_list[2:25]), zoo::na.approx, na.rm = F) %>%
   ungroup() 
 
 blocks14 <- blocks %>%
@@ -943,7 +919,7 @@ write_csv(blocks14, "blocks2014_int.csv")
 
 blocks17 <- blocks %>%
   filter(Year == "2017")
-write_csv(blocks14, "blocks2017_int.csv")
+write_csv(blocks17, "blocks2017_int.csv")
 
 rm(list = ls())
 
