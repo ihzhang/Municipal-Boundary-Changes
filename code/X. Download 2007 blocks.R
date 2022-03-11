@@ -90,4 +90,9 @@ lapply(url_list, cat, "\n", file="pl_07.txt", append=TRUE)
 
 # same with terminal & wget 
 # wget -P Google\ Drive/My\ Drive/Stanford/QE2/SHP_pl/2007/ -i Google\ Drive/My\ Drive/Stanford/QE2/pl_07.txt
-# group shapefiles by state
+# once downloaded, use unzip \*.zip in your wd with the files, followed by rm -f *.zip to remove unneeded zip files
+
+# the rest of this was done in sherlock, after transferring files over
+
+
+
