@@ -423,7 +423,110 @@ pl9000 %<>%
 
 write_csv(pl9000, "pl9000_var.csv")
 
+# 2007 ####
+cpi <- c(1.53, 1.19) #2000, 2007
+places2007 <- read_csv(file = "seplaces_allstates/2007places.csv")
+vap2007 <- read_csv(file = "seplaces_allstates/2007_vap.csv")
 
+places2007 %<>%
+  mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+         PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
+         plid = paste0(STATE, PLACE))
+
+vap2007 %<>%
+  mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+         PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
+         plid = paste0(STATE, PLACE))
+
+places2007 %<>%
+  left_join(vap2007 %>% select(plid, SE_T003_001:SE_T003_014), by = "plid")
+rm(vap2007)
+
+# 2. make variables 
+places2007 %<>%
+  mutate(pop07p = SE_A00001_001, 
+         #pcturb07p = NA,
+         #pctrur07p = NA,
+         popdensity07p = SE_A00002_002,
+         nhblack07p = SE_A04001_004, 
+         nhwhite07p = SE_A04001_003, 
+         pctnhblack07p = (nhblack07p/pop07p) * 100,
+         pctnhwhite07p = (nhwhite07p/pop07p) * 100, 
+         pctrecimm07p = (SE_A10058_002/pop07p) * 100,
+         unemp07p = (SE_A17002_006/SE_A17002_004)*100,
+         pctowneroccupied07p = (SE_A10060_002/SE_A10060_001)*100,
+         pctvacancy07p = (SE_A10044_003/SE_A10044_001)*100,
+         mhmval07p = SE_A10036_001*cpi[2],
+         hinc07p = SE_A14006_001 * cpi[2], 
+         whitepov07p = (SE_A13001I_002/SE_A13001I_001)*100,
+         blackpov07p = (SE_A13001B_002/SE_A13001B_001)*100,
+         hpov07p = (SE_A13001H_002/SE_A13001H_001)*100,
+         minpov07p =  ((hpov07p + blackpov07p + SE_A13001G_002 + SE_A13001F_002 + SE_A13001E_002 + SE_A13001D_002 + SE_A13001C_002)/(SE_A13001B_001 + SE_A13001B_001 + SE_A13001G_001 + SE_A13001F_001 + SE_A13001E_001 + SE_A13001D_001 + SE_A13001C_001))*100,
+         vap07p = SE_T003_001,
+         nhwhitevap07p = SE_T003_003,
+         pctnhwhitevap07p = (nhwhitevap07p/vap07p)*100,
+         nhblackvap07p = SE_T003_004,
+         pctnhblackvap07p = (nhblackvap07p/vap07p)*100,
+         hispvap07p = SE_T003_014,
+         pcthispvap07p = (hispvap07p/vap07p)*100,
+         asianvap07p = SE_T003_006 + SE_T003_007,
+         pctasianvap07p = (asianvap07p/vap07p)*100,
+         nativevap07p = SE_T003_005,
+         pctnativevap07p = (nativevap07p/vap07p)*100,
+         othervap07p = rowSums(across(c(SE_T003_008:SE_T003_013))),
+         pctothervap07p = (othervap07p/vap07p)*100,
+  ) %>%
+  select(plid, pop07p:pctothervap07p)
+
+write_csv(places2007, "pl2007_cleaned.csv")
+
+length(unique(pl2000$plid))
+length(unique(places2007$plid))
+
+table(unique(pl2000$plid) %in% unique(places2007$plid))
+
+pl0007 <- 
+  left_join(
+    pl2000, 
+    places2007, 
+    by = "plid")
+
+pl0007 %<>%
+  mutate_at(all_of(c("pop00p", "popdensity00p", "nhwhite00p", "nhblack00p", 
+                     "hinc00p", "nhwhitevap00p", "nhblackvap00p", "hispvap00p", "asianvap00p", "nativevap00p", "othervap00p",
+                     "pop07p", "popdensity07p", "nhwhite07p", "nhblack07p", 
+                     "hinc07p", "nhwhitevap07p", "nhblackvap07p", "hispvap07p", "asianvap07p", "nativevap07p", "othervap07p")), 
+            ~ifelse((is.na(.) | . == 0), 1, .)) %>%
+  mutate(popgrowth = ((pop07p-pop00p)/pop00p) * 100,
+         densification = (popdensity07p - popdensity00p),
+         nhwhitegrowth = ((nhwhite07p-nhwhite00p)/nhwhite00p) * 100, 
+         nhblackgrowth = ((nhblack07p-nhblack00p)/nhblack00p) * 100,
+         recimmgrowth = (pctrecimm07p - pctrecimm00p),
+         incomegrowth = ((hinc07p - hinc00p*cpi[1])/hinc07p)*100, 
+         blackpovgrowth = (blackpov07p - blackpov00p),
+         whitepovgrowth = (whitepov07p - nhwhitepov00p),
+         hpovgrowth = (hpov07p - hpov00p),
+         minpovgrowth = (minpov07p - minpov00p), 
+         nhwhitevapgrowth = ((nhwhitevap07p - nhwhitevap00p)/nhwhitevap00p)*100,
+         nhblackvapgrowth = ((nhblackvap07p - nhblackvap00p)/nhblackvap00p)*100,
+         hispvapgrowth = ((hispvap07p - hispvap00p)/hispvap00p)*100,
+         nativevapgrowth = ((nativevap07p - nativevap00p)/nativevap00p)*100,
+         asianvapgrowth = ((asianvap07p - asianvap00p)/asianvap00p)*100,
+         othervapgrowth = ((othervap07p - othervap00p)/othervap00p)*100)
+
+pl0007 %<>%
+  mutate(vraa = case_when(
+    (pctnhblackvap07p >= 20 & (pctnativevap07p >= 20 | pctasianvap07p >= 20 | pcthispvap07p >= 20 | pctothervap07p >= 20)) ~ "1",
+    (pctnativevap07p >= 20 & (pctnhblackvap07p | pctasianvap07p >= 20 | pcthispvap07p >= 20 | pctothervap07p >= 20)) ~ "1",
+    (pctasianvap07p >= 20 & (pctnhblackvap07p | pctnativevap07p >= 20 | pcthispvap07p >= 20 | pctothervap07p >= 20)) ~ "1",
+    (pcthispvap07p >= 20 & (pctnhblackvap07p | pctnativevap07p >= 20 | pctasianvap07p >= 20 | pctothervap07p >= 20)) ~ "1",
+    (pctothervap07p >= 20 & (pctnhblackvap07p | pctnativevap07p >= 20 | pctasianvap07p >= 20 | pcthispvap07p >= 20)) ~ "1",
+    TRUE ~ "0")
+  )
+table(pl0007$vraa)
+
+write_csv(pl0007, "pl0007_var.csv")
+rm(pl0007, pl2000, places2007)
 # 2010 places ####
 cpi <- c(1.42, 1.11, 1.03, 1)
 places2010 <- read_csv(file = "seplaces_allstates/2010places.csv")

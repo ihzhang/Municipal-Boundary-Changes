@@ -1279,6 +1279,10 @@ pct3 <- fixest::feols(underbound_blackvap_3pct ~ as.factor(vra)*as.factor(post) 
 summary(pct3)
 black_all <- list(tidy(all), tidy(hpct), tidy(pct1), tidy(pct3))
 openxlsx::write.xlsx(black_all, "analyticalfiles/results/black_all_nowhite.xlsx")
+# simple test 
+all <- fixest::feols(underbound_blackvap ~ as.factor(vra)*as.factor(post) | plid + STATE, data = panel0020_did)
+summary(all)
+# end test
 all <- fixest::feols(underbound_blackvap ~ as.factor(vra)*as.factor(post) + as.factor(maj_white) + as.factor(pop_tercile) + as.factor(annexing) + pct_annexed | plid + STATE, data = panel2p)
 summary(all)
 hpct <- fixest::feols(underbound_blackvap_hpct ~ as.factor(vra)*as.factor(post) + as.factor(maj_white) +  as.factor(pop_tercile) + as.factor(annexing) + pct_annexed | plid + STATE, data = panel2p)
