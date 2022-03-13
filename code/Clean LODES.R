@@ -95,15 +95,42 @@ rm(url_list)
 # remember--we use LODES7, so the base url is: 
 base_url <- "https://lehd.ces.census.gov/data/lodes/LODES7/"
 
+state_codes <- c("AL_01", "AK_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09", 
+                 "DE_10", "FL_12", "GA_13", "IA_19", "ID_16", "IL_17", "IN_18",
+                 "KS_20", "KY_21", "LA_22", 
+                 "MA_25", "MD_24", "ME_23", "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
+                 "NC_37", "ND_38", "NE_31", "NH_33", "NJ_34", "NM_35", "NV_32", "NY_36",
+                 "OH_39", "OK_40", "OR_41", "PA_42", "RI_44",
+                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VT_50", "VA_51",
+                 "WA_53", "WV_54", "WI_55", "WY_56"
+)
+state_codes <- tolower(state_codes)
+page <- read_html(base_url)
 
+state_list <- page %>%
+  html_nodes("a") %>%       # find all links
+  html_attr("href") %>%     # get the url
+  str_subset("^[a-z][a-z]/$") 
 
+state_codes <- substr(state_codes, 1, 2)
+state_list <- state_list[substr(state_list, 1, 2) %in% state_codes]
 
+url_list <- list() # store each url in a list 
+for (state in 1:length(state_list)) {
+  state_url <- paste0(base_url, state_list[state], "rac/")
+  state_page <- read_html(state_url)
+  zipfile <- state_page %>%
+    html_nodes("a") %>%       # find all links
+    html_attr("href") %>%     
+    str_subset("S000_JT00_2017.csv.gz") 
+  url <- paste0(state_url, zipfile)
+  url_list <- append(url_list, url)
+  print(url)
+}
 
-
-
-
-
-
+# turn list into txt file - a good place to double-check that the list has 49 observations
+lapply(url_list, cat, "\n", file="LODES_17.txt", append=TRUE)
+rm(url_list)
 
 # clean 2007 data ####
 state_list_2007_rac <- list.files("Demography/LODES data/2007/rac/", all.files = FALSE, full.names = FALSE) # read in all files, saves file names in a vector
@@ -120,6 +147,22 @@ rm(file_list_2007_rac, state_list_2007_rac) # I like to remove useless objects f
 rac_2007$Year <- 2007
 write_csv(rac_2007, file = "rac_2007.csv")
 rm(rac_2007)
+
+# clean 2017 data ####
+state_list_2017_rac <- list.files("Demography/LODES data/2017/rac/", all.files = FALSE, full.names = FALSE) # read in all files, saves file names in a vector
+file_list_2017_rac <- list() # initiate an empty list
+for (i in 1:length(state_list_2017_rac)) {
+  file_list_2017_rac[[i]] <- read_csv(file = paste0("Demography/LODES data/2017/rac/", state_list_2017_rac[[i]])) %>%
+    mutate(njobs17 = C000,
+           nhincjobs17 = CE03) %>%
+    select(h_geocode, njobs17, nhincjobs17)
+}
+
+rac_2017 <- rbindlist(file_list_2017_rac, use.names = TRUE)
+rm(file_list_2017_rac, state_list_2017_rac) # I like to remove useless objects from the environment ASAP to avoid clutter
+rac_2017$Year <- 2017
+write_csv(rac_2017, file = "rac_2017.csv")
+rm(rac_2017)
 
 # OLD--don't need wac anymore ####
 # repeat for 2010 WAC (double-check variables needed in Google Doc), and 2014.

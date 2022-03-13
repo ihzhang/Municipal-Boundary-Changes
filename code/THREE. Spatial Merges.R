@@ -508,22 +508,28 @@ aa <- read_csv("annexedblocks1417_base_unincorp.csv")
 blocks2014 <- fread("blocks2014_int.csv")
 blocks2014 %<>%
   mutate(STATEA = substr(blkid, 1, 2),
-         county = substr(blkid, 1, 5)
+         countyfips = substr(blkid, 1, 5)
   ) %>%
   select(-Year)
-names(blocks2014)
 
 rac2014 <- read_csv("rac_2014.csv")
 names(rac2014)
 
 b2014names <- names(blocks2014)
+b2014names
 blocks2014 %<>%
-  mutate_at(all_of(b2014names)[2:30], ~ifelse(is.na(.), 0, .))
+  mutate_at(all_of(b2014names)[1:25], ~ifelse(is.na(.), 0, .))
 
 rac2014 %<>%
   mutate_at(c("njobs14", "nhincjobs14"), ~ifelse(is.na(.), 0, .))
+
 head(aa$blkid)
 head(blocks2014$blkid)
+head(rac2014$h_geocode)
+
+blocks2014 %<>%
+  left_join(rac2014 %>% select(-Year), by = c("blkid" = "h_geocode"))
+rm(rac2014)
 
 # check they seem to be in comparable formats
 aa %<>%
@@ -531,12 +537,12 @@ aa %<>%
 rm(blocks2014)
 
 # drop missing values
-aa %<>% 
-  mutate(keep = ifelse((annexed == 0 | (annexed == 1 & (!is.na(pop) & pop > 0 & !is.na(vap) & vap > 0))), 1, 0))
-table(aa$keep)
-aa %<>%
-  filter(keep==1)
-
+# aa %<>% 
+#   mutate(keep = ifelse((annexed == 0 | (annexed == 1 & (!is.na(pop) & pop > 0 & !is.na(vap) & vap > 0))), 1, 0))
+# table(aa$keep)
+# aa %<>%
+#   filter(keep==1)
+# 
 table(aa$annexed)
 
 aa %<>% 
@@ -561,12 +567,10 @@ aa %<>%
 table(aa$annexed)
 
 # merge in place data for 2014, as well as 2010-2014 trends 
-pl1417 <- read_csv("pl1417_var.csv")
+pl1417 <- read_csv("places1417_var.csv")
 table(aa$plid %in% pl1417$plid) 
 aa %<>%
-  filter(plid %in% pl1417$plid)
-
-aa %<>%
+  filter(plid %in% pl1417$plid) %>%
   left_join(pl1417, by = "plid")
 
 # we can't have places that annexed all their blocks, 
@@ -590,9 +594,14 @@ vra.df %<>%
 aa %<>%
   mutate(vra = case_when(
     STATEA %in% vrastates ~ 1,
-    county %in% vra.df$countyfips ~ 1,
+    countyfips %in% vra.df$countyfips ~ 1,
     TRUE ~ 0
   ))
+
+names(aa)
+aa %<>% 
+  mutate_at(all_of(vars(5:29, 32:33)), ~ifelse(is.na(.), 0, .))
+summary(aa)
 
 # prep for rbind 
 aa$period <- "1417"
@@ -647,8 +656,24 @@ blocks2017 %<>%
   mutate(STATEA = substr(blkid, 1, 2),
          county = substr(blkid, 1, 5)) 
 
+rac2017 <- read_csv("rac_2017.csv")
+names(rac2017)
+
+b2017names <- names(blocks2017)
+b2017names
+blocks2017 %<>%
+  mutate_at(all_of(b2017names)[1:25], ~ifelse(is.na(.), 0, .))
+
+rac2017 %<>%
+  mutate_at(c("njobs17", "nhincjobs17"), ~ifelse(is.na(.), 0, .))
+
 head(aa$blkid)
 head(blocks2017$blkid)
+head(rac2017$h_geocode)
+
+blocks2017 %<>%
+  left_join(rac2017 %>% select(-Year), by = c("blkid" = "h_geocode"))
+rm(rac2017)
 
 # check they seem to be in comparable formats
 aa %<>%
@@ -656,16 +681,15 @@ aa %<>%
 rm(blocks2017)
 
 # drop missing values
-aa %<>% 
-  mutate(keep = ifelse((annexed == 0 | (annexed == 1 & (!is.na(pop) & pop > 0 & !is.na(vap) & vap > 0))), 1, 0))
-table(aa$keep)
-aa %<>%
-  filter(keep==1)
-table(aa$annexed)
-rm(annexedblocks, contigall2017)
+# aa %<>% 
+#   mutate(keep = ifelse((annexed == 0 | (annexed == 1 & (!is.na(pop) & pop > 0 & !is.na(vap) & vap > 0))), 1, 0))
+# table(aa$keep)
+# aa %<>%
+#   filter(keep==1)
+# table(aa$annexed)
+# rm(annexedblocks, contigall2017)
 
 aa %<>% 
-  #select(-plid2000) %>%
   group_by(plid) %>%
   mutate(n = sum(annexed==1),
          annexing_place = ifelse(n==0, 0, 1)) %>%
@@ -716,6 +740,11 @@ aa %<>%
     county %in% vra.df$countyfips ~ 1,
     TRUE ~ 0
   ))
+
+names(aa)
+aa %<>% 
+  mutate_at(all_of(vars(5:29, 33:34)), ~ifelse(is.na(.), 0, .))
+summary(aa)
 
 # prep for rbind 
 aa$period <- "1720"

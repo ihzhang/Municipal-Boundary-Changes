@@ -862,38 +862,6 @@ pl1417 <-
 pl1417 %<>%
   mutate_at(all_of(c("pop14p", "popdensity14p", "nhwhite14p", "nhblack14p", "h14p", "min14p",
                      "hinc14p", "nhwhitevap14p", "nhblackvap14p", "hispvap14p", "nativevap14p", "asianvap14p", "othervap14p",
-                    "pop17p", "vap17p", "nhwhitevap17p", "nhblackvap17p", "hispvap17p", "nativevap17p", "asianvap17p", "othervap17p")), 
-            ~ifelse((is.na(.) | . == 0), 1, .)) %>%
-  mutate(nhwhitevapgrowth = ((nhwhitevap17p - nhwhitevap14p)/nhwhitevap14p)*100,
-         nhblackvapgrowth = ((nhblackvap17p - nhblackvap14p)/nhblackvap14p)*100,
-         hispvapgrowth = ((hispvap17p - hispvap14p)/hispvap14p)*100,
-         nativevapgrowth = ((nativevap17p - nativevap14p)/nativevap14p)*100,
-         asianvapgrowth = ((asianvap17p - asianvap14p)/asianvap14p)*100,
-         othervapgrowth = ((othervap17p - othervap14p)/othervap14p)*100)
-
-pl1417 %<>%
-  mutate(vraa = case_when(
-    (pctnhblackvap17p >= 20 & (pctnativevap17p >= 20 | pctasianvap17p >= 20 | pcthispvap17p >= 20 | pctothervap17p >= 20)) ~ "1",
-    (pctnativevap17p >= 20 & (pctnhblackvap17p | pctasianvap17p >= 20 | pcthispvap17p >= 20 | pctothervap17p >= 20)) ~ "1",
-    (pctasianvap17p >= 20 & (pctnhblackvap17p | pctnativevap17p >= 20 | pcthispvap17p >= 20 | pctothervap17p >= 20)) ~ "1",
-    (pcthispvap17p >= 20 & (pctnhblackvap17p | pctnativevap17p >= 20 | pctasianvap17p >= 20 | pctothervap17p >= 20)) ~ "1",
-    (pctothervap17p >= 20 & (pctnhblackvap17p | pctnativevap17p >= 20 | pctasianvap17p >= 20 | pcthispvap17p >= 20)) ~ "1",
-    TRUE ~ "0")
-  )
-table(pl1417$vraa)
-write_csv(pl1417, "places1417_var.csv")
-
-# for other version 
-pl1417 <- 
-  left_join(
-    places2014 %>% select(
-      c(plid, pop14p:pctothervap14p)), 
-    places2017, 
-    by = "plid")
-
-pl1417 %<>%
-  mutate_at(all_of(c("pop14p", "popdensity14p", "nhwhite14p", "nhblack14p", "h14p", "min14p",
-                     "hinc14p", "nhwhitevap14p", "nhblackvap14p", "hispvap14p", "nativevap14p", "asianvap14p", "othervap14p",
                      "pop17p", "vap17p", "nhwhitevap17p", "nhblackvap17p", "hispvap17p", "nativevap17p", "asianvap17p", "othervap17p")), 
             ~ifelse((is.na(.) | . == 0), 1, .)) %>%
   mutate(nhwhitevapgrowth = ((nhwhitevap17p - nhwhitevap14p)/nhwhitevap14p)*100,
@@ -913,7 +881,7 @@ pl1417 %<>%
     TRUE ~ "0")
   )
 table(pl1417$vraa)
-write_csv(pl1417, "places1417_var_2nd_version.csv")
+write_csv(pl1417, "places1417_var.csv")
 
 rm(pl1417, places2014, pop2017)
 
