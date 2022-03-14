@@ -31,8 +31,8 @@ library("broom")
 # need county code for each place 
 
 # 2010-2013 ####
-aa1013 <- read_csv("analyticalfiles/annexedblocks1013dem_pl00_newsample_unincorp.csv")
-
+aa1013 <- read_csv("analyticalfiles/annexedblocks1013dem.csv")
+names(aa1013)
 # transform this into place-level summaries
 # characteristic of all annexable blocks
 # diff between annexed and not annexed 
@@ -55,13 +55,24 @@ place_all <- aa1013 %>%
          nativevap_total = sum(nativevap, na.rm = T),
          asianvap_total = sum(asianvap, na.rm = T),
          othervap_total = sum(othervap, na.rm = T),
-         pct_annexed = mean(annexed, na.rm = T)) %>%
+         pct_annexed = mean(annexed, na.rm = T),
+         njobs_total = sum(njobs10),
+         nhincjobs_total = sum(nhincjobs10),
+         hu_total = sum(hu),
+         owneroccupied_total = sum(owneroccupied),
+         vacancy_total = sum(vacancy)
+         ) %>%
   ungroup()
   
 place_by_annex <- aa1013 %>%
   filter(annexed==1) %>%
   group_by(plid, annexed) %>%
-  summarize(pop_total = sum(pop),
+  summarize(pop_total = sum(pop, na.rm = T),
+            njobs_total = sum(njobs10, na.rm = T),
+            nhincjobs_total = sum(nhincjobs10, na.rm = T),
+            hu_total = sum(hu, na.rm = T),
+            owneroccupied_total = sum(owneroccupied, na.rm = T),
+            vacancy_total = sum(vacancy, na.rm = T),
             nhblack_total = sum(nhblack),
             nhblack_mean = mean((nhblack_total/pop_total)*100, na.rm = T),
             nhwhite_total = sum(nhwhite),
@@ -69,11 +80,11 @@ place_by_annex <- aa1013 %>%
             h_total = sum(h),
             h_mean = mean((h_total/pop_total)*100, na.rm = T),
             vap_total = sum(vap, na.rm = T),
-            nhblackvap_total = sum(nhbvap),
+            nhblackvap_total = sum(nhbvap, na.rm = T),
             nhblackvap_mean = mean((nhblackvap_total/vap_total)*100),
-            nhwhitevap_total = sum(nhwvap),
+            nhwhitevap_total = sum(nhwvap, na.rm = T),
             nhwhitevap_mean = mean((nhwhitevap_total/vap_total)*100),
-            hvap_total = sum(hispvap),
+            hvap_total = sum(hispvap, na.rm = T),
             hvap_mean = mean((hvap_total/vap_total)*100),
             nativevap_total = sum(nativevap, na.rm = T),
             asianvap_total = sum(asianvap, na.rm = T),
@@ -109,48 +120,13 @@ pl_annex_var_1013 %<>%
 # have been, i.e. pctwhite given growth rate by 2013
 # or if pcth after annex < pcth before annex compared to what would have been,
 # i.e. pcth given growth rate by 2013 
-pl0010 <- read_csv("pl0010_var.csv")
+pl1013 <- read_csv("pl1013_var.csv")
 
-# pl0010 %<>%
-#   filter(
-#     is.finite(popgrowth) & 
-#       is.finite(nhwhitegrowth) & 
-#       is.finite(nhwhitevapgrowth) &
-#       is.finite(nhblackgrowth) & 
-#       is.finite(nhblackvapgrowth) &
-#       is.finite(hgrowth) & 
-#       is.finite(hispvapgrowth) &
-#       is.finite(mingrowth)
-#   ) %>%
-#   mutate(vapgrowth = ((vap10p-vap00p)/vap10p)*100,
-#          proj_growth_vap = (((vapgrowth/10)*3)/100)+1,
-#     proj_growth_white = (((nhwhitegrowth/10)*3)/100)+1,
-#          proj_growth_black = (((nhblackgrowth/10)*3)/100)+1,
-#          proj_growth_h = (((hgrowth/10)*3)/100)+1,
-#          proj_growth_min = (((mingrowth/10)*3)/100)+1,
-#          proj_growth_whitevap = (((nhwhitevapgrowth/10)*3)/100)+1, 
-#          proj_growth_blackvap = (((nhblackvapgrowth/10)*3)/100)+1,
-#          proj_growth_hvap = (((hispvapgrowth/10)*3)/100)+1,
-#          proj_pop = pop10p*((((popgrowth/10)*3)/100)+1),
-#          proj_vap = vap10p*proj_growth_vap,
-#          proj_nhwhite = nhwhite10p*proj_growth_white,
-#          proj_nhblack = nhblack10p*proj_growth_black,
-#          proj_h = h10p*proj_growth_h,
-#          proj_nhwhitevap = nhwhitevap10p*proj_growth_whitevap,
-#          proj_nhblackvap = nhblackvap10p*proj_growth_blackvap,
-#          proj_hvap = hispvap10p*proj_growth_hvap,
-#          densifying = ifelse(is.na(densification), NA,
-#                              ifelse(densification > 0, 1, 0)),
-#          economic_need = ifelse(is.na(hinc10p), NA,
-#                                 ifelse(((hinc10p-hinc00p*1.25)/(hinc00p*1.25)) < 0, 1, 0))
-#   ) %>%
-#   select(plid, c(contains("proj")), c(contains("growth")), -c(contains("_growth")), vraa, c(contains("vap")))
-
-table(pl_annex_var_1013$plid %in% pl0010$plid) #4695 false
+table(pl_annex_var_1013$plid %in% pl1013$plid) #4695 false
 
 pl_annex_var_1013 %<>%
-  filter(plid %in% pl0010$plid) %>%
-  left_join(pl0010, by = "plid") %>%
+  filter(plid %in% pl1013$plid) %>%
+  left_join(pl1013, by = "plid") %>%
   mutate(post = 0) %>%
   group_by(substr(plid, 1, 2)) %>%
   mutate(pop_tercile = ntile(pop10p, 3),
@@ -231,6 +207,15 @@ pl_annex_var_1013 %<>%
       (annexing == 1 & ((((nhwhitevap_total_1 + nhwhitevap10p)/(vap10p + vap_total_1)) < (nhwhitevap10p/vap10p)))), 1, 0)
   )
 
+# compare SES
+pl_annex_var_1013 %<>% 
+  mutate(
+    property_inc = ifelse(
+      (annexing == 1 & (((owneroccupied_total_1 + owneroccupied10p)/(hu10p + hu_total_1)) > (hu10p + hu_total_1))), 1, 0),
+    hincjobs = ifelse(
+      (annexing == 1 & (((nhincjobs_total_1 + overlodesthresh10p)/(emp10p + njobs_total_1)) > (emp10p + njobs_total_1))), 1, 0)
+  )
+
 pl_annex_var_1013 %<>%
   mutate(drop = ifelse(
     vap_total == 0, 1, 0
@@ -270,6 +255,8 @@ table(pl_annex_var_1013$underbound_asianvap_1pct)
 table(pl_annex_var_1013$underbound_nativevap_1pct)
 table(pl_annex_var_1013$underbound_othervap_1pct)
 table(pl_annex_var_1013$underbound_nhwhitevap_1pct)
+table(pl_annex_var_1013$property_inc)
+table(pl_annex_var_1013$hincjobs)
 
 write_csv(pl_annex_var_1013, "analyticalfiles/pl_annex_var_1013.csv")
 pl_annex_var_1013 <- read_csv("analyticalfiles/pl_annex_var_1013.csv")
@@ -299,7 +286,7 @@ desc1013 <- pl_annex_var_1013 %>%
 rm(aa1013, pl_annex_var_1013, pl0010)
 
 #repeat for 1417 ####
-aa1417 <- read_csv("analyticalfiles/annexedblocks1417dem_pl00_newsample_unincorp.csv")
+aa1417 <- read_csv("analyticalfiles/annexedblocks1417dem.csv")
 
 # transform this into place-level summaries
 # characteristic of all annexable blocks
@@ -324,13 +311,23 @@ place_all <- aa1417 %>%
             nativevap_total = sum(nativevap, na.rm = T),
             asianvap_total = sum(asianvap, na.rm = T),
             othervap_total = sum(othervap, na.rm = T),
-            pct_annexed = mean(annexed, na.rm = T)) %>%
+            pct_annexed = mean(annexed, na.rm = T),
+            njobs_total = sum(njobs14),
+            nhincjobs_total = sum(nhincjobs14),
+            hu_total = sum(hu),
+            owneroccupied_total = sum(owneroccupied),
+            vacancy_total = sum(vacancy)) %>%
   ungroup()
 
 place_by_annex <- aa1417 %>%
   filter(annexed==1) %>%
   group_by(plid, annexed) %>%
   summarize(pop_total = sum(pop),
+            njobs_total = sum(njobs14),
+            nhincjobs_total = sum(nhincjobs14),
+            hu_total = sum(hu),
+            owneroccupied_total = sum(owneroccupied),
+            vacancy_total = sum(vacancy),
             nhblack_total = sum(nhblack),
             nhblack_mean = mean((nhblack_total/pop_total)*100, na.rm = T),
             nhwhite_total = sum(nhwhite),
@@ -379,47 +376,13 @@ pl_annex_var_1417 %<>%
 # have been, i.e. pctwhite given growth rate by 2013
 # or if pcth after annex < pcth before annex compared to what would have been,
 # i.e. pcth given growth rate by 2013 
-pl1014 <- read_csv("pl1014_var.csv")
+pl1417 <- read_csv("places1417_var.csv")
 
-# pl1014 %<>%
-#   filter(
-#     is.finite(popgrowth) & 
-#       is.finite(nhwhitegrowth) & 
-#       is.finite(nhwhitevapgrowth) &
-#       is.finite(nhblackgrowth) & 
-#       is.finite(nhblackvapgrowth) &
-#       is.finite(hgrowth) & 
-#       is.finite(hispvapgrowth) &
-#       is.finite(mingrowth)
-#   ) %>%
-#   mutate(proj_growth_white = (((nhwhitegrowth/4)*6)/100)+1,
-#          proj_growth_black = (((nhblackgrowth/4)*6)/100)+1,
-#          proj_growth_h = (((hgrowth/4)*6)/100)+1,
-#          proj_growth_whitevap = (((nhwhitevapgrowth/4)*6)/100)+1, 
-#          proj_growth_blackvap = (((nhblackvapgrowth/4)*6)/100)+1,
-#          proj_growth_hvap = (((hispvapgrowth/4)*6)/100)+1,
-#          proj_pop = pop14p*((((popgrowth/4)*6)/100)+1),
-#          vapgrowth = ((vap14p-vap10p)/vap10p)*100,
-#          proj_growth_vap = (((vapgrowth/4)*6)/100)+1,
-#          proj_vap = vap14p*proj_growth_vap,
-#          proj_nhwhite = nhwhite14p*proj_growth_white,
-#          proj_nhblack = nhblack14p*proj_growth_black,
-#          proj_h = h14p*proj_growth_h,
-#          proj_nhwhitevap = nhwhitevap14p*proj_growth_whitevap,
-#          proj_nhblackvap = nhblackvap14p*proj_growth_blackvap,
-#          proj_hvap = hispvap14p*proj_growth_hvap,
-#          densifying = ifelse(is.na(densification), NA,
-#                              ifelse(densification > 0, 1, 0)),
-#          economic_need = ifelse(is.na(hinc14p), NA,
-#                                 ifelse(((hinc14p-hinc10p*1.25)/(hinc10p*1.25)) < 0, 1, 0))
-#   ) %>%
-#   select(plid, c(contains("proj")), densifying, economic_need, c(contains("growth")), -c(contains("_growth")), vraa, c(contains("vap")))
-
-table(pl_annex_var_1417$plid %in% pl1014$plid) 
+table(pl_annex_var_1417$plid %in% pl1417$plid) 
 
 pl_annex_var_1417 %<>%
-  filter(plid %in% pl1014$plid) %>%
-  left_join(pl1014, by = "plid") %>%
+  filter(plid %in% pl1417$plid) %>%
+  left_join(pl1417, by = "plid") %>%
   mutate(post = 1) %>%
   group_by(substr(plid, 1, 2)) %>%
   mutate(pop_tercile = ntile(pop14p, 3),
@@ -499,6 +462,14 @@ pl_annex_var_1417 %<>%
       (annexing == 1 & ((((nhwhitevap_total_1 + nhwhitevap14p)/(vap14p + vap_total_1)) < (nhwhitevap14p/vap14p)))), 1, 0)
   )
 
+# compare SES
+pl_annex_var_1417 %<>% 
+  mutate(
+    property_inc = ifelse(
+      (annexing == 1 & (((owneroccupied_total_1 + owneroccupied14p)/(hu14p + hu_total_1)) > (hu14p + hu_total_1))), 1, 0),
+    hincjobs = ifelse(
+      (annexing == 1 & (((nhincjobs_total_1 + overlodesthresh14p)/(emp14p + njobs_total_1)) > (emp14p + njobs_total_1))), 1, 0)
+  )
 
 pl_annex_var_1417 %<>%
   mutate(drop = ifelse(
@@ -540,6 +511,8 @@ table(pl_annex_var_1417$underbound_nativevap_3pct)
 table(pl_annex_var_1417$underbound_asianvap_3pct)
 table(pl_annex_var_1417$underbound_othervap_3pct)
 table(pl_annex_var_1417$underbound_nhwhitevap_3pct)
+table(pl_annex_var_1417$property_inc)
+table(pl_annex_var_1417$hincjobs)
 
 write_csv(pl_annex_var_1417, "analyticalfiles/pl_annex_var_1417.csv")
 pl_annex_var_1417 <- read_csv("analyticalfiles/pl_annex_var_1417.csv")

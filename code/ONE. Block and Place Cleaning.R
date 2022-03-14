@@ -654,6 +654,16 @@ pl1013 <- left_join(
   acs13,
   by = "plid"
 )
+
+pl1013 %<>%
+  mutate(vraa = case_when(
+    (pctnhblackvap10p >= 20 & (pctnativevap10p >= 20 | pctasianvap10p >= 20 | pcthispvap10p >= 20 | pctothervap10p >= 20)) ~ "1",
+    (pctnativevap10p >= 20 & (pctnhblackvap10p | pctasianvap10p >= 20 | pcthispvap10p >= 20 | pctothervap10p >= 20)) ~ "1",
+    (pctasianvap10p >= 20 & (pctnhblackvap10p | pctnativevap10p >= 20 | pcthispvap10p >= 20 | pctothervap10p >= 20)) ~ "1",
+    (pcthispvap10p >= 20 & (pctnhblackvap10p | pctnativevap10p >= 20 | pctasianvap10p >= 20 | pctothervap10p >= 20)) ~ "1",
+    (pctothervap10p >= 20 & (pctnhblackvap10p | pctnativevap10p >= 20 | pctasianvap10p >= 20 | pcthispvap10p >= 20)) ~ "1",
+    TRUE ~ "0"))
+
 write_csv(pl1013, "pl1013_var.csv")
 rm(list = ls())
 
