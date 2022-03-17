@@ -360,6 +360,7 @@ rm(list = ls())
 # write_csv(pl9000, "pl9000_var.csv")
 
 # 2007 ####
+cpi <- c(1.19, 1.11, 1.08, 1.06, 1)
 places2007 <- read_csv(file = "seplaces_allstates/2007places.csv")
 vap2007 <- read_csv(file = "seplaces_allstates/vap/2007_vap.csv")
 emp2007 <- read_csv("seplaces_allstates/emp/acs0509.csv")
@@ -423,59 +424,60 @@ places2007 %<>%
          othervap07p = SE_T003_008,
          pctothervap07p = (othervap07p/vap07p)*100
   ) %>%
-  select(plid, pop07p:pctothervap07p)
+  select(Geo_NAME, plid, pop07p:pctothervap07p)
 
 write_csv(places2007, "pl2007_cleaned.csv")
 
-length(unique(pl2000$plid))
-length(unique(places2007$plid))
-
-table(unique(pl2000$plid) %in% unique(places2007$plid))
-
-pl0007 <- 
-  left_join(
-    places2000, 
-    places2007, 
-    by = "plid")
-
-pl0007 %<>%
-  mutate_at(all_of(c("pop00p", "popdensity00p", "nhwhite00p", "nhblack00p", 
-                     "hinc00p", "nhwhitevap00p", "nhblackvap00p", "hispvap00p", "asianvap00p", "nativevap00p", "othervap00p",
-                     "pop07p", "popdensity07p", "nhwhite07p", "nhblack07p", 
-                     "hinc07p", "nhwhitevap07p", "nhblackvap07p", "hispvap07p", "asianvap07p", "nativevap07p", "othervap07p")), 
-            ~ifelse((is.na(.) | . == 0), 1, .)) %>%
-  mutate(popgrowth = ((pop07p-pop00p)/pop00p) * 100,
-         densification = (popdensity07p - popdensity00p),
-         nhwhitegrowth = ((nhwhite07p-nhwhite00p)/nhwhite00p) * 100, 
-         nhblackgrowth = ((nhblack07p-nhblack00p)/nhblack00p) * 100,
-         recimmgrowth = (pctrecimm07p - pctrecimm00p),
-         incomegrowth = ((hinc07p - hinc00p*cpi[1])/hinc07p)*100, 
-         blackpovgrowth = (blackpov07p - blackpov00p),
-         whitepovgrowth = (whitepov07p - nhwhitepov00p),
-         hpovgrowth = (hpov07p - hpov00p),
-         minpovgrowth = (minpov07p - minpov00p), 
-         nhwhitevapgrowth = ((nhwhitevap07p - nhwhitevap00p)/nhwhitevap00p)*100,
-         nhblackvapgrowth = ((nhblackvap07p - nhblackvap00p)/nhblackvap00p)*100,
-         hispvapgrowth = ((hispvap07p - hispvap00p)/hispvap00p)*100,
-         nativevapgrowth = ((nativevap07p - nativevap00p)/nativevap00p)*100,
-         asianvapgrowth = ((asianvap07p - asianvap00p)/asianvap00p)*100,
-         othervapgrowth = ((othervap07p - othervap00p)/othervap00p)*100)
-
-pl0007 %<>%
-  mutate(vraa = case_when(
-    (pctnhblackvap07p >= 20 & (pctnativevap07p >= 20 | pctasianvap07p >= 20 | pcthispvap07p >= 20 | pctothervap07p >= 20)) ~ "1",
-    (pctnativevap07p >= 20 & (pctnhblackvap07p | pctasianvap07p >= 20 | pcthispvap07p >= 20 | pctothervap07p >= 20)) ~ "1",
-    (pctasianvap07p >= 20 & (pctnhblackvap07p | pctnativevap07p >= 20 | pcthispvap07p >= 20 | pctothervap07p >= 20)) ~ "1",
-    (pcthispvap07p >= 20 & (pctnhblackvap07p | pctnativevap07p >= 20 | pctasianvap07p >= 20 | pctothervap07p >= 20)) ~ "1",
-    (pctothervap07p >= 20 & (pctnhblackvap07p | pctnativevap07p >= 20 | pctasianvap07p >= 20 | pcthispvap07p >= 20)) ~ "1",
-    TRUE ~ "0")
-  )
-table(pl0007$vraa)
-
-write_csv(pl0007, "pl0007_var.csv")
-rm(pl0007, pl2000, places2007)
+# length(unique(pl2000$plid))
+# length(unique(places2007$plid))
+# 
+# table(unique(pl2000$plid) %in% unique(places2007$plid))
+# 
+# pl0007 <- 
+#   left_join(
+#     places2000, 
+#     places2007, 
+#     by = "plid")
+# 
+# pl0007 %<>%
+#   mutate_at(all_of(c("pop00p", "popdensity00p", "nhwhite00p", "nhblack00p", 
+#                      "hinc00p", "nhwhitevap00p", "nhblackvap00p", "hispvap00p", "asianvap00p", "nativevap00p", "othervap00p",
+#                      "pop07p", "popdensity07p", "nhwhite07p", "nhblack07p", 
+#                      "hinc07p", "nhwhitevap07p", "nhblackvap07p", "hispvap07p", "asianvap07p", "nativevap07p", "othervap07p")), 
+#             ~ifelse((is.na(.) | . == 0), 1, .)) %>%
+#   mutate(popgrowth = ((pop07p-pop00p)/pop00p) * 100,
+#          densification = (popdensity07p - popdensity00p),
+#          nhwhitegrowth = ((nhwhite07p-nhwhite00p)/nhwhite00p) * 100, 
+#          nhblackgrowth = ((nhblack07p-nhblack00p)/nhblack00p) * 100,
+#          recimmgrowth = (pctrecimm07p - pctrecimm00p),
+#          incomegrowth = ((hinc07p - hinc00p*cpi[1])/hinc07p)*100, 
+#          blackpovgrowth = (blackpov07p - blackpov00p),
+#          whitepovgrowth = (whitepov07p - nhwhitepov00p),
+#          hpovgrowth = (hpov07p - hpov00p),
+#          minpovgrowth = (minpov07p - minpov00p), 
+#          nhwhitevapgrowth = ((nhwhitevap07p - nhwhitevap00p)/nhwhitevap00p)*100,
+#          nhblackvapgrowth = ((nhblackvap07p - nhblackvap00p)/nhblackvap00p)*100,
+#          hispvapgrowth = ((hispvap07p - hispvap00p)/hispvap00p)*100,
+#          nativevapgrowth = ((nativevap07p - nativevap00p)/nativevap00p)*100,
+#          asianvapgrowth = ((asianvap07p - asianvap00p)/asianvap00p)*100,
+#          othervapgrowth = ((othervap07p - othervap00p)/othervap00p)*100)
+# 
+# pl0007 %<>%
+#   mutate(vraa = case_when(
+#     (pctnhblackvap07p >= 20 & (pctnativevap07p >= 20 | pctasianvap07p >= 20 | pcthispvap07p >= 20 | pctothervap07p >= 20)) ~ "1",
+#     (pctnativevap07p >= 20 & (pctnhblackvap07p | pctasianvap07p >= 20 | pcthispvap07p >= 20 | pctothervap07p >= 20)) ~ "1",
+#     (pctasianvap07p >= 20 & (pctnhblackvap07p | pctnativevap07p >= 20 | pcthispvap07p >= 20 | pctothervap07p >= 20)) ~ "1",
+#     (pcthispvap07p >= 20 & (pctnhblackvap07p | pctnativevap07p >= 20 | pctasianvap07p >= 20 | pctothervap07p >= 20)) ~ "1",
+#     (pctothervap07p >= 20 & (pctnhblackvap07p | pctnativevap07p >= 20 | pctasianvap07p >= 20 | pcthispvap07p >= 20)) ~ "1",
+#     TRUE ~ "0")
+#   )
+# table(pl0007$vraa)
+# 
+# write_csv(pl0007, "pl0007_var.csv")
+# rm(pl0007, pl2000, places2007)
 
 # 2010 places ####
+cpi <- c(1.19, 1.11, 1.08, 1.06, 1)
 # $3333 Lodes 2010 = 3486.48 in 2012 = 41837 --> 40K above threshold
 places2010 <- read_csv(file = "seplaces_allstates/2010places.csv")
 vap2010 <- read_csv(file = "seplaces_allstates/vap/2010_vap.csv")
@@ -543,60 +545,59 @@ places2010 %<>%
          othervap10p = rowSums(across(c(SF1_P0110010:SF1_P0110011, SF1_P0110028, SF1_P0110049, SF1_P0110065, SF1_P0110072))),
          pctothervap10p = (othervap10p/vap10p)*100
          ) %>%
-  select(plid, pop10p:pctothervap10p)
+  select(plid, Geo_NAME, pop10p:pctothervap10p)
 
 write_csv(places2010, "pl2010_cleaned.csv")
 
-length(unique(pl2000$plid))
-length(unique(places2010$plid))
-
-table(unique(pl2000$plid) %in% unique(places2010$plid))
-
-pl0010 <- 
-  left_join(
-    places2000, 
-    places2010, 
-    by = "plid")
-
-pl0010 %<>%
-  mutate_at(all_of(c("pop00p", "popdensity00p", "nhwhite00p", "nhblack00p", "h00p", "min00p",
-                     "hinc00p", "nhwhitevap00p", "nhblackvap00p", "hispvap00p", "asianvap00p", "nativevap00p", "othervap00p",
-                     "pop10p", "popdensity10p", "nhwhite10p", "nhblack10p", "h10p", "min10p",
-                     "hinc10p", "nhwhitevap10p", "nhblackvap10p", "hispvap10p", "asianvap10p", "nativevap10p", "othervap10p")), 
-            ~ifelse((is.na(.) | . == 0), 1, .)) %>%
-  mutate(popgrowth = ((pop10p-pop00p)/pop00p) * 100,
-         densification = (popdensity10p - popdensity00p),
-         nhwhitegrowth = ((nhwhite10p-nhwhite00p)/nhwhite00p) * 100, 
-         nhblackgrowth = ((nhblack10p-nhblack00p)/nhblack00p) * 100,
-         hgrowth = ((h10p-h00p)/h00p) * 100,
-         mingrowth = ((min10p-min00p)/min00p) * 100,
-         recimmgrowth = (pctrecimm10p - pctrecimm00p),
-         incomegrowth = ((hinc10p[3] - hinc00p*cpi[1])/hinc00p[1])*100, 
-         blackpovgrowth = (blackpov10p - blackpov00p),
-         whitepovgrowth = (whitepov10p - nhwhitepov00p),
-         hpovgrowth = (hpov10p - hpov00p),
-         minpovgrowth = (minpov10p - minpov00p), 
-         nhwhitevapgrowth = ((nhwhitevap10p - nhwhitevap00p)/nhwhitevap00p)*100,
-         nhblackvapgrowth = ((nhblackvap10p - nhblackvap00p)/nhblackvap00p)*100,
-         hispvapgrowth = ((hispvap10p - hispvap00p)/hispvap00p)*100,
-         nativevapgrowth = ((nativevap10p - nativevap00p)/nativevap00p)*100,
-         asianvapgrowth = ((asianvap10p - asianvap00p)/asianvap00p)*100,
-         othervapgrowth = ((othervap10p - othervap00p)/othervap00p)*100)
-
-pl0010 %<>%
-  mutate(vraa = case_when(
-    (pctnhblackvap10p >= 20 & (pctnativevap10p >= 20 | pctasianvap10p >= 20 | pcthispvap10p >= 20 | pctothervap10p >= 20)) ~ "1",
-    (pctnativevap10p >= 20 & (pctnhblackvap10p | pctasianvap10p >= 20 | pcthispvap10p >= 20 | pctothervap10p >= 20)) ~ "1",
-    (pctasianvap10p >= 20 & (pctnhblackvap10p | pctnativevap10p >= 20 | pcthispvap10p >= 20 | pctothervap10p >= 20)) ~ "1",
-    (pcthispvap10p >= 20 & (pctnhblackvap10p | pctnativevap10p >= 20 | pctasianvap10p >= 20 | pctothervap10p >= 20)) ~ "1",
-    (pctothervap10p >= 20 & (pctnhblackvap10p | pctnativevap10p >= 20 | pctasianvap10p >= 20 | pcthispvap10p >= 20)) ~ "1",
-    TRUE ~ "0")
-  )
-table(pl0010$vraa)
-
-write_csv(pl0010, "pl0010_var.csv")
+# length(unique(places2007$plid))
+# length(unique(places2010$plid))
+# 
+# table(unique(pl2000$plid) %in% unique(places2010$plid))
+# 
+# pl0010 <- 
+#   left_join(
+#     places2000, 
+#     places2010, 
+#     by = "plid")
+# 
+# pl0010 %<>%
+#   mutate_at(all_of(c("pop00p", "popdensity00p", "nhwhite00p", "nhblack00p", "h00p", "min00p",
+#                      "hinc00p", "nhwhitevap00p", "nhblackvap00p", "hispvap00p", "asianvap00p", "nativevap00p", "othervap00p",
+#                      "pop10p", "popdensity10p", "nhwhite10p", "nhblack10p", "h10p", "min10p",
+#                      "hinc10p", "nhwhitevap10p", "nhblackvap10p", "hispvap10p", "asianvap10p", "nativevap10p", "othervap10p")), 
+#             ~ifelse((is.na(.) | . == 0), 1, .)) %>%
+#   mutate(popgrowth = ((pop10p-pop00p)/pop00p) * 100,
+#          densification = (popdensity10p - popdensity00p),
+#          nhwhitegrowth = ((nhwhite10p-nhwhite00p)/nhwhite00p) * 100, 
+#          nhblackgrowth = ((nhblack10p-nhblack00p)/nhblack00p) * 100,
+#          hgrowth = ((h10p-h00p)/h00p) * 100,
+#          mingrowth = ((min10p-min00p)/min00p) * 100,
+#          recimmgrowth = (pctrecimm10p - pctrecimm00p),
+#          incomegrowth = ((hinc10p[3] - hinc00p*cpi[1])/hinc00p[1])*100, 
+#          blackpovgrowth = (blackpov10p - blackpov00p),
+#          whitepovgrowth = (whitepov10p - nhwhitepov00p),
+#          hpovgrowth = (hpov10p - hpov00p),
+#          minpovgrowth = (minpov10p - minpov00p), 
+#          nhwhitevapgrowth = ((nhwhitevap10p - nhwhitevap00p)/nhwhitevap00p)*100,
+#          nhblackvapgrowth = ((nhblackvap10p - nhblackvap00p)/nhblackvap00p)*100,
+#          hispvapgrowth = ((hispvap10p - hispvap00p)/hispvap00p)*100,
+#          nativevapgrowth = ((nativevap10p - nativevap00p)/nativevap00p)*100,
+#          asianvapgrowth = ((asianvap10p - asianvap00p)/asianvap00p)*100,
+#          othervapgrowth = ((othervap10p - othervap00p)/othervap00p)*100)
+# 
+# pl0010 %<>%
+#   mutate(vraa = case_when(
+#     (pctnhblackvap10p >= 20 & (pctnativevap10p >= 20 | pctasianvap10p >= 20 | pcthispvap10p >= 20 | pctothervap10p >= 20)) ~ "1",
+#     (pctnativevap10p >= 20 & (pctnhblackvap10p | pctasianvap10p >= 20 | pcthispvap10p >= 20 | pctothervap10p >= 20)) ~ "1",
+#     (pctasianvap10p >= 20 & (pctnhblackvap10p | pctnativevap10p >= 20 | pcthispvap10p >= 20 | pctothervap10p >= 20)) ~ "1",
+#     (pcthispvap10p >= 20 & (pctnhblackvap10p | pctnativevap10p >= 20 | pctasianvap10p >= 20 | pctothervap10p >= 20)) ~ "1",
+#     (pctothervap10p >= 20 & (pctnhblackvap10p | pctnativevap10p >= 20 | pctasianvap10p >= 20 | pcthispvap10p >= 20)) ~ "1",
+#     TRUE ~ "0")
+#   )
+# table(pl0010$vraa)
+# 
+# write_csv(pl0010, "pl0010_var.csv")
 #rm(list = ls())
-rm(places2010, vap2010)
 
 #0710 ####
 places2007 <- read_csv("pl2007_cleaned.csv")
@@ -607,7 +608,7 @@ table(unique(places2007$plid) %in% unique(places2010$plid))
 pl0710 <- 
   left_join(
     places2007, 
-    places2010, 
+    places2010 %>% select(-Geo_NAME), 
     by = "plid")
 
 pl0710 %<>%
@@ -625,6 +626,7 @@ write_csv(pl0710, "pl0710_var.csv")
 rm(places2007, pl0710)
 
 # 2013 ACS places ####
+cpi <- c(1.19, 1.11, 1.08, 1.06, 1)
 # we just need vap info 
 acs13 <- read_csv("seplaces_allstates/vap/1115acsvap.csv")
 
@@ -645,13 +647,13 @@ acs13 %<>%
         pctnativevap13p = (nativevap13p/vap13p)*100,
         othervap13p = SE_T003_008,
         pctothervap13p = (othervap13p/vap13p)*100) %>%
-    select(plid, vap13p:pctothervap13p)
+    select(plid, Geo_NAME, vap13p:pctothervap13p)
 
 write_csv(acs13, "acs13.csv")
 
 pl1013 <- left_join(
   places2010, 
-  acs13,
+  acs13 %>% select(-Geo_NAME),
   by = "plid"
 )
 
@@ -668,6 +670,7 @@ write_csv(pl1013, "pl1013_var.csv")
 rm(list = ls())
 
 # 2014 ACS places ####
+cpi <- c(1.19, 1.11, 1.08, 1.06, 1)
 # $3333 LODES in 2014 is 3375.75 in 2016 = 40,509 --> 40K threshold
 places2014 <- read_csv("seplaces_allstates/2014places.csv")
 vap2014 <- read_csv("seplaces_allstates/vap/acs1216vap.csv")
@@ -754,7 +757,7 @@ places2014 <- read_csv("places2014_cleaned.csv")
 pl1014 <- 
   left_join(
     places2010 %>% select(
-      c(plid, pop10p:pctothervap10p)), 
+      c(plid, Geo_NAME, pop10p:pctothervap10p)), 
     places2014 %>% select(
       c(plid, pop14p:pctothervap14p)), 
     by = "plid")
@@ -801,6 +804,7 @@ write_csv(pl1014, "pl1014_var.csv")
 rm(places2010, pl1014)
 
 # 2017 census ####
+cpi <- c(1.19, 1.11, 1.08, 1.06, 1)
 # 3333 LODES $ is 3454.78 in 2019 = 41454 --> 40K threshold
 # vap, emp, and hu 
 places2017 <- read_csv("seplaces_allstates/vap/acs1519vap.csv")
@@ -808,7 +812,6 @@ emp2017 <- read_csv("seplaces_allstates/emp/acs1519.csv")
 hu2017 <- read_csv("seplaces_allstates/hu/acs1519.csv")
 
 places2017 %<>% 
-    rename("Geo_QName" = "Geo_QNAME") %>%
     mutate(plid = paste0(str_pad(Geo_STATE, 2, "left", "0"),
                          str_pad(Geo_PLACE, 5, "left", "0")))
 
@@ -821,16 +824,17 @@ hu2017 %<>%
                        str_pad(Geo_PLACE, 5, "left", "0")))
 
 places2017 %<>%
-  left_join(emp2017 %>% select(plid, SE_A14024_001:ACS19_5yr_B20005095), by = "plid") %>%
+  left_join(emp2017 %>% select(plid, SE_A17002_001:ACS19_5yr_B20005095), by = "plid") %>%
   left_join(hu2017 %>% select(plid, SE_A10060_001:ACS19_5yr_B25004001), by = "plid")
 
 rm(emp2017, hu2017)
 
 places2017 %<>%
     mutate(hu17p = SE_A10060_001,
-           owneroccuped17p = SE_A10060_002, 
+           owneroccupied17p = SE_A10060_002, 
            vacancy17p = ACS19_5yr_B25004001,
            incomepp17p = SE_A14024_001*cpi[5],
+           emp17p = SE_A17002_005,
            overlodesthresh17p = rowSums(across(c(ACS19_5yr_B20005019:ACS19_5yr_B20005025, ACS19_5yr_B20005042:ACS19_5yr_B20005048, ACS19_5yr_B20005066:ACS19_5yr_B20005072, ACS19_5yr_B20005089:ACS19_5yr_B20005095))),
            vap17p = SE_T003_001,
            nhwhitevap17p = SE_T003_003,
@@ -845,7 +849,7 @@ places2017 %<>%
            pctasianvap17p = (asianvap17p/vap17p)*100,
            othervap17p = SE_T003_008,
            pctothervap17p = (othervap17p/vap17p)*100) %>%
-    select(c(plid, Geo_QName, contains("17p")))
+    select(c(plid, Geo_NAME, contains("17p")))
 
 pop2017 <- read_csv("seplaces_allstates/acs1519pop.csv")
 pop2017 %<>%
@@ -865,8 +869,8 @@ places2014 <- read_csv("places2014_cleaned.csv")
 pl1417 <- 
   left_join(
     places2014 %>% select(
-      c(plid, pop14p:pctothervap14p)), 
-    places2017, 
+      c(plid, Geo_NAME, pop14p:pctothervap14p)), 
+    places2017 %>% select(-Geo_NAME), 
     by = "plid")
 
 pl1417 %<>%
@@ -896,9 +900,9 @@ write_csv(pl1417, "places1417_var.csv")
 rm(pl1417, places2014, pop2017)
 
 # 2020 places ####
+cpi <- c(1.19, 1.11, 1.08, 1.06, 1)
 places2020 <- read_csv("seplaces_allstates/vap/vap2020.csv")
 places2020 %<>% 
-  rename("Geo_QName" = "Geo_QNAME") %>%
   mutate(vap20p = SE_T011_001,
          nhwhitevap20p = SE_T011_003,
          pctnhwhitevap20p = (nhwhitevap20p/vap20p)*100,
@@ -914,15 +918,15 @@ places2020 %<>%
          pctothervap20p = (othervap20p/vap20p)*100,
          plid = paste0(str_pad(Geo_STATE, 2, "left", "0"),
                        str_pad(Geo_PLACE, 5, "left", "0"))) %>%
-  select(c(plid, Geo_QName, contains("20p")))
+  select(c(plid, Geo_NAME, contains("20p")))
 
 write_csv(places2020, "places2020_cleaned.csv")
 
 pl1720 <- 
   left_join(
     places2017 %>% select(
-      c(plid, vap17p:pop17p)), 
-    places2020, 
+      c(plid, Geo_NAME, hu17p:pop17p)), 
+    places2020 %>% select(-Geo_NAME), 
     by = "plid")
 
 names(pl1720)

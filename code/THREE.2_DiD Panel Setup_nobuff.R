@@ -188,7 +188,19 @@ pl_annex_var_1013 %<>%
     underbound_othervap_1pct = ifelse(
       (annexing == 1 & increase_white == 1 & ((((othervap_total_1 + othervap10p)/(vap10p + vap_total_1)) - (othervap10p/vap10p))) < -0.01), 1, 0),
     underbound_nhwhitevap_1pct = ifelse(
-      (annexing == 1 & ((((nhwhitevap_total_1 + nhwhitevap10p)/(vap10p + vap_total_1)) - (nhwhitevap10p/vap10p))) < -0.01), 1, 0)
+      (annexing == 1 & ((((nhwhitevap_total_1 + nhwhitevap10p)/(vap10p + vap_total_1)) - (nhwhitevap10p/vap10p))) < -0.01), 1, 0),
+    underbound_blackvap_10pct = ifelse(
+      (annexing == 1 & increase_white == 1 & ((((nhblackvap_total_1 + nhblackvap10p)/(vap_total_1 + vap10p)) - (nhblackvap10p/vap10p))) < -0.1), 1, 0), 
+    underbound_hispvap_10pct = ifelse(
+      (annexing == 1 & increase_white == 1 & ((((hvap_total_1 + hispvap10p)/(vap_total_1 + vap10p)) - (hispvap10p/vap10p))) < -0.1), 1, 0),
+    underbound_asianvap_10pct = ifelse(
+      (annexing == 1 & increase_white == 1 & ((((asianvap_total_1 + asianvap10p)/(vap10p + vap_total_1)) - (asianvap10p/vap10p))) < -0.1), 1, 0), 
+    underbound_nativevap_10pct = ifelse(
+      (annexing == 1 & increase_white == 1 & ((((nativevap_total_1 + nativevap10p)/(vap10p + vap_total_1)) - (nativevap10p/vap10p))) < -0.1), 1, 0),
+    underbound_othervap_10pct = ifelse(
+      (annexing == 1 & increase_white == 1 & ((((othervap_total_1 + othervap10p)/(vap10p + vap_total_1)) - (othervap10p/vap10p))) < -0.1), 1, 0),
+    underbound_nhwhitevap_10pct = ifelse(
+      (annexing == 1 & ((((nhwhitevap_total_1 + nhwhitevap10p)/(vap10p + vap_total_1)) - (nhwhitevap10p/vap10p))) < -0.1), 1, 0)
   )
 
 pl_annex_var_1013 %<>%
@@ -301,7 +313,6 @@ place_all <- aa1417 %>%
             h_total = sum((pcth*pop)),
             h_mean = mean((h_total/pop_total)*100, na.rm = T),
             vap_total = sum(vap, na.rm = T),
-            hu_total = sum(hu, na.rm = T),
             nhblackvap_total = sum(nhbvap, na.rm = T),
             nhblackvap_mean = mean((nhblackvap_total/vap_total)*100),
             nhwhitevap_total = sum(nhwvap, na.rm = T),
@@ -443,7 +454,19 @@ pl_annex_var_1417 %<>%
     underbound_othervap_1pct = ifelse(
       (annexing == 1 & increase_white == 1 & ((((othervap_total_1 + othervap14p)/(vap14p + vap_total_1)) - (othervap14p/vap14p))) < -0.01), 1, 0),
     underbound_nhwhitevap_1pct = ifelse(
-      (annexing == 1 & ((((nhwhitevap_total_1 + nhwhitevap14p)/(vap14p + vap_total_1)) - (nhwhitevap14p/vap14p))) < -0.01), 1, 0)
+      (annexing == 1 & ((((nhwhitevap_total_1 + nhwhitevap14p)/(vap14p + vap_total_1)) - (nhwhitevap14p/vap14p))) < -0.01), 1, 0),
+    underbound_blackvap_10pct = ifelse(
+      (annexing == 1 & increase_white == 1 & ((((nhblackvap_total_1 + nhblackvap14p)/(vap_total_1 + vap14p)) - (nhblackvap14p/vap14p))) < -0.1), 1, 0), 
+    underbound_hispvap_10pct = ifelse(
+      (annexing == 1 & increase_white == 1 & ((((hvap_total_1 + hispvap14p)/(vap_total_1 + vap14p)) - (hispvap14p/vap14p))) < -0.1), 1, 0),
+    underbound_asianvap_10pct = ifelse(
+      (annexing == 1 & increase_white == 1 & ((((asianvap_total_1 + asianvap14p)/(vap14p + vap_total_1)) - (asianvap14p/vap14p))) < -0.1), 1, 0), 
+    underbound_nativevap_10pct = ifelse(
+      (annexing == 1 & increase_white == 1 & ((((nativevap_total_1 + nativevap14p)/(vap14p + vap_total_1)) - (nativevap14p/vap14p))) < -0.1), 1, 0),
+    underbound_othervap_10pct = ifelse(
+      (annexing == 1 & increase_white == 1 & ((((othervap_total_1 + othervap14p)/(vap14p + vap_total_1)) - (othervap14p/vap14p))) < -0.1), 1, 0),
+    underbound_nhwhitevap_10pct = ifelse(
+      (annexing == 1 & ((((nhwhitevap_total_1 + nhwhitevap14p)/(vap14p + vap_total_1)) - (nhwhitevap14p/vap14p))) < -0.1), 1, 0)
   )
 
 pl_annex_var_1417 %<>%
@@ -511,6 +534,12 @@ table(pl_annex_var_1417$underbound_nativevap_3pct)
 table(pl_annex_var_1417$underbound_asianvap_3pct)
 table(pl_annex_var_1417$underbound_othervap_3pct)
 table(pl_annex_var_1417$underbound_nhwhitevap_3pct)
+table(pl_annex_var_1417$underbound_blackvap_10pct)
+table(pl_annex_var_1417$underbound_hispvap_10pct)
+table(pl_annex_var_1417$underbound_nativevap_10pct)
+table(pl_annex_var_1417$underbound_asianvap_10pct)
+table(pl_annex_var_1417$underbound_othervap_10pct)
+table(pl_annex_var_1417$underbound_nhwhitevap_10pct)
 table(pl_annex_var_1417$property_inc)
 table(pl_annex_var_1417$hincjobs)
 
@@ -541,7 +570,7 @@ desc1417 <- pl_annex_var_1417 %>%
 #rm(list = ls())
 
 # repeat for 1720 ####
-aa1720 <- read_csv("analyticalfiles/annexedblocks1720dem_pl00_newsample_unincorp.csv")
+aa1720 <- read_csv("analyticalfiles/annexedblocks1720dem.csv")
 
 # characteristic of all annexable blocks
 # diff between annexed and not annexed 
@@ -555,7 +584,6 @@ place_all <- aa1720 %>%
             h_total = sum((pcth*pop), na.rm = T),
             h_mean = mean((h_total/pop_total)*100, na.rm = T),
             vap_total = sum(vap, na.rm = T),
-            hu_total = sum(hu, na.rm = T),
             nhblackvap_total = sum(nhbvap, na.rm = T),
             nhblackvap_mean = mean(((nhblackvap_total/vap_total)*100), na.rm = T),
             nhwhitevap_total = sum(nhwvap, na.rm = T),
@@ -565,13 +593,23 @@ place_all <- aa1720 %>%
             nativevap_total = sum(nativevap, na.rm = T),
             asianvap_total = sum(asianvap, na.rm = T),
             othervap_total = sum(othervap, na.rm = T),
-            pct_annexed = mean(annexed, na.rm = T)) %>%
+            pct_annexed = mean(annexed, na.rm = T),
+            njobs_total = sum(njobs17),
+            nhincjobs_total = sum(nhincjobs17),
+            hu_total = sum(hu),
+            owneroccupied_total = sum(owneroccupied),
+            vacancy_total = sum(vacancy)) %>%
   ungroup()
 
 place_by_annex <- aa1720 %>%
   filter(annexed==1) %>%
   group_by(plid, annexed) %>%
   summarize(pop_total = sum(pop),
+            njobs_total = sum(njobs17),
+            nhincjobs_total = sum(nhincjobs17),
+            hu_total = sum(hu),
+            owneroccupied_total = sum(owneroccupied),
+            vacancy_total = sum(vacancy),
             nhblack_total = sum(nhblack),
             nhblack_mean = mean((nhblack_total/pop_total)*100, na.rm = T),
             nhwhite_total = sum(nhwhite),
@@ -620,13 +658,13 @@ pl_annex_var_1720 %<>%
 # have been, i.e. pctwhite given growth rate by 2013
 # or if pcth after annex < pcth before annex compared to what would have been,
 # i.e. pcth given growth rate by 2013 
-pl1417 <- read_csv("places1417_var.csv")
+pl1720 <- read_csv("places1720_var.csv")
 
-table(pl_annex_var_1720$plid %in% pl1417$plid) 
+table(pl_annex_var_1720$plid %in% pl1720$plid) 
 
 pl_annex_var_1720 %<>%
-  filter(plid %in% pl1417$plid) %>%
-  left_join(pl1417, by = "plid") %>%
+  filter(plid %in% pl1720$plid) %>%
+  left_join(pl1720, by = "plid") %>%
   mutate(post = 1) %>%
   group_by(substr(plid, 1, 2)) %>%
   mutate(pop_tercile = ntile(pop17p, 3),
@@ -685,7 +723,19 @@ pl_annex_var_1720 %<>%
     underbound_othervap_1pct = ifelse(
       (annexing == 1 & increase_white == 1 & ((((othervap_total_1 + othervap17p)/(vap17p + vap_total_1)) - (othervap17p/vap17p))) < -0.01), 1, 0),
     underbound_nhwhitevap_1pct = ifelse(
-      (annexing == 1 & ((((nhwhitevap_total_1 + nhwhitevap17p)/(vap17p + vap_total_1)) - (nhwhitevap17p/vap17p))) < -0.01), 1, 0)
+      (annexing == 1 & ((((nhwhitevap_total_1 + nhwhitevap17p)/(vap17p + vap_total_1)) - (nhwhitevap17p/vap17p))) < -0.01), 1, 0),
+    underbound_blackvap_10pct = ifelse(
+      (annexing == 1 & increase_white == 1 & ((((nhblackvap_total_1 + nhblackvap17p)/(vap_total_1 + vap17p)) - (nhblackvap17p/vap17p))) < -0.1), 1, 0), 
+    underbound_hispvap_10pct = ifelse(
+      (annexing == 1 & increase_white == 1 & ((((hvap_total_1 + hispvap17p)/(vap_total_1 + vap17p)) - (hispvap17p/vap17p))) < -0.1), 1, 0),
+    underbound_asianvap_10pct = ifelse(
+      (annexing == 1 & increase_white == 1 & ((((asianvap_total_1 + asianvap17p)/(vap17p + vap_total_1)) - (asianvap17p/vap17p))) < -0.1), 1, 0), 
+    underbound_nativevap_10pct = ifelse(
+      (annexing == 1 & increase_white == 1 & ((((nativevap_total_1 + nativevap17p)/(vap17p + vap_total_1)) - (nativevap17p/vap17p))) < -0.1), 1, 0),
+    underbound_othervap_10pct = ifelse(
+      (annexing == 1 & increase_white == 1 & ((((othervap_total_1 + othervap17p)/(vap17p + vap_total_1)) - (othervap17p/vap17p))) < -0.1), 1, 0),
+    underbound_nhwhitevap_10pct = ifelse(
+      (annexing == 1 & ((((nhwhitevap_total_1 + nhwhitevap17p)/(vap17p + vap_total_1)) - (nhwhitevap17p/vap17p))) < -0.1), 1, 0)
   )
 
 pl_annex_var_1720 %<>%
@@ -702,6 +752,14 @@ pl_annex_var_1720 %<>%
       (annexing == 1 & increase_white == 1 & ((((othervap_total_1 + othervap17p)/(vap17p + vap_total_1)) < (othervap17p/vap17p)))), 1, 0),
     underbound_nhwhitevap = ifelse(
       (annexing == 1 & ((((nhwhitevap_total_1 + nhwhitevap17p)/(vap17p + vap_total_1)) < (nhwhitevap17p/vap17p)))), 1, 0)
+  )
+
+pl_annex_var_1720 %<>% 
+  mutate(
+    property_inc = ifelse(
+      (annexing == 1 & (((owneroccupied_total_1 + owneroccupied17p)/(hu17p + hu_total_1)) > (hu17p + hu_total_1))), 1, 0),
+    hincjobs = ifelse(
+      (annexing == 1 & (((nhincjobs_total_1 + overlodesthresh17p)/(emp17p + njobs_total_1)) > (emp17p + njobs_total_1))), 1, 0)
   )
 
 pl_annex_var_1720 %<>%
@@ -738,6 +796,12 @@ table(pl_annex_var_1720$underbound_nativevap_1pct)
 table(pl_annex_var_1720$underbound_asianvap_1pct)
 table(pl_annex_var_1720$underbound_othervap_1pct)
 table(pl_annex_var_1720$underbound_nhwhitevap_1pct)
+table(pl_annex_var_1720$underbound_blackvap_10pct)
+table(pl_annex_var_1720$underbound_hispvap_10pct)
+table(pl_annex_var_1720$underbound_nativevap_10pct)
+table(pl_annex_var_1720$underbound_asianvap_10pct)
+table(pl_annex_var_1720$underbound_othervap_10pct)
+table(pl_annex_var_1720$underbound_nhwhitevap_10pct)
 
 write_csv(pl_annex_var_1720, "analyticalfiles/pl_annex_var_1720.csv")
 pl_annex_var_1720 <- read_csv("analyticalfiles/pl_annex_var_1720.csv")
@@ -765,13 +829,13 @@ desc1720 <- pl_annex_var_1720 %>%
 
 #rm(list = ls())
 
-# 0010 ####
-aa0010 <- read_csv("analyticalfiles/annexedblocks0010dem_pl00_newsample_unincorp.csv")
+# 0710 ####
+aa0710 <- read_csv("analyticalfiles/annexedblocks0710dem.csv")
 
 # transform this into place-level summaries
 # characteristic of all annexable blocks
 # diff between annexed and not annexed 
-place_all <- aa0010 %>% 
+place_all <- aa0710 %>% 
   group_by(plid) %>%
   summarize(pop_total = sum(pop),
             nhblack_total = sum((pctnhblack*pop)),
@@ -790,13 +854,23 @@ place_all <- aa0010 %>%
             nativevap_total = sum(nativevap, na.rm = T),
             asianvap_total = sum(asianvap, na.rm = T),
             othervap_total = sum(othervap, na.rm = T),
-            pct_annexed = mean(annexed, na.rm = T)) %>%
+            pct_annexed = mean(annexed, na.rm = T),
+            njobs_total = sum(njobs14),
+            nhincjobs_total = sum(nhincjobs14),
+            hu_total = sum(hu),
+            owneroccupied_total = sum(owneroccupied),
+            vacancy_total = sum(vacancy)) %>%
   ungroup()
 
-place_by_annex <- aa0010 %>%
+place_by_annex <- aa0710 %>%
   filter(annexed==1) %>%
   group_by(plid, annexed) %>%
   summarize(pop_total = sum(pop),
+            njobs_total = sum(njobs14),
+            nhincjobs_total = sum(nhincjobs14),
+            hu_total = sum(hu),
+            owneroccupied_total = sum(owneroccupied),
+            vacancy_total = sum(vacancy),
             nhblack_total = sum(nhblack),
             nhblack_mean = mean((nhblack_total/pop_total)*100, na.rm = T),
             nhwhite_total = sum(nhwhite),
@@ -820,13 +894,13 @@ place_by_annex <- aa0010 %>%
     values_from = c(pop_total:othervap_total)
   )
 
-pl_annex_var_0010 <- left_join(
+pl_annex_var_0710 <- left_join(
   place_all, place_by_annex, 
   by = "plid"
 )
 
 # add vra indicator 
-places_vra <- aa0010 %>%
+places_vra <- aa0710 %>%
   group_by(plid) %>%
   summarize(vra = mean(vra, na.rm = T),
             annexing = mean(annexed, na.rm = T)) %>%

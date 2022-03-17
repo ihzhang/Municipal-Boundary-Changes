@@ -26,46 +26,40 @@ setwd("~/Google Drive/My Drive/Stanford/QE2")
 # 1. 
 # find all blocks within 400-m buffer of every place in 2000 
 # this forms universe of "annexable" blocks 
-blocks_list <- list()
-blocks_list[[1]] <- fread("ipumsblocks_allstates/2000blocks/nhgis0032_ds147_2000_block.csv", select = 
-                      c("GISJOIN", "STATEA", "COUNTYA", "TRACTA", "BLOCKA", "PLACEA"))
-blocks_list[[1]] <- blocks_list[[1]][-1, ]
-
-blocks_list[[2]] <- fread("ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv", select = 
-                            c("GISJOIN", "STATEA", "COUNTYA", "TRACTA", "BLOCKA", "PLACEA"))
-years <- c("2000", "2010")
-
-for(i in 1:length(years)) {
-blocks_list[[i]] <- blocks_list[[i]] %>%
+blocks2010 <- fread("ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv", select = 
+                            c("GISJOIN", "STATEA", "COUNTYA", "TRACTA", "BLOCKA", "PLACEA")) %>%
   mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
-                        str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0")))
-}
+                        str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0")),
+         plid = paste0(str_pad(STATEA, 2, "left", "0"), str_pad(PLACEA, 5, "left", "0")))
 
 get_buffers <- function(state_code, year) {
   blocks <- st_read(paste0("SHP_blk_0010/", year, "/", state_code, "/tl_2010_", substr(state_code, 4, 5), "_tabblock", substr(year, 3, 4), ".shp"))
   blocks <- st_transform(blocks, 3488)
-  if (year == 2010) {
-    blocks <- blocks %>%
-      mutate(blkid = paste0(str_pad(as.character(STATEFP10), 2, side = "left", pad = "0"), str_pad(as.character(COUNTYFP10), 3, side = "left", pad = "0"),
-                            str_pad(as.character(TRACTCE10), 6, side = "left", pad = "0"), str_pad(as.character(BLOCKCE10), 4, side = "left", pad = "0")))
-  } else {
-    blocks <- blocks %>%
-      mutate(blkid = as.character(BLKIDFP00))
-  }
+  blocks %<>%
+    mutate(blkid = paste0(str_pad(as.character(STATEFP10), 2, side = "left", pad = "0"), str_pad(as.character(COUNTYFP10), 3, side = "left", pad = "0"),
+                          str_pad(as.character(TRACTCE10), 6, side = "left", pad = "0"), str_pad(as.character(BLOCKCE10), 4, side = "left", pad = "0")))
   
   # should only retain those not already part of a place
-  blocks <- blocks %>%
-    left_join(blocks_list[[which(years==year)]] %>% dplyr::select(blkid, PLACEA, GISJOIN), 
+  cdps07 <- read_csv("pl2007_cleaned.csv") %>%
+    select(Geo_NAME, plid) %>%
+    mutate(cdp = ifelse(grepl("CDP|cdp", Geo_NAME), 1, 0)) %>%
+    filter(cdp==1)
+  
+  blocks %<>%
+    left_join(blocks2007 %>% dplyr::select(blkid, PLACEA, plid), 
               by = "blkid") %>% 
-    filter(is.na(PLACEA) | PLACEA=="99999") 
+    filter(is.na(PLACEA) | PLACEA=="99999" | plid %in% cdps07$plid) 
+  rm(blocks2007)
   
   places <- st_read(paste0("SHP_pl/", year, "/", state_code, "/tl_2010_", substr(state_code, 4, 5), "_place", substr(year, 3, 4), ".shp"))
   places <- st_transform(places, 3488)
-  places <- places %>% 
+
+  places %<>% 
     mutate(PLACE = as.character(.[[2]])) %>%
     filter(!is.na(PLACE) & PLACE != "99999" & PLACE != "999") %>%
-    mutate(plid = paste0(str_pad(as.character(.[[1]]), 2, side = "left", pad = "0"), str_pad(as.character(.[[2]]), 5, side = "left", pad = "0")))
-  
+    mutate(plid = paste0(str_pad(as.character(.[[1]]), 2, side = "left", pad = "0"), str_pad(as.character(.[[2]]), 5, side = "left", pad = "0"))) %>%
+    filter(!(plid %in% cdps07$plid))
+  rm(cdps07)
   datalist <- list()
   places_df <- split(places, f = places$plid)
   cl <- makeCluster(3)
@@ -182,9 +176,13 @@ get_buffers_14 <- function(state_code) {
     plid_list %<>% 
         select(blkid, plid) %>%
         mutate(blkid = as.character(blkid))
+    cdps <- read_csv("places2014_cleaned.csv") %>%
+      select(Geo_NAME, plid) %>%
+      mutate(cdp = ifelse(grepl("CDP|cdp", Geo_NAME), 1, 0)) %>%
+      filter(cdp==1)
     blocks %<>%
         left_join(plid_list, by = "blkid") %>% 
-        filter(is.na(plid))
+        filter((is.na(plid) | plid %in% cdps$plid))
     rm(plid_list)
     
     # place shapefile
@@ -244,3 +242,150 @@ for (state_code in state_codes) {
 }
 
 # plotting maps https://rpubs.com/walkerke/tigris01
+
+# get 2017 ####
+shapefile_list <- list.files("SHP_blk_0010/2017/")
+folder_list <- str_c("SHP_blk_0010/2017/", shapefile_list, "/")
+
+get_block_ids_17 <- function (file_in_folder_list) {
+  blockfilename <- list.files(file_in_folder_list, pattern = ".shp$")
+  blocks <- st_read(paste0(file_in_folder_list, blockfilename))
+  blocks <- st_transform(blocks, 3488)
+  blocks %<>%
+    mutate(blkid = paste0(str_pad(as.character(STATEFP10), 2, side = "left", pad = "0"), str_pad(as.character(COUNTYFP10), 3, side = "left", pad = "0"),
+                          str_pad(as.character(TRACTCE10), 6, side = "left", pad = "0"), str_pad(as.character(BLOCKCE10), 4, side = "left", pad = "0")))
+  
+  place_file <- list.files("SHP_pl/2017/", pattern = substr(blockfilename, 1, 11))
+  place_file <- paste0("SHP_pl/2017/", place_file, "/", list.files(paste0("SHP_pl/2017/", place_file, "/"), pattern = ".shp$"))
+  places <- st_read(place_file)
+  places <- st_transform(places, 3488)
+  
+  places %<>% 
+    mutate(plid = paste0(
+      str_pad(as.character(STATEFP), 2, side = "left", pad = "0"), 
+      str_pad(as.character(PLACEFP), 5, side = "left", pad = "0")))
+  
+  datalist <- list()
+  places_df <- split(places, f = places$plid)
+  # I have 8 cores; using anything more than 5 will crash computer if using multiple apps
+  
+  cl <- makeCluster(3) 
+  registerDoParallel(cl)
+  getDoParWorkers()
+  
+  datalist <- foreach (i = 1:length(places_df), 
+                       .packages = c("sf", "dplyr", "data.table", "readr", "magrittr")) %dopar% {
+    p1 <- st_as_sf(places_df[[i]])
+    p1blocks <- st_contains(p1, blocks)
+    if(nrow(as.data.frame(blocks[p1blocks[[1]],])) < 1) return(NULL) 
+      test <- as.data.frame(blocks[p1blocks[[1]],])
+      test$plid <- p1$plid
+      test %<>% 
+        select(c(1:6), blkid, plid)
+      return(test)
+                       }
+  
+  datalist <- data.table::rbindlist(datalist) 
+  readr::write_csv(datalist, file = paste0(file_in_folder_list, substr(blockfilename, 9, 10), "_block_plids.csv"))
+  stopCluster(cl)
+  rm(list=ls(name=foreach:::.foreachGlobals), pos=foreach:::.foreachGlobals)
+  
+}
+folder_list <- folder_list[25:length(folder_list)]
+for (file in folder_list) {
+  start_time <- Sys.time()
+  print(start_time)
+  get_block_ids_17(file)
+  end_time <- Sys.time()
+  print(file)
+  print(end_time - start_time)
+  print(end_time)
+  Sys.sleep(60)
+}
+
+# get contiguity for 2014 #### 
+# first have to filter out by plid; we want is.na or 99999 only 
+# note sometimes tigris will fail, likely because of a firewall block on repeated calls
+# so the function still includes an optional line to read the file in from a local path 
+# switch the lines on and off using # 
+
+get_buffers_14 <- function(state_code) {
+  blocks <- st_read(paste0("SHP_blk_0010/2014/", state_code, "/tl_2014_", substr(state_code, 4, 5), "_tabblock10.shp"))
+  #blocks <- tigris::blocks(state = substr(state_code, 4, 5), year = 2014)
+  blocks <- st_transform(blocks, 3488)
+  blocks %<>%
+    mutate(blkid = paste0(str_pad(as.character(STATEFP10), 2, side = "left", pad = "0"), 
+                          str_pad(as.character(COUNTYFP10), 3, side = "left", pad = "0"),
+                          str_pad(as.character(TRACTCE10), 6, side = "left", pad = "0"), 
+                          str_pad(as.character(BLOCKCE10), 4, side = "left", pad = "0")))
+  
+  # should only retain those not already part of a place
+  plid_list <- read_csv(file = paste0("SHP_blk_0010/2014/", state_code, "/", substr(state_code, 1, 2), "_block_plids.csv"))
+  plid_list %<>% 
+    select(blkid, plid) %>%
+    mutate(blkid = as.character(blkid))
+  cdps <- read_csv("places2014_cleaned.csv") %>%
+    select(Geo_NAME, plid) %>%
+    mutate(cdp = ifelse(grepl("CDP|cdp", Geo_NAME), 1, 0)) %>%
+    filter(cdp==1)
+  blocks %<>%
+    left_join(plid_list, by = "blkid") %>% 
+    filter((is.na(plid) | plid %in% cdps$plid))
+  rm(plid_list)
+  
+  # place shapefile
+  #places <- tigris::places(state = substr(state_code, 4, 5), year = 2014)
+  places <- st_read(paste0("SHP_pl/2014/", state_code, "/tl_2014_", substr(state_code, 4, 5), "_place.shp"))
+  places <- st_transform(places, 3488)
+  places %<>% 
+    mutate(plid = paste0(
+      str_pad(as.character(STATEFP), 2, side = "left", pad = "0"), 
+      str_pad(as.character(PLACEFP), 5, side = "left", pad = "0"))) 
+  
+  datalist <- list()
+  places_df <- split(places, f = places$plid)
+  # I have 8 cores; using anything more than 5 will crash computer if using multiple apps
+  
+  cl <- makeCluster(3) 
+  registerDoParallel(cl)
+  getDoParWorkers()
+  
+  datalist <- foreach (i = 1:length(places_df), 
+                       .packages = c("sf", "dplyr", "data.table", "readr", "magrittr")) %dopar% {
+                         p1buffer <- sf::st_buffer(st_as_sf(places_df[[i]]), 400)
+                         p1buffer_intersects <- sf::st_intersects(p1buffer, blocks)
+                         if(nrow(as.data.frame(blocks[p1buffer_intersects[[1]],])) < 1) return(NULL)
+                         test <- as.data.frame(blocks[p1buffer_intersects[[1]],])
+                         test$bufferplace <- places_df[[i]]$plid[[1]]
+                         test %<>% 
+                           select(c(1:4), blkid, bufferplace)
+                         return(test)
+                       }
+  
+  buffers <- data.table::rbindlist(datalist) 
+  readr::write_csv(buffers, file = paste0("SHP_blk_0010/2014/", state_code, "/", substr(state_code, 1, 2), "_buffers.csv"))
+  stopCluster(cl)
+  rm(list=ls(name=foreach:::.foreachGlobals), pos=foreach:::.foreachGlobals)
+}
+
+state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09", 
+                 "DE_10", "FL_12", "GA_13", "HI_15", "IA_19", "ID_16", "IL_17", "IN_18",
+                 "KS_20", "KY_21", "LA_22", 
+                 "MA_25", "MD_24", "ME_23", "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
+                 "NC_37", "ND_38", "NE_31", "NH_33", "NJ_34", "NM_35", "NV_32", "NY_36",
+                 "OH_39", "OK_40", "OR_41", "PA_42", "RI_44",
+                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VT_50", "VA_51",
+                 "WA_53", "WV_54", "WI_55", "WY_56"
+)
+
+for (state_code in state_codes) {
+  start_time <- Sys.time()
+  print(start_time)
+  get_buffers_14(state_code)
+  end_time <- Sys.time()
+  print(state_code)
+  print(end_time - start_time)
+  print(end_time)
+  Sys.sleep(60)
+}
+
