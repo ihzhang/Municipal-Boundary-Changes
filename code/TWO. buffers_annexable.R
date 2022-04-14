@@ -19,9 +19,10 @@ library("doParallel")
 
 setwd("~/Google Drive/My Drive/Stanford/QE2")
 
-# 1. 2000 blocks in buffers of 2000 places 
-# 2. 2010 blocks in buffers of 2010 places 
-# 3. 2014 blocks in buffers of 2014 places
+# 1. 2007 blocks in buffers of 2007 places (for 2007-2010)
+# 2. 2010 blocks in buffers of 2010 places (for 2010-2013)
+# 3. 2014 blocks in buffers of 2014 places (for 2014-2017)
+# 4. 2017 blocks in buffers for 2017 places (for 2017-2020)
 
 # 1. 
 # find all blocks within 400-m buffer of every place in 2000 
@@ -286,12 +287,12 @@ get_block_ids_17 <- function (file_in_folder_list) {
                        }
   
   datalist <- data.table::rbindlist(datalist) 
-  readr::write_csv(datalist, file = paste0(file_in_folder_list, substr(blockfilename, 9, 10), "_block_plids.csv"))
+  readr::write_csv(datalist, file = paste0(file_in_folder_list, "block_plids.csv"))
   stopCluster(cl)
   rm(list=ls(name=foreach:::.foreachGlobals), pos=foreach:::.foreachGlobals)
   
 }
-folder_list <- folder_list[25:length(folder_list)]
+folder_list <- folder_list[21:24]
 for (file in folder_list) {
   start_time <- Sys.time()
   print(start_time)
@@ -303,8 +304,27 @@ for (file in folder_list) {
   Sys.sleep(60)
 }
 
-# get contiguity for 2014 #### 
-# first have to filter out by plid; we want is.na or 99999 only 
+state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09", 
+                 "DE_10", "FL_12", "GA_13", "HI_15", "IA_19", "ID_16", "IL_17", "IN_18",
+                 "KS_20", "KY_21", "LA_22", 
+                 "MA_25", "MD_24", "ME_23", "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
+                 "NC_37", "ND_38", "NE_31", "NH_33", "NJ_34", "NM_35", "NV_32", "NY_36",
+                 "OH_39", "OK_40", "OR_41", "PA_42", "RI_44",
+                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VT_50", "VA_51",
+                 "WA_53", "WV_54", "WI_55", "WY_56"
+)
+# compile into file 
+blocks_list <- list()
+for(i in 1:length(state_codes)) {
+  state_list <- list.files("SHP_blk_0010/2017/", pattern = paste0("_", substr(state_codes[[i]], 4, 5), "_"))
+  blocks <- list.files(paste0("SHP_blk_0010/2017/", state_list, "/"), pattern = "block_plids.csv")
+  blocks_list[[i]] <- read_csv(file = paste0("SHP_blk_0010/2017/", state_list, "/", blocks))
+}
+blocks_list <- rbindlist(blocks_list)
+write_csv(blocks_list, "places2017_plids.csv")
+
+# get buffers for 2014 #### 
+# first have to filter out by plid; we want is.na or 99999 or cdp only 
 # note sometimes tigris will fail, likely because of a firewall block on repeated calls
 # so the function still includes an optional line to read the file in from a local path 
 # switch the lines on and off using # 
