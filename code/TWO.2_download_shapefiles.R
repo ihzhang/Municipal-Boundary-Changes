@@ -1,3 +1,4 @@
+setwd("~/Google Drive/My Drive/Stanford/QE2")
 library(rvest)
 library(stringr)
 library(htmltools)
@@ -94,5 +95,65 @@ lapply(url_list, cat, "\n", file="pl_07.txt", append=TRUE)
 
 # the rest of this was done in sherlock, after transferring files over
 
+# do this for 2021? ####
+# blocks 
+base_url <- "https://www2.census.gov/geo/tiger/TIGER2021/TABBLOCK20/"
+page <- read_html(base_url)
+state_list <- page %>%
+  html_nodes("a") %>%       # find all links
+  html_attr("href") %>%     # get the url
+  str_subset(".zip") 
+
+state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09", 
+                 "DE_10", "FL_12", "GA_13", "HI_15", "IA_19", "ID_16", "IL_17", "IN_18",
+                 "KS_20", "KY_21", "LA_22", 
+                 "MA_25", "MD_24", "ME_23", "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
+                 "NC_37", "ND_38", "NE_31", "NH_33", "NJ_34", "NM_35", "NV_32", "NY_36",
+                 "OH_39", "OK_40", "OR_41", "PA_42", "RI_44",
+                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VT_50", "VA_51",
+                 "WA_53", "WV_54", "WI_55", "WY_56"
+)
+
+state_codes <- substr(state_codes, nchar(state_codes)-1, nchar(state_codes))
+state_list <- state_list[substr(state_list, 9, 10) %in% state_codes]
+url_list <- list()
+for (state in 1:length(state_list)) {
+  state_url <- paste0(base_url, state_list[state])
+  url_list <- append(url_list, state_url)
+  print(state_url)
+} 
+
+lapply(url_list, cat, "\n", file="blk_2021.txt", append=TRUE)
+
+# use terminal & wget to batch download from this link 
+# my code was as follows 
+# wget -P Google\ Drive/My\ Drive/Stanford/QE2/SHP_blk_0010/2007/ -i Google\ Drive/My\ Drive/Stanford/QE2/tabblock_07.txt
 
 
+# repeat for place 
+base_url <- "https://www2.census.gov/geo/tiger/TIGER2021/TABBLOCK20/"
+page <- read_html(base_url)
+state_list <- page %>%
+  html_nodes("a") %>%       # find all links
+  html_attr("href") %>%     # get the url
+  str_subset(".zip") 
+
+state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09", 
+                 "DE_10", "FL_12", "GA_13", "HI_15", "IA_19", "ID_16", "IL_17", "IN_18",
+                 "KS_20", "KY_21", "LA_22", 
+                 "MA_25", "MD_24", "ME_23", "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
+                 "NC_37", "ND_38", "NE_31", "NH_33", "NJ_34", "NM_35", "NV_32", "NY_36",
+                 "OH_39", "OK_40", "OR_41", "PA_42", "RI_44",
+                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VT_50", "VA_51",
+                 "WA_53", "WV_54", "WI_55", "WY_56"
+)
+state_codes <- substr(state_codes, nchar(state_codes)-1, nchar(state_codes))
+state_list <- state_list[substr(state_list, 9, 10) %in% state_codes]
+url_list <- list()
+for (state in 1:length(state_list)) {
+  state_url <- paste0(base_url, state_list[state])
+  url_list <- append(url_list, state_url)
+  print(state_url)
+} 
+
+lapply(url_list, cat, "\n", file="pl_21.txt", append=TRUE)
