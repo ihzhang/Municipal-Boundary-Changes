@@ -129,9 +129,8 @@ lapply(url_list, cat, "\n", file="blk_2021.txt", append=TRUE)
 # my code was as follows 
 # wget -P Google\ Drive/My\ Drive/Stanford/QE2/SHP_blk_0010/2007/ -i Google\ Drive/My\ Drive/Stanford/QE2/tabblock_07.txt
 
-
 # repeat for place 
-base_url <- "https://www2.census.gov/geo/tiger/TIGER2021/TABBLOCK20/"
+base_url <- "https://www2.census.gov/geo/tiger/TIGER2021/PLACE/"
 page <- read_html(base_url)
 state_list <- page %>%
   html_nodes("a") %>%       # find all links
