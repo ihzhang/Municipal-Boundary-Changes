@@ -152,17 +152,17 @@ pl0010 <- read_csv("analyticalfiles/pl_annex_var_0010.csv") %>%
 
 plids_viz <- pl0010$plid
 
-# 2000 places 
-ca_pl00 <- st_read("SHP_pl/2000/CA_06/tl_2010_06_place00.shp") %>%
-  filter(PLCIDFP00 %in% plids_viz) %>%
+# 2014 places 
+ca_pl14 <- st_read("SHP_pl/2014/CA_06/tl_2014_06_place.shp") %>%
+  filter(PLACEFP %in% plids_viz) %>%
   st_transform(., 3488)
 
 # ca_pl10 <- st_read("SHP_pl/2010/CA_06/tl_2010_06_place10.shp") %>%
 #  filter(GEOID10 %in% plids_viz)
 
 # get contig blocks and actually annexed blocks for each of those places
-ca_blks00 <- read_csv("SHP_blk_0010/2000/CA_06/CA_buffers.csv") %>%
-  filter(bufferplace %in% plids_viz) %>%
+ca_blks14 <- read_csv("SHP_blk_0010/2014/CA_06/CA_buffers.csv") %>%
+  filter(bufferplace %in% aa1420$plid) %>%
   select(blkid, bufferplace) %>%
   rename(plid = bufferplace)
 
@@ -171,27 +171,105 @@ ca_blks00 <- read_csv("SHP_blk_0010/2000/CA_06/CA_buffers.csv") %>%
 #   mutate(plid = paste0(str_pad(STATEA, 2, "left", "0"), str_pad(PLACEA, 5, "left", "0"))) %>%
 #   filter(plid %in% plids_viz)
 
-ca_blk00 <- st_read("SHP_blk_0010/2000/CA_06/tl_2010_06_tabblock00.shp") %>%
-  filter(BLKIDFP00 %in% ca_blks00$blkid) %>%
+ca_blk14 <- st_read("SHP_blk_0010/2014/CA_06/tl_2014_06_tabblock10.shp") %>%
+  filter(GEOID10 %in% ca_blks14$blkid) %>%
   st_transform(., 3488) %>%
-  left_join(ca_blks00, by = c("BLKIDFP00" = "blkid"))
+  left_join(ca_blks14, by = c("GEOID10" = "blkid"))
 
 # get which blocks were annexed 
-aa0010 <- read_csv("analyticalfiles/annexedblocks0010dem_pl00_newsample_unincorp.csv") %>%
-  filter(annexed == 1 & plid %in% plids_viz & blkid %in% ca_blks00$blkid)
-ca_blk00 %<>%
-  mutate(annexed = ifelse(BLKIDFP00 %in% aa0010$blkid, 1, 0))
-table(ca_blk00$annexed)
+aa1420 <- read_csv("analyticalfiles/annexedblocks1420dem.csv") %>%
+  filter(blkid %in% ca_blk14$GEOID10)
+ca_blk14 %<>%
+  left_join(aa1420, by = c("GEOID10" = "blkid"))
+table(ca_blk14$annexed)
 
 g <- ggplot() + 
-  geom_sf(data = ca_blk00, aes(fill = as.factor(annexed))) + 
-  geom_sf(data = ca_pl00, fill = "black") + 
+  geom_sf(data = ca_blk14, size = 0.1, aes(fill = as.factor(annexed))) + 
+  geom_sf(data = ca_pl14, size = 0.1, fill = "black") + 
   labs(fill='Annexed',
-       title = "Annexations for Bakersfield, CA, 2000-2010") +
+       title = "Annexations for Bakersfield, CA, 2014-2020") +
   scale_fill_grey(start = 0.7, end = 0.4) 
 g
 ggsave(filename = "analyticalfiles/Bakersfield_annex.png",
        plot = g,
        dpi = 300)
 
+# biggest underbound_black city
+panel0020_did %>%
+  filter(period == 1 & underbound_black==1) %>%
+  arrange(desc(pop_p0))
+
+pl1420 <- read_csv("analyticalfiles/annexedblocks1420dem.csv") %>%
+  filter(plid=="0603526")
+
+plids_viz <- substr(unique(pl1420$plid), 3, 7)
+
+# 2014 places 
+ca_pl14 <- st_read("SHP_pl/2014/CA_06/tl_2014_06_place.shp") %>%
+  filter(PLACEFP %in% plids_viz) %>%
+  st_transform(., 3488)
+
+# get contig blocks and actually annexed blocks for each of those places
+ca_blks14 <- read_csv("SHP_blk_0010/2014/CA_06/CA_buffers.csv") %>%
+  filter(bufferplace %in% pl1420$plid) %>%
+  select(blkid, bufferplace) %>%
+  rename(plid = bufferplace)
+
+# # grab placeids 
+# ca_blkplids <- read_csv("blocks2000_var.csv") %>%
+#   mutate(plid = paste0(str_pad(STATEA, 2, "left", "0"), str_pad(PLACEA, 5, "left", "0"))) %>%
+#   filter(plid %in% plids_viz)
+ca_blk14 <- st_read("SHP_blk_0010/2014/CA_06/tl_2014_06_tabblock10.shp") %>%
+  filter(GEOID10 %in% ca_blks14$blkid) %>%
+  st_transform(., 3488) %>%
+  left_join(ca_blks14, by = c("GEOID10" = "blkid"))
+
+# get which blocks were annexed 
+aa1420 <- read_csv("analyticalfiles/annexedblocks1420dem.csv") %>%
+  filter(blkid %in% ca_blk14$GEOID10)
+ca_blk14 %<>%
+  left_join(aa1420, by = c("GEOID10" = "blkid"))
+table(ca_blk14$annexed)
+
+annexed <- ca_blk14 %>% filter(annexed == 1)
+
+nhb <- ggplot() +  
+  geom_sf(data = ca_blk14, size = 0.0001, aes(fill = pctnhblack)) + 
+  geom_sf(data = annexed, color = "red", size = 0.25, aes(fill = pctnhblack)) + 
+  scale_fill_continuous() + 
+  geom_sf(data = ca_pl14, size = 0.1, fill = "grey") + 
+  labs(color='Annexed',
+       fill = "% Non-Hispanic Black",
+       title = "Annexations for Bakersfield, CA, 2014-2020") 
+nhb
+
+h <- ggplot() +  
+  geom_sf(data = ca_blk14, size = 0.0001, aes(fill = pcth)) + 
+  geom_sf(data = annexed, color = "red", size = 0.25, aes(fill = pcth)) + 
+  scale_fill_continuous() + 
+  geom_sf(data = ca_pl14, size = 0.1, fill = "grey") + 
+  labs(color='Annexed',
+       fill = "% Hispanic") 
+h
+
+nhw <- ggplot() +  
+  geom_sf(data = ca_blk14, size = 0.0001, aes(fill = pctnhwhite)) + 
+  geom_sf(data = annexed, color = "red", size = 0.25, aes(fill = pctnhwhite)) + 
+  scale_fill_continuous() + 
+  geom_sf(data = ca_pl14, size = 0.1, fill = "grey") + 
+  labs(color='Annexed',
+       fill = "% Non-Hispanic White", 
+       caption = "Annexed Blocks in Red") 
+nhw
+
+bakersfield <- grid.arrange(nhb,
+             h,
+             nhw,                             
+             ncol = 2, nrow = 2)
+bakersfield
+ggsave(filename = "analyticalfiles/Bakersfield_annex_race.png",
+       plot = bakersfield,
+       dpi = 300)
+
 rm(list = ls())
+
