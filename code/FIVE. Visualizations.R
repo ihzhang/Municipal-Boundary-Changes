@@ -374,7 +374,17 @@ nhb <- ggplot() +
        caption = "Dilution of Black and Hispanic") 
 nhb
 
-ggsave(filename = "analyticalfiles/Pearl MS_annex_race.png",
+h <- ggplot() +  
+  geom_sf(data = pl14, size = 0.1, fill = "grey") + 
+  geom_sf(data = blk14, size = 0.5, aes(fill = pcth)) + 
+  geom_sf(data = annexed, color = "red", size = 0.25, aes(fill = pcth)) + 
+  labs(color='Annexed',
+       fill = "% Hispanic",
+       title = "Annexations for Baytown City, TX 2014-2020 (pop = 76,089, maj-Hispanic, 32% white)",
+       caption = "Dilution of Black and Hispanic") 
+h
+
+ggsave(filename = "analyticalfiles/Baytown TX_annex_race.png",
        plot = nhb,
        dpi = 300)
 rm(list = ls())
