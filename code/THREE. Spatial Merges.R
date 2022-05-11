@@ -68,13 +68,11 @@ write_csv(blocks2007, "aa_baseline_full_0007.csv")
 
 rm(list = ls())
 
-# start with all blocks in 2000 and identify those that were annexed 
-aa <- read_csv("blocks2000_var.csv")
+# start with all contiguous blocks in 2000 and identify those that were annexed 
+aa <- read_csv("2000buffers.csv")
 
 aa %<>%
-  mutate(STATEA = str_pad(STATEA, 2, side = "left", pad = "0"),
-         PLACEA = str_pad(PLACEA, 5, side = "left", pad = "0"),
-         plid = ifelse(PLACEA == "99999", NA, paste0(STATEA, PLACEA)))
+  rename(plid = bufferplace)
 
 annexed <- read_csv("aa_baseline_full_0007.csv")
 
@@ -88,6 +86,19 @@ aa %<>%
 table(aa$annexed)
 rm(annexed)
 
+blocks2000 <- read_csv("blocks2000_var.csv")
+
+blocks2000 %<>%
+  mutate(STATEA = str_pad(STATEA, 2, side = "left", pad = "0"),
+         PLACEA = str_pad(PLACEA, 5, side = "left", pad = "0"),
+         plid = ifelse(PLACEA == "99999", NA, paste0(STATEA, PLACEA))) 
+
+aa %<>%
+  left_join(blocks2000 %>% select(blkid:pctothervap00b), by = "blkid") %>%
+  mutate(pop00b = ifelse((pop00b > 0 & pop00b < 1), 1, pop00b)) %>%
+  filter(pop00b >= 1)
+rm(blocks2000)
+
 #clean up and get ready for Census data 
 rac2000 <- read_csv("LODES data/rac_2000.csv")
 names(rac2000)
@@ -95,7 +106,7 @@ wac2000 <- read_csv("LODES data/wac_2000.csv")
 names(wac2000)
 b2000names <- names(aa)
 aa %<>%
-  mutate_at(all_of(b2000names)[7:32], ~ifelse(is.na(.), 0, .))
+  mutate_at(all_of(b2000names)[8:33], ~ifelse(is.na(.), 0, .))
 
 # check they seem to be in comparable formats
 head(aa$blkid)
@@ -136,9 +147,9 @@ vra.df %<>%
          sectionv = 1)
 
 aa %<>%
-  mutate(countyfips = paste0(STATEA, COUNTYA), 
+  mutate(countyfips = paste0(STATEFP00, COUNTYFP00), 
          vra = case_when(
-    STATEA %in% vrastates ~ 1,
+    STATEFP00 %in% vrastates ~ 1,
     countyfips %in% vra.df$countyfips ~ 1,
     TRUE ~ 0
   ))
@@ -197,16 +208,10 @@ write_csv(blocks2013_pl, "aa_baseline_full_0713.csv")
 rm(list = ls())
 
 # start with all blocks in 2007 and identify those that were annexed 
-blocks2007 <- read_csv("blocks2007_int.csv")
-blocks2007_plids <- read_csv("blocks2007_plids.csv")
-
-aa <- blocks2007 %>%
-  left_join(blocks2007_plids, by = "blkid")
-rm(blocks2007_plids, blocks2007)
+aa <- read_csv("blocks2007_buffers.csv")
 
 aa %<>%
-  select(plid, blkid, STATEFP, COUNTYFP, pop:pctothervap) %>%
-  filter(!duplicated(blkid))
+  rename(plid = bufferplace)
 
 annexed <- read_csv("aa_baseline_full_0713.csv")
 
@@ -220,6 +225,17 @@ aa %<>%
 table(aa$annexed)
 rm(annexed)
 
+blocks2007 <- read_csv("blocks2007_int.csv")
+
+aa %<>%
+  left_join(blocks2007 %>% select(blkid, pop:pctothervap), by = "blkid") %>%
+  mutate(pop = ifelse((pop > 0 & pop < 1), 1, pop)) %>%
+  filter(pop >= 1)
+rm(blocks2007)
+
+aa %<>%
+  select(STATEFP:pctothervap)
+
 #clean up and get ready for Census data 
 rac2007 <- read_csv("LODES data/rac_2007.csv")
 names(rac2007)
@@ -227,7 +243,7 @@ wac2007 <- read_csv("LODES data/wac_2007.csv")
 names(wac2007)
 b2007names <- names(aa)
 aa %<>%
-  mutate_at(all_of(b2007names)[4:29], ~ifelse(is.na(.), 0, .))
+  mutate_at(all_of(b2007names)[6:31], ~ifelse(is.na(.), 0, .))
 
 # check they seem to be in comparable formats
 head(aa$blkid)
@@ -335,15 +351,10 @@ write_csv(blocks2020_pl, "aa_baseline_full_1420.csv")
 rm(list = ls())
 
 # start with all blocks in 2007 and identify those that were annexed 
-blocks2014 <- read_csv("blocks2014_int.csv")
-blocks2014_plids <- read_csv("blocks2014_plids.csv")
-
-aa <- blocks2014 %>%
-  left_join(blocks2014_plids, by = "blkid")
-rm(blocks2014_plids, blocks2014)
+aa <- read_csv("blocks2014_buffers.csv")
 
 aa %<>%
-  filter(!duplicated(blkid))
+  rename(plid = bufferplace)
 
 annexed <- read_csv("aa_baseline_full_1420.csv")
 
@@ -357,6 +368,14 @@ aa %<>%
 table(aa$annexed)
 rm(annexed)
 
+blocks2014 <- read_csv("blocks2014_int.csv")
+
+aa %<>%
+  left_join(blocks2014 %>% select(blkid, pop:pctothervap), by = "blkid") %>%
+  mutate(pop = ifelse((pop > 0 & pop < 1), 1, pop)) %>%
+  filter(pop >= 1)
+rm(blocks2014)
+
 #clean up and get ready for Census data 
 rac2014 <- read_csv("LODES data/rac_2014.csv")
 names(rac2014)
@@ -364,7 +383,7 @@ wac2014 <- read_csv("LODES data/wac_2014.csv")
 names(wac2014)
 b2014names <- names(aa)
 aa %<>%
-  mutate_at(all_of(b2014names)[1:26], ~ifelse(is.na(.), 0, .))
+  mutate_at(all_of(b2014names)[8:32], ~ifelse(is.na(.), 0, .))
 
 # check they seem to be in comparable formats
 head(aa$blkid)

@@ -271,5 +271,111 @@ ggsave(filename = "analyticalfiles/Bakersfield_annex_race.png",
        plot = bakersfield,
        dpi = 300)
 
+# underbound city with largest differential in annexable and city 
+# 1309040
+pl1420 <- read_csv("analyticalfiles/annexedblocks1420dem.csv") %>%
+  filter(plid=="2855760")
+
+plids_viz <- substr(unique(pl1420$plid), 3, 7)
+
+# 2014 places 
+pl14 <- st_read("SHP_pl/2014/MS_28/tl_2014_28_place.shp") %>%
+  filter(PLACEFP %in% plids_viz) %>%
+  st_transform(., 3488)
+
+# get contig blocks and actually annexed blocks for each of those places
+blks14 <- read_csv("SHP_blk_0010/2014/MS_28/MS_buffers.csv") %>%
+  filter(bufferplace %in% pl1420$plid) %>%
+  select(blkid, bufferplace) %>%
+  rename(plid = bufferplace) %>%
+  mutate(blkid = as.character(blkid)) %>%
+  filter(!duplicated(blkid))
+
+# # grab placeids 
+# ca_blkplids <- read_csv("blocks2000_var.csv") %>%
+#   mutate(plid = paste0(str_pad(STATEA, 2, "left", "0"), str_pad(PLACEA, 5, "left", "0"))) %>%
+#   filter(plid %in% plids_viz)
+blk14 <- st_read("SHP_blk_0010/2014/MS_28/tl_2014_28_tabblock10.shp") %>%
+  filter(GEOID10 %in% blks14$blkid) %>%
+  filter(!duplicated(GEOID10)) %>%
+  st_transform(., 3488) %>%
+  left_join(blks14, by = c("GEOID10" = "blkid"))
+
+# get which blocks were annexed 
+aa1420 <- read_csv("analyticalfiles/annexedblocks1420dem.csv") %>%
+  filter(blkid %in% blk14$GEOID10)
+blk14 %<>%
+  left_join(aa1420, by = c("GEOID10" = "blkid")) %>%
+  filter(pop > 0) 
+table(blk14$annexed)
+
+annexed <- blk14 %>% filter(annexed == 1)
+
+nhb <- ggplot() +  
+  geom_sf(data = pl14, size = 0.1, fill = "grey") + 
+  geom_sf(data = blk14, size = 0.5, aes(fill = pctnhblack)) + 
+  geom_sf(data = annexed, color = "red", size = 0.25, aes(fill = pctnhblack)) + 
+  labs(color='Annexed',
+       fill = "% Non-Hispanic Black",
+       title = "Annexations for Pearl City, MS 2014-2020 (pop = 25,092, 26% Black)",
+       caption = "Described as a \"sundown city\"") 
+nhb
+
+ggsave(filename = "analyticalfiles/Pearl MS_annex_race.png",
+       plot = nhb,
+       dpi = 300)
+
+# tx 4806128
+pl1420 <- read_csv("analyticalfiles/annexedblocks1420dem.csv") %>%
+  filter(plid=="4806128")
+
+plids_viz <- substr(unique(pl1420$plid), 3, 7)
+
+# 2014 places 
+pl14 <- st_read("SHP_pl/2014/TX_48/tl_2014_48_place.shp") %>%
+  filter(PLACEFP %in% plids_viz) %>%
+  st_transform(., 3488)
+
+# get contig blocks and actually annexed blocks for each of those places
+blks14 <- read_csv("SHP_blk_0010/2014/TX_48/TX_buffers.csv") %>%
+  filter(bufferplace %in% pl1420$plid) %>%
+  select(blkid, bufferplace) %>%
+  rename(plid = bufferplace) %>%
+  mutate(blkid = as.character(blkid)) %>%
+  filter(!duplicated(blkid))
+
+# # grab placeids 
+# ca_blkplids <- read_csv("blocks2000_var.csv") %>%
+#   mutate(plid = paste0(str_pad(STATEA, 2, "left", "0"), str_pad(PLACEA, 5, "left", "0"))) %>%
+#   filter(plid %in% plids_viz)
+blk14 <- st_read("SHP_blk_0010/2014/TX_48/tl_2014_48_tabblock10.shp") %>%
+  filter(GEOID10 %in% blks14$blkid) %>%
+  filter(!duplicated(GEOID10)) %>%
+  st_transform(., 3488) %>%
+  left_join(blks14, by = c("GEOID10" = "blkid"))
+
+# get which blocks were annexed 
+aa1420 <- read_csv("analyticalfiles/annexedblocks1420dem.csv") %>%
+  filter(blkid %in% blk14$GEOID10)
+blk14 %<>%
+  left_join(aa1420, by = c("GEOID10" = "blkid")) %>%
+  filter(pop > 0) 
+table(blk14$annexed)
+
+annexed <- blk14 %>% filter(annexed == 1)
+
+nhb <- ggplot() +  
+  geom_sf(data = pl14, size = 0.1, fill = "grey") + 
+  geom_sf(data = blk14, size = 0.5, aes(fill = pctnhblack)) + 
+  geom_sf(data = annexed, color = "red", size = 0.25, aes(fill = pctnhblack)) + 
+  labs(color='Annexed',
+       fill = "% Non-Hispanic Black",
+       title = "Annexations for Baytown City, TX 2014-2020 (pop = 76,089, maj-Hispanic, 32% white)",
+       caption = "Dilution of Black and Hispanic") 
+nhb
+
+ggsave(filename = "analyticalfiles/Pearl MS_annex_race.png",
+       plot = nhb,
+       dpi = 300)
 rm(list = ls())
 

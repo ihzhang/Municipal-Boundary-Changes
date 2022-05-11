@@ -409,3 +409,29 @@ for (state_code in state_codes) {
   Sys.sleep(60)
 }
 
+# make buffer file for 2000, 2007, and 2014 
+state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09", 
+                 "DE_10", "FL_12", "GA_13", "HI_15", "IA_19", "ID_16", "IL_17", "IN_18",
+                 "KS_20", "KY_21", "LA_22", 
+                 "MA_25", "MD_24", "ME_23", "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
+                 "NC_37", "ND_38", "NE_31", "NH_33", "NJ_34", "NM_35", "NV_32", "NY_36",
+                 "OH_39", "OK_40", "OR_41", "PA_42", "RI_44",
+                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VT_50", "VA_51",
+                 "WA_53", "WV_54", "WI_55", "WY_56"
+)
+blocks_list <- list()
+for(i in 1:length(state_codes)) {
+  blocks <- list.files(paste0("SHP_blk_0010/2000/", state_codes[[i]], "/"), pattern = "buffers.csv")
+  blocks_list[[i]] <- read_csv(file = paste0("SHP_blk_0010/2000/", state_codes[[i]], "/", blocks))
+}
+blocks_list <- rbindlist(blocks_list)
+write_csv(blocks_list, "2000buffers.csv")
+
+# 2007
+blocks_list <- list()
+for(i in 1:length(state_codes)) {
+  blocks <- list.files(paste0("SHP_blk_0010/2007/", state_codes[[i]], "/"), pattern = "buffers.csv")
+  blocks_list[[i]] <- read_csv(file = paste0("SHP_blk_0010/2007/", state_codes[[i]], "/", blocks))
+}
+blocks_list <- rbindlist(blocks_list)
+write_csv(blocks_list, "2007buffers.csv")
