@@ -2110,6 +2110,11 @@ panel0020_did %<>%
   mutate(blackdiff = pctnhblack_total - pctnhblack_p0)
 
 panel0020_did %>%
-  filter(underbound_black == 1 & period == 1) %>%
+  filter(underbound_black_3pct == 1 & period == 1 & vra == 1) %>%
+  arrange(desc(blackdiff), desc(pop_p0)) %>%
+  View()
+
+panel0020_did %>%
+  filter(underbound_black_10pct == 1 & period == 1 & vra == 1) %>%
   arrange(desc(blackdiff), desc(pop_p0)) %>%
   View()
