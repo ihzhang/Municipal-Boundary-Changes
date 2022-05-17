@@ -507,7 +507,7 @@ table(blk14$annexed)
 annexed <- blk14 %>% filter(annexed == 1)
 
 nhb_14 <- ggplot() +  
-  geom_sf(data = pl14, size = 0.1, fill = "grey") + 
+  geom_sf(data = pl14, size = 0.1, fill = "white") + 
   geom_sf(data = blk14, size = 0.5, aes(fill = pctnhblack)) + 
   geom_sf(data = annexed, color = "red", size = 0.25, aes(fill = pctnhblack)) +
   labs(color='Annexed',
@@ -515,5 +515,9 @@ nhb_14 <- ggplot() +
        title = "Annexations for Clio City, AL 2014-2020",
        caption = "Dilution of Black by at least 3%") 
 nhb_14
+
+ggsave(filename = "clio_1420.png",
+       nhb_14, 
+       dpi = 300)
 rm(list = ls())
 
