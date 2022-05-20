@@ -45,6 +45,10 @@ place_all <- aa0713 %>%
             nhblack_total = sum(nhblack, na.rm = T),
             nhwhite_total = sum(nhwhite, na.rm = T),
             h_total = sum(h, na.rm = T),
+            asian_total = sum(asian, na.rm = T), 
+            native_total = sum(native, na.rm = T), 
+            other_total = sum(other, na.rm = T),
+            nbmin_total = sum(nbmin, na.rm = T),
          vap_total = sum(vap, na.rm = T),
          nhblackvap_total = sum(nhbvap),
          nhwhitevap_total = sum(nhwvap),
@@ -52,6 +56,7 @@ place_all <- aa0713 %>%
          nativevap_total = sum(nativevap, na.rm = T),
          asianvap_total = sum(asianvap, na.rm = T),
          othervap_total = sum(othervap, na.rm = T),
+         nbminvap_total = sum(nbminvap, na.rm = T),
          pct_annexed = mean(annexed, na.rm = T),
          njobs_total = sum(njobs07, na.rm = T),
          nhincjobs_total = sum(nhincjobs07, na.rm = T),
@@ -65,12 +70,20 @@ place_all <- aa0713 %>%
   mutate(pctnhblack_total = (nhblack_total/pop_total)*100,
          pcth_total = (h_total/pop_total)*100,
          pctnhwhite_total = (nhwhite_total/pop_total)*100,
+         pctasian_total = (asian_total/pop_total)*100,
+         pctnative_total = (native_total/pop_total)*100,
+         pctother_total = (other_total/pop_total)*100,
+         pctnbmin_total = (nbmin_total/pop_total)*100,
          pctownerocc_total = (owneroccupied_total/hu_total)*100,
          pctincocc_total = (incopp_total/nwork_total)*100,
          pcthincjobs_total = (nhincjobs_total/njobs_total)*100,
          pctnhblackvap_total = (nhblackvap_total/vap_total)*100,
          pcthvap_total = (hvap_total/vap_total)*100,
-         pctnhwhitevap_total = (nhwhitevap_total/vap_total)*100)
+         pctnhwhitevap_total = (nhwhitevap_total/vap_total)*100,
+         pctasianvap_total = (asianvap_total/vap_total)*100,
+         pctnativevap_total = (nativevap_total/vap_total)*100,
+         pctothervap_total = (othervap_total/vap_total)*100,
+         pctnbminvap_total = (nbminvap_total/vap_total)*100)
   
 place_by_annex <- aa0713 %>%
   mutate(incopp = man + ret,
@@ -84,6 +97,10 @@ place_by_annex <- aa0713 %>%
             nhblack_total = sum(nhblack, na.rm = T),
             nhwhite_total = sum(nhwhite, na.rm = T),
             h_total = sum(h, na.rm = T),
+            asian_total = sum(asian, na.rm = T),
+            native_total = sum(native, na.rm = T),
+            other_total = sum(other, na.rm = T),
+            nbmin_total = sum(nbmin, na.rm = T),
             njobs_total = sum(njobs07, na.rm = T),
             nhincjobs_total = sum(nhincjobs07, na.rm = T),
             nwork_total = sum(jobs, na.rm = T),
@@ -100,7 +117,8 @@ place_by_annex <- aa0713 %>%
             hvap_total = sum(hispvap, na.rm = T),
             nativevap_total = sum(nativevap, na.rm = T),
             asianvap_total = sum(asianvap, na.rm = T),
-            othervap_total = sum(othervap, na.rm = T)) %>%
+            othervap_total = sum(othervap, na.rm = T),
+            nbminvap_total = sum(nbminvap, na.rm = T)) %>%
   ungroup() %>%
   pivot_wider(
     id_cols = plid,
@@ -112,7 +130,15 @@ place_by_annex <- aa0713 %>%
         pcth_total_1 = (h_total_1/pop_total_1)*100,
         pctnhblackvap_total_1 = (nhblackvap_total_1/vap_total_1)*100,
         pctnhwhitevap_total_1 = (nhwhitevap_total_1/vap_total_1)*100,
-        pcthvap_total_1 = (hvap_total_1/vap_total_1)*100)
+        pcthvap_total_1 = (hvap_total_1/vap_total_1)*100,
+        pctasian_total_1 = (asian_total_1/pop_total_1)*100,
+        pctnative_total_1 = (native_total_1/pop_total_1)*100,
+        pctother_total_1 = (other_total_1/pop_total_1)*100,
+        pctnbmin_total_1 = (nbmin_total_1/pop_total_1)*100,
+        pctasianvap_total_1 = (asianvap_total_1/vap_total_1)*100,
+        pctnativevap_total_1 = (nativevap_total_1/vap_total_1)*100,
+        pctothervap_total_1 = (othervap_total_1/vap_total_1)*100,
+        pctnbminvap_total_1 = (nbminvap_total_1/vap_total_1)*100)
   
 pl_annex_var_0713 <- left_join(
   place_all, place_by_annex, 
