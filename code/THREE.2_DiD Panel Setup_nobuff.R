@@ -13,6 +13,7 @@ library("magrittr")
 library("openxlsx")
 library("broom")
 library("sjPlot")
+library("survey")
 
 # make DiD panel ####
 # 1. get plid for annexations to 2007-2013 and 2014-2020
@@ -1620,6 +1621,31 @@ set_label(panel0020_did$hinc_p0) <- "Median Household Income"
 set_label(panel0020_did$pctowneroccupied_p0) <- "% Owner-Occupied Units"
 set_label(panel0020_did$mhmval_p0) <- "Median Home Value"
 set_label(panel0020_did$incomepp_p0) <- "Per Capita Income"
+
+dclus1<-svydesign(id=~plid, data=panel0020_did)
+ann_test <- svyglm(annexing ~vra*period, design = dclus1, family = "binomial", data = panel0020_did)
+summary(ann_test)
+
+ann_glm <- glm(annexing ~vra*period, family = "binomial", data = panel0020_did)
+summary(ann_glm)
+
+clustered <- mgcv::gam(annexing ~vra*period, data = panel0020_did, family = binomial(link = "logit"))
+clustered$Vp <- vcovCL(clustered, cluster = panel0020_did$plid, type = "HC0")
+
+summary(clustered)
+summary(ann_test)
+
+psvyglm <- as.data.frame(predict(ann_test, se = T)) 
+pclustered <- as.data.frame(predict(clustered, se = T)) %>%
+  rename(link = fit, 
+         SE = se.fit)
+pglm <- as.data.frame(predict(ann_glm, se = T)) %>%
+  select(-residual.scale) %>%
+  rename(link = fit, 
+         SE = se.fit)
+all.equal(psvyglm, pclustered)
+all.equal(psvyglm, pglm)
+all.equal(pclustered, pglm)
 
 nhw <- fixest::feols(annexing ~ vra*period + pop_p0 + popdensity_p0 + pctnhwhite_p0 +
                        pctemp_p0 + hinc_p0 + pctowneroccupied_p0 + mhmval_p0 + incomepp_p0 | plid, data = panel0020_did)
