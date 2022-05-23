@@ -1109,7 +1109,7 @@ write_csv(places2020, "places2020_cleaned.csv")
 
 rm(list = ls())
 
-# make interpolated block data #### 
+# 2020 block-level #### 
 blocks2020 <- fread(file = "ipumsblocks_allstates/2020blocks/nhgis0031_ds248_2020_block.csv") 
 blocks2020 %<>%
     select(c("STATEA", "COUNTYA", "TRACTA", "BLOCKA", "PLACEA", "U7C001":"U7G003"))
@@ -1139,7 +1139,7 @@ foreach (i = 1:length(dat_use)) %do% {
             othervap20b =  U7E010 + U7E011,
             nbminvap20b = (vap20b - nhwvap20b - nhbvap20b),
             hu20b = U7G001,
-            owneroccuped20b = U7G002,
+            owneroccupied20b = U7G002,
             vacancy20b = U7G003
         ) %>% 
         dplyr::select( # select can take a vector of column indexes c(number 1, number 2, number 3:number 7 etc.) or column names
@@ -1153,107 +1153,23 @@ write_csv(blocks2020, "blocks2020_var.csv")
 rm(list = ls())
 
 # actual interpolation on Sherlock ####
-blocks2020 <- read_csv("blocks2020_var.csv")
-blocks2020 %<>%
-    mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"),
-                          str_pad(COUNTYA, 3, side = "left", pad = "0"),
-                          str_pad(TRACTA, 6, side = "left", pad = "0"),
-                          str_pad(BLOCKA, 4, side = "left", pad = "0"))) %>%
-    select(blkid, pop20b:vacancy20b) 
 
-names(blocks2020) <- gsub("20b", "", names(blocks2020))
-blocks2020 %<>%
-    mutate(Year = 2020)
+# clean up 2007 and 2014 ####
+#2007 
+blocks2007 <- read_csv("blocks2007_int.csv")
+summary(blocks2007)
 
-blocks2000 <- read_csv("blocks2000_var.csv")
-names(blocks2000) <- gsub("00b", "", names(blocks2000))
-blocks2000 %<>%
-    mutate(Year = "2000")
+blocks2007 %<>%
+  mutate_at(all_of(names(blocks2007)[1:(length(names(blocks2007))-2)]), ~ifelse(is.na(.) | . < 1, 1, .))
+summary(blocks2007)
+write_csv(blocks2007, "blocks2007_int.csv")
+rm(blocks2007)
 
-blocks2010 <- read_csv("blocks2010_var.csv")
-blocks2010 %<>%
-    mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"),
-                          str_pad(COUNTYA, 3, side = "left", pad = "0"),
-                          str_pad(TRACTA, 6, side = "left", pad = "0"),
-                          str_pad(BLOCKA, 4, side = "left", pad = "0")))
-
-names(blocks2010) <- gsub("10b", "", names(blocks2010))
-blocks2010 %<>%
-    mutate(Year = 2010)
-
-# blocks2000 %<>%
-#     filter((blkid %in% blocks2010$blkid) & (blkid %in% blocks2020$blkid))
-# 
-# blocks2010 %<>%
-#     filter(blkid %in% blocks2000$blkid)
-# 
-# blocks2020 %<>%
-#     filter(blkid %in% blocks2000$blkid)
-
-blkids <- Reduce(intersect, list(unique(blocks2000$blkid), unique(blocks2010$blkid), unique(blocks2020$blkid)))
-names_list <- Reduce(intersect, list(names(blocks2010), names(blocks2020)))
-
-blocks2000 %<>%
-  filter(blkid %in% blkids) %>%
-  select(all_of(names_list))
-
-blocks2010 %<>%
-  #filter(blkid %in% blkids) %>%
-  select(all_of(names_list))
-
-blocks2020 %<>%
-  #filter(blkid %in% blkids) %>%
-  select(all_of(names_list))
-
-blocks <- base::rbind(blocks2010, blocks2020)
-rm(blocks2000, blocks2020)
-
-# make a version that turns NAs to 0s for interpolation
-blocks %<>%
-  mutate_at(all_of(names_list[2:25]), ~ifelse(is.na(.), 0, .))
-
-# do 2014 
-blocks2014 <- blocks2010 %>%
-  mutate(Year = 2014)
+blocks2014 <- read_csv("blocks2014_int_2.csv")
+summary(blocks2014)
 
 blocks2014 %<>%
-    mutate_at(all_of(names(blocks2014)[2:25]), ~NA) 
+  mutate_at(all_of(names(blocks2014)[2:(length(names(blocks2014))-1)]), ~ifelse(is.na(.) | . < 1, 1, .))
+summary(blocks2014)
+write_csv(blocks2014, "blocks2014_int.csv")
 
-blocks2014 <- read_csv("blocks2014_int.csv")
-blocks <- base::rbind(blocks, blocks2014)
-rm(blocks2014)
-
-blocks2017 <- blocks2010 
-blocks2017 %<>%
-  mutate_at(all_of(names(blocks2017)[2:25]), ~NA) %>%
-  mutate(Year = 2017)
-
-blocks <- base::rbind(blocks, blocks2017)
-
-rm(blocks2010, blocks2017, blocks2014)
-test <- blocks %>% filter(blkid %in% blkids[1:50])
-
-test %<>%
-    group_by(blkid) %>%
-    arrange(Year) %>%
-    mutate_at(all_of(names(blocks)[2:25]), zoo::na.approx, na.rm = F) %>%
-    ungroup() 
-
-rm(test)
-rm(blkids)
-
-blocks %<>%
-  group_by(blkid) %>%
-  arrange(Year) %>%
-  mutate_at(all_of(names_list[2:25]), zoo::na.approx, na.rm = F) %>%
-  ungroup() 
-
-blocks14 <- blocks %>%
-    filter(Year == "2014")
-write_csv(blocks14, "blocks2014_int.csv")
-
-blocks17 <- blocks %>%
-  filter(Year == "2017")
-write_csv(blocks17, "blocks2007_int.csv")
-
-rm(list = ls())
