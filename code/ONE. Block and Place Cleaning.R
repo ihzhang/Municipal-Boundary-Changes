@@ -555,7 +555,7 @@ vars <- names(places2007)[!names(places2007) %in% pctvars & !names(places2007) %
 places2007 %<>%
   mutate_at(all_of(pctvars), ~ifelse(is.na(.) | . <= 0.1, 0.1, .)) %>%
   mutate_at(all_of(c("hinc07p", "incomepp07p")), ~ifelse(is.na(.) | . <= 2499, 2499, .)) %>%
-  mutate_at(all_of(vars), ~ifelse(is.na(.) | . <= 0, 1, .)) 
+  mutate_at(all_of(vars), ~ifelse(is.na(.) | . <= 1, 1, .)) 
 
 places2007 %<>%
   mutate(mhmval07p = ifelse(is.na(mhmval07p) | mhmval07p <= 9999, 9999, mhmval07p))
@@ -1105,6 +1105,21 @@ places2020 %<>%
          pctnbminvap20p = (nbminvap20p/vap20p)*100) %>%
   select(c(plid, Geo_NAME, contains("20p")))
 
+names(places2020) <- gsub("20p", "", names(places2020))
+
+pctvars <- names(places2020)[grep("pct", names(places2020))]
+moneyvars <- c("mhmval", "hinc", "incomepp")
+vars <- names(places2020)[!names(places2020) %in% pctvars & !names(places2020) %in% moneyvars & !names(places2020) %in% c("plid", "Geo_NAME", "Year")]
+
+places2020 %<>%
+  mutate_at(all_of(pctvars), ~ifelse(is.na(.) | !is.finite(.) | . <= 0.1, 0.1, 
+                                     ifelse(. >= 100, 100, .))) %>%
+  mutate_at(all_of(vars), ~ifelse(is.na(.) | . < 1, 1, .)) 
+
+#no money variables
+summary(places2020)
+
+names(places2020)[3:ncol(places2020)] <- str_c(names(places2020[3:ncol(places2020)]), "20p")
 write_csv(places2020, "places2020_cleaned.csv")
 
 rm(list = ls())
@@ -1165,7 +1180,7 @@ summary(blocks2007)
 write_csv(blocks2007, "blocks2007_int.csv")
 rm(blocks2007)
 
-blocks2014 <- read_csv("blocks2014_int_2.csv")
+blocks2014 <- read_csv("blocks2014_int.csv")
 summary(blocks2014)
 
 blocks2014 %<>%
