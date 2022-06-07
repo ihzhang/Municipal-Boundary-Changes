@@ -1,8 +1,10 @@
 # get environment ready 
-setwd("~/Google Drive/My Drive/Stanford/QE2")
+setwd("~/Google Drive/My Drive/QE2")
 
 library("stringr")
 library("dplyr")
+library("ggplot2")
+library("ggpubr")
 library("stargazer")
 library("tidyverse")
 library("tidycensus")
@@ -51,39 +53,44 @@ blk14 %<>%
 # #3. get which blocks were annexed 
 annexed <- blk14 %>% filter(annexed == 1)
 
-# plot this
+# plot this; updated with labeling
 nhb <- ggplot() +  
   geom_sf(data = pl14, size = 0.1, fill = "grey") + 
   geom_sf(data = blk14, size = 0.5, aes(fill = nhblack)) + 
-  geom_sf(data = annexed, color = "yellow", size = 0.25, aes(fill = nhblack)) + 
-  labs(color='Annexed',
+  scale_fill_gradient(low="grey77", high="grey31") +
+  geom_sf(data = annexed, size = 0.25, aes(fill = nhblack, color = "Annexed Block"), show.legend = "line") + 
+  scale_color_manual(values = "yellow",
+                     guide = guide_legend(override.aes = list(fill = "white", color = "yellow"))) +
+  labs(color = "", 
        fill = "% Non-Hispanic Black",
-       title = "Annexations for Pearl City, MS 2014-2020") 
+       title = "Annexations for Pearl City, MS 2014-2020")
 
-# as you can see, the color scale is wrong (should go from light to dark)
-# I also want to be able to add a legend showing what the red is (i.e., annexed) but it's not working
+# SOLVED: as you can see, the color scale is wrong (should go from light to dark) 
+# SOLVED:I also want to be able to add a legend showing what the red is (i.e., annexed) but it's not working
 # and, I want everything in greyscale
 nhb
 
 # not run
-ggsave(filename = "analyticalfiles/Pearl MS_annex_race.png",
-       plot = nhb,
-       dpi = 300)
+# ggsave(filename = "analyticalfiles/Pearl MS_annex_race.png",
+#        plot = nhb,
+#        dpi = 300)
 
 # next, I want to try showing this over time, 2000-2007, 2007-2013, and 2014-2020
 # tx 4806128 ("Baytown") -- you can also find the name of the city in the place shapefile
+
+# JC: trying plid 1365856, GA_13
 # 0007
 pl0007 <- read_csv("analyticalfiles/annexedblocks0007dem.csv") %>%
-  filter(plid=="4806128")
+  filter(plid=="1365856")
 
 plids_viz <- substr(unique(pl0007$plid), 3, 7)
 
 # 2000 places 
-pl00 <- st_read("SHP_pl/2000/TX_48/tl_2010_48_place00.shp") %>%
+pl00 <- st_read("SHP_pl/2000/GA_13/tl_2010_13_place00.shp") %>%
   filter(PLACEFP00 %in% plids_viz) %>%
   st_transform(., 3488)
 
-blk00 <- st_read("SHP_blk_0010/2000/TX_48/tl_2010_48_tabblock00.shp") %>% 
+blk00 <- st_read("SHP_blk_0010/2000/GA_13/tl_2010_13_tabblock00.shp") %>% 
   filter(BLKIDFP00 %in% pl0007$blkid) %>%
   filter(!duplicated(BLKIDFP00)) %>%
   st_transform(., 3488) %>%
@@ -94,27 +101,54 @@ blk00 <- st_read("SHP_blk_0010/2000/TX_48/tl_2010_48_tabblock00.shp") %>%
 # get which blocks were annexed 
 annexed <- blk00 %>% filter(annexed == 1)
 
+# Create common legend breaks for 
+breaks <- c("0-20", "20-40", "40-60", "60-80")
+
 nhb_00 <- ggplot() +  
   geom_sf(data = pl00, size = 0.1, fill = "grey") + 
   geom_sf(data = blk00, size = 0.5, aes(fill = nhblack00b)) + 
   geom_sf(data = annexed, color = "yellow", size = 0.25, aes(fill = nhblack00b)) +
   labs(fill = "% Non-Hispanic Black", 
        caption = "2000-2007*") +
-  theme(legend.position="none")
+  theme(legend.position="none",
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.ticks.y = element_blank())
 nhb_00
+
+# map_theme <- theme(
+#   plot.title = element_text(
+#     hjust = .5,
+#     vjust = 0.2,
+#     size = 8
+#   ),
+#   plot.margin = grid::unit(c(0, 0, 0, 0), "mm"),
+#   axis.title.x = element_blank(),
+#   axis.title.y = element_blank(),
+#   axis.text.x = element_blank(),
+#   axis.text.y = element_blank(),
+#   axis.ticks.x = element_blank(),
+#   axis.ticks.y = element_blank(),
+#   legend.title = element_blank(),
+#   legend.position = "bottom",
+#   legend.text = element_text(size = 6),
+#   legend.key.size = unit(0.2, "cm")
+# )
+
 
 # 2007-2013
 pl0713 <- read_csv("analyticalfiles/annexedblocks0713dem.csv") %>%
-  filter(plid=="4806128")
+  filter(plid=="1365856")
 
 plids_viz <- substr(unique(pl0713$plid), 3, 7)
 
 # 2014 places 
-pl07 <- st_read("SHP_pl/2007/fe_2007_48_place.shp") %>%
+pl07 <- st_read("SHP_pl/2007/fe_2007_13_place.shp") %>%
   filter(PLACEFP %in% plids_viz) %>%
   st_transform(., 3488)
 
-blk07 <- st_read("SHP_blk_0010/2007/states/TX_48_allblocks.shp") %>% 
+blk07 <- st_read("SHP_blk_0010/2007/states/GA_13_allblocks.shp") %>% 
   filter(BLKIDFP %in% pl0713$blkid) %>%
   filter(!duplicated(BLKIDFP)) %>%
   st_transform(., 3488) %>%
@@ -130,21 +164,25 @@ nhb_07 <- ggplot() +
   geom_sf(data = annexed, color = "yellow", size = 0.25, aes(fill = nhblack)) +
   labs(fill = "% Non-Hispanic Black", 
        caption = "2007-2013*") +
-  theme(legend.position="none")
+  theme(legend.position="none",
+        axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.ticks.y = element_blank())
 nhb_07
 
 # 2014-2020
 pl1420 <- read_csv("analyticalfiles/annexedblocks1420dem.csv") %>%
-  filter(plid=="4806128")
+  filter(plid=="1365856")
 
 plids_viz <- substr(unique(pl1420$plid), 3, 7)
 
 # 2014 places 
-pl14 <- st_read("SHP_pl/2014/TX_48/tl_2014_48_place.shp") %>%
+pl14 <- st_read("SHP_pl/2014/GA_13/tl_2014_13_place.shp") %>%
   filter(PLACEFP %in% plids_viz) %>%
   st_transform(., 3488)
 
-blk14 <- st_read("SHP_blk_0010/2014/TX_48/tl_2014_48_tabblock10.shp") %>%
+blk14 <- st_read("SHP_blk_0010/2014/GA_13/tl_2014_13_tabblock10.shp") %>%
   filter(GEOID10 %in% pl1420$blkid) %>%
   filter(!duplicated(GEOID10)) %>%
   st_transform(., 3488) %>%
@@ -161,23 +199,35 @@ nhb_14 <- ggplot() +
   geom_sf(data = annexed, color = "yellow", size = 0.25, aes(fill = nhblack)) +
   labs(color='Annexed',
        fill = "% Non-Hispanic Black",
-       caption = "2014-2020* \n*showing populated blocks only") 
+       caption = "2014-2020* \n*showing populated blocks only") +
+  theme(axis.text.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.ticks.y = element_blank())
 nhb_14
 
+
+plot_list <- list(nhb_00, nhb_07, nhb_14)
 # As you can see, a lot about this graph would be nice to to change 
 # could the 3 plots be more centered?
-# can we add a title?
+# SOLVED: can we add a title?
 # can I make sure the legend breaks are the same across the maps? 
-# can we remove the lat-longs? 
-nhb <- ggarrange(nhb_00, nhb_07, nhb_14, 
+# SOLVED: can we remove the lat-longs? 
+nhb_attempt <- ggarrange(nhb_00, nhb_07, nhb_14,
                  title = "Annexations for Baytown City, TX")
+annotate_figure(nhb_attempt,
+                top = text_grob("Annexations for Baytown City, TX"))
 # it will take a while to load
-nhb
+nhb_attempt
 
 # I like to save in pdf because you don't lose pixels when zooming
-ggsave(filename = "analyticalfiles/Baytown TX_annexed_race.pdf", 
-       plot = nhb, 
+setwd("~/Desktop")
+ggsave(filename = "GA_13_annexed_race.pdf",
+       plot = nhb,
        dpi = 300)
+# ggsave(filename = "analyticalfiles/Baytown TX_annexed_race.pdf",
+#        plot = nhb,
+#        dpi = 300)
 
 # another interesting place to look is 0115640, which is Clio City, Alabama
 #0115640
