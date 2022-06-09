@@ -107,15 +107,21 @@ breaks <- c("0-20", "20-40", "40-60", "60-80")
 nhb_00 <- ggplot() +  
   geom_sf(data = pl00, size = 0.1, fill = "grey") + 
   geom_sf(data = blk00, size = 0.5, aes(fill = nhblack00b)) + 
-  geom_sf(data = annexed, color = "yellow", size = 0.25, aes(fill = nhblack00b)) +
-  labs(fill = "% Non-Hispanic Black", 
+  scale_fill_gradient(low="grey77", high="grey31") +
+  geom_sf(data = annexed, size = 0.25, aes(fill = nhblack, color = "Annexed Block"), show.legend = "line") + 
+  scale_color_manual(values = "yellow",
+                     guide = guide_legend(override.aes = list(fill = "white", color = "yellow"))) +  labs(fill = "% Non-Hispanic Black", 
        caption = "2000-2007*") +
-  theme(legend.position="none",
+  theme(# legend.position="none",
         axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks.x = element_blank(),
         axis.ticks.y = element_blank())
 nhb_00
+
+
+
+
 
 # map_theme <- theme(
 #   plot.title = element_text(
@@ -161,15 +167,20 @@ annexed <- blk07 %>% filter(annexed == 1)
 nhb_07 <- ggplot() +  
   geom_sf(data = pl07, size = 0.1, fill = "grey") + 
   geom_sf(data = blk07, size = 0.5, aes(fill = nhblack)) + 
-  geom_sf(data = annexed, color = "yellow", size = 0.25, aes(fill = nhblack)) +
+  scale_fill_gradient(low="grey77", high="grey31") +
+  geom_sf(data = annexed, size = 0.25, aes(fill = nhblack, color = "Annexed Block"), show.legend = "line") + 
+  scale_color_manual(values = "yellow",
+                     guide = guide_legend(override.aes = list(fill = "white", color = "yellow"))) +
   labs(fill = "% Non-Hispanic Black", 
        caption = "2007-2013*") +
-  theme(legend.position="none",
+  theme(# legend.position="none",
         axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks.x = element_blank(),
         axis.ticks.y = element_blank())
 nhb_07
+
+
 
 # 2014-2020
 pl1420 <- read_csv("analyticalfiles/annexedblocks1420dem.csv") %>%
@@ -196,7 +207,10 @@ annexed <- blk14 %>% filter(annexed == 1)
 nhb_14 <- ggplot() +  
   geom_sf(data = pl14, size = 0.1, fill = "grey") + 
   geom_sf(data = blk14, size = 0.5, aes(fill = nhblack)) + 
-  geom_sf(data = annexed, color = "yellow", size = 0.25, aes(fill = nhblack)) +
+  scale_fill_gradient(low="grey77", high="grey31") +
+  geom_sf(data = annexed, size = 0.25, aes(fill = nhblack, color = "Annexed Block"), show.legend = "line") + 
+  scale_color_manual(values = "yellow",
+                     guide = guide_legend(override.aes = list(fill = "white", color = "yellow"))) +
   labs(color='Annexed',
        fill = "% Non-Hispanic Black",
        caption = "2014-2020* \n*showing populated blocks only") +
@@ -208,23 +222,26 @@ nhb_14
 
 
 plot_list <- list(nhb_00, nhb_07, nhb_14)
+plot_list <- list(nhb_00, nhb_07)
 # As you can see, a lot about this graph would be nice to to change 
 # could the 3 plots be more centered?
 # SOLVED: can we add a title?
 # can I make sure the legend breaks are the same across the maps? 
 # SOLVED: can we remove the lat-longs? 
-nhb_attempt <- ggarrange(nhb_00, nhb_07, nhb_14,
-                 title = "Annexations for Baytown City, TX")
-annotate_figure(nhb_attempt,
+nhb_attempt <- ggarrange(
+  ggarrange(nhb_00, nhb_07, ncol = 2), nhb_14, nrow = 2, 
+  common.legend = T)
+
+nhb_attempt <- annotate_figure(nhb_attempt,
                 top = text_grob("Annexations for Baytown City, TX"))
 # it will take a while to load
 nhb_attempt
 
 # I like to save in pdf because you don't lose pixels when zooming
 setwd("~/Desktop")
-ggsave(filename = "GA_13_annexed_race.pdf",
-       plot = nhb,
-       dpi = 300)
+# ggsave(filename = "GA_13_annexed_race.pdf",
+#        plot = nhb,
+#        dpi = 300)
 # ggsave(filename = "analyticalfiles/Baytown TX_annexed_race.pdf",
 #        plot = nhb,
 #        dpi = 300)
