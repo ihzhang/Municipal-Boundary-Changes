@@ -738,9 +738,9 @@ moneyvars <- c("mhmval10p", "hinc10p", "incomepp10p")
 vars <- names(places2010)[!names(places2010) %in% pctvars & !names(places2010) %in% moneyvars & !names(places2010) %in% c("plid", "Geo_NAME")]
 
 places2010 %<>%
-  mutate_at(all_of(pctvars), ~ifelse(is.na(.) | . <= 0.1, 0.1, .)) %>%
+  mutate_at(all_of(pctvars), ~ifelse(is.na(.) | . < 0.1, 0.1, .)) %>%
   mutate_at(all_of(c("hinc10p", "incomepp10p")), ~ifelse(is.na(.) | . <= 2499, 2499, .)) %>%
-  mutate_at(all_of(vars), ~ifelse(is.na(.) | . <= 0, 1, .)) 
+  mutate_at(all_of(vars), ~ifelse(is.na(.) | . < 1, 1, .)) 
 
 places2010 %<>%
   mutate(mhmval10p = ifelse(is.na(mhmval10p) | mhmval10p <= 9999, 9999, mhmval10p))
@@ -925,9 +925,9 @@ moneyvars <- c("mhmval17p", "hinc17p", "incomepp17p")
 vars <- names(places2017)[!names(places2017) %in% pctvars & !names(places2017) %in% moneyvars & !names(places2017) %in% c("plid", "Geo_NAME")]
 
 places2017 %<>%
-  mutate_at(all_of(pctvars), ~ifelse(is.na(.) | . <= 0.1, 0.1, .)) %>%
+  mutate_at(all_of(pctvars), ~ifelse(is.na(.) | . < 0.1, 0.1, .)) %>%
   mutate_at(all_of(c("hinc17p", "incomepp17p")), ~ifelse(is.na(.) | . <= 2499, 2499, .)) %>%
-  mutate_at(all_of(vars), ~ifelse(is.na(.) | . <= 0, 1, .)) 
+  mutate_at(all_of(vars), ~ifelse(is.na(.) | . <1, 1, .)) 
 
 places2017 %<>%
   mutate(mhmval17p = ifelse(is.na(mhmval17p) | mhmval17p <= 9999, 9999, mhmval17p))
@@ -971,8 +971,8 @@ moneyvars <- c("mhmval", "hinc", "incomepp")
 vars <- names(places2014)[!names(places2014) %in% pctvars & !names(places2014) %in% moneyvars & !names(places2014) %in% c("plid", "Geo_NAME", "Year")]
 
 places2014 %<>%
-  mutate_at(all_of(pctvars), ~ifelse(is.na(.) | !is.finite(.) | . <= 0.1, 0.1, 
-                                     ifelse(. >= 100, 100, .))) %>%
+  mutate_at(all_of(pctvars), ~ifelse(is.na(.) | !is.finite(.) | . < 0.1, 0.1, 
+                                     ifelse(. > 100, 100, .))) %>%
   mutate_at(all_of(vars), ~ifelse(is.na(.) | . < 1, 1, .)) 
 
 places2014 %<>%

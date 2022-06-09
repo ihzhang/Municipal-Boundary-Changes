@@ -181,3 +181,14 @@ ggsave(filename = "analyticalfiles/Baytown TX_annexed_race.pdf",
 
 # another interesting place to look is 0115640, which is Clio City, Alabama
 #0115640
+
+
+nhb <- ggplot() +  
+  geom_sf(data = pl14, size = 0.1, fill = "grey") + 
+  geom_sf(data = blk14, size = 0.5, aes(fill = nhblack)) + 
+  geom_sf(data = annexed, size = 0.25, aes(fill = nhblack, color = "Annexed Block"), show.legend = "line") + 
+scale_color_manual(values = "yellow",
+                         guide = guide_legend(override.aes = list(fill = "white", color = "yellow"))) +
+  labs(color = "", 
+       fill = "% Non-Hispanic Black",
+       title = "Annexations for Pearl City, MS 2014-2020") 
