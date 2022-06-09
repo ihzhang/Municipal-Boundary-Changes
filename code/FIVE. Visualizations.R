@@ -79,6 +79,23 @@ nhb
 # tx 4806128 ("Baytown") -- you can also find the name of the city in the place shapefile
 
 # JC: trying plid 1365856, GA_13
+
+# Common map_theme
+map_theme <- theme(
+  plot.title = element_text(
+    hjust = .5,
+    vjust = 0.2,
+    size = 8
+  ),
+  plot.margin = grid::unit(c(0, 0, 0, 0), "mm"),
+  axis.title.x = element_blank(),
+  axis.title.y = element_blank(),
+  axis.text.x = element_blank(),
+  axis.text.y = element_blank(),
+  axis.ticks.x = element_blank(),
+  axis.ticks.y = element_blank()
+)
+
 # 0007
 pl0007 <- read_csv("analyticalfiles/annexedblocks0007dem.csv") %>%
   filter(plid=="1365856")
@@ -102,45 +119,24 @@ blk00 <- st_read("SHP_blk_0010/2000/GA_13/tl_2010_13_tabblock00.shp") %>%
 annexed <- blk00 %>% filter(annexed == 1)
 
 # Create common legend breaks for 
-breaks <- c("0-20", "20-40", "40-60", "60-80")
+breaks <- c(0, 20, 40, 60, 80, 100)
+limits = c(0, 100)
 
 nhb_00 <- ggplot() +  
   geom_sf(data = pl00, size = 0.1, fill = "grey") + 
   geom_sf(data = blk00, size = 0.5, aes(fill = nhblack00b)) + 
-  scale_fill_gradient(low="grey77", high="grey31") +
+  scale_fill_gradient(low="grey77", high="grey31", breaks = breaks, limits = limits) +
   geom_sf(data = annexed, size = 0.25, aes(fill = nhblack, color = "Annexed Block"), show.legend = "line") + 
   scale_color_manual(values = "yellow",
                      guide = guide_legend(override.aes = list(fill = "white", color = "yellow"))) +  labs(fill = "% Non-Hispanic Black", 
        caption = "2000-2007*") +
-  theme(# legend.position="none",
+  theme(legend.position="none",
         axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks.x = element_blank(),
-        axis.ticks.y = element_blank())
+        axis.ticks.y = element_blank()) + 
+  map_theme
 nhb_00
-
-
-
-
-
-# map_theme <- theme(
-#   plot.title = element_text(
-#     hjust = .5,
-#     vjust = 0.2,
-#     size = 8
-#   ),
-#   plot.margin = grid::unit(c(0, 0, 0, 0), "mm"),
-#   axis.title.x = element_blank(),
-#   axis.title.y = element_blank(),
-#   axis.text.x = element_blank(),
-#   axis.text.y = element_blank(),
-#   axis.ticks.x = element_blank(),
-#   axis.ticks.y = element_blank(),
-#   legend.title = element_blank(),
-#   legend.position = "bottom",
-#   legend.text = element_text(size = 6),
-#   legend.key.size = unit(0.2, "cm")
-# )
 
 
 # 2007-2013
@@ -167,17 +163,18 @@ annexed <- blk07 %>% filter(annexed == 1)
 nhb_07 <- ggplot() +  
   geom_sf(data = pl07, size = 0.1, fill = "grey") + 
   geom_sf(data = blk07, size = 0.5, aes(fill = nhblack)) + 
-  scale_fill_gradient(low="grey77", high="grey31") +
+  scale_fill_gradient(low="grey77", high="grey31", breaks = breaks, limits = limits) +
   geom_sf(data = annexed, size = 0.25, aes(fill = nhblack, color = "Annexed Block"), show.legend = "line") + 
   scale_color_manual(values = "yellow",
                      guide = guide_legend(override.aes = list(fill = "white", color = "yellow"))) +
   labs(fill = "% Non-Hispanic Black", 
        caption = "2007-2013*") +
-  theme(# legend.position="none",
+  theme(legend.position="none",
         axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks.x = element_blank(),
-        axis.ticks.y = element_blank())
+        axis.ticks.y = element_blank()) +
+  map_theme
 nhb_07
 
 
@@ -207,33 +204,37 @@ annexed <- blk14 %>% filter(annexed == 1)
 nhb_14 <- ggplot() +  
   geom_sf(data = pl14, size = 0.1, fill = "grey") + 
   geom_sf(data = blk14, size = 0.5, aes(fill = nhblack)) + 
-  scale_fill_gradient(low="grey77", high="grey31") +
+  scale_fill_gradient(low="grey77", high="grey31", breaks =  breaks, limits = limits) +
   geom_sf(data = annexed, size = 0.25, aes(fill = nhblack, color = "Annexed Block"), show.legend = "line") + 
   scale_color_manual(values = "yellow",
                      guide = guide_legend(override.aes = list(fill = "white", color = "yellow"))) +
   labs(color='Annexed',
        fill = "% Non-Hispanic Black",
-       caption = "2014-2020* \n*showing populated blocks only") +
+       caption = "2014-2020*") +
   theme(axis.text.x = element_blank(),
         axis.text.y = element_blank(),
         axis.ticks.x = element_blank(),
-        axis.ticks.y = element_blank())
+        axis.ticks.y = element_blank()) +
+  map_theme
 nhb_14
 
+leg <- as_ggplot(get_legend(nhb_14))
+nhb_14 <- nhb_14 + 
+  theme(legend.position = "none")
 
-plot_list <- list(nhb_00, nhb_07, nhb_14)
-plot_list <- list(nhb_00, nhb_07)
+
 # As you can see, a lot about this graph would be nice to to change 
 # could the 3 plots be more centered?
 # SOLVED: can we add a title?
-# can I make sure the legend breaks are the same across the maps? 
+# SOLVED: can I make sure the legend breaks are the same across the maps? 
 # SOLVED: can we remove the lat-longs? 
 nhb_attempt <- ggarrange(
-  ggarrange(nhb_00, nhb_07, ncol = 2), nhb_14, nrow = 2, 
-  common.legend = T)
+  plotlist = list(nhb_00, nhb_07, nhb_14, leg), ncol = 4, nrow = 1, widths = c(2, 1.4, 2))
+ #  common.legend = F)
 
 nhb_attempt <- annotate_figure(nhb_attempt,
-                top = text_grob("Annexations for Baytown City, TX"))
+                top = text_grob("Annexations for Baytown City, TX"),
+                bottom = text_grob("\n*showing populated blocks only"))
 # it will take a while to load
 nhb_attempt
 
