@@ -2049,7 +2049,7 @@ panel0020_did %<>%
   ungroup()
 
 # heckman
-probit <- feglm(annexing ~ as.factor(vra) + as.factor(time) + pop_p0 + popdensity_p0 + popgrowth + pctnhwhite_p0 + pctnhblack_p0 + pctasian_p0 + pcth_p0 + pctnative_p0 + pctemp_p0 + pctowneroccupied_p0 + pov_p0 + hinc_p0 + mhmval_p0 + pctnhwhitegrowth + pctnhblack_total + pctnhwhite_total + pcth_total + pctasian_total + pctnative_total + pctownerocc_total + pcthincjobs_total + pctincocc_total | plid, data = panel0020_did, family = binomial(link = "probit"))
+probit <- feglm(annexing ~ as.factor(vra)*as.factor(time) + pop_p0 + popdensity_p0 + popgrowth + pctnhwhite_p0 + pctnhblack_p0 + pctasian_p0 + pcth_p0 + pctnative_p0 + pctemp_p0 + pctowneroccupied_p0 + pov_p0 + hinc_p0 + mhmval_p0 + pctnhwhitegrowth + pctnhblack_total + pctnhwhite_total + pcth_total + pctasian_total + pctnative_total + pctownerocc_total + pcthincjobs_total + pctincocc_total | plid, data = panel0020_did, family = binomial(link = "probit"))
 summary(probit)
 
 probit_lp = predict(probit)
