@@ -2046,10 +2046,11 @@ panel0020_did %<>%
   group_by(plid) %>%
   mutate(mean_annex = mean(annexing)) %>%
   filter(mean_annex > 0 & mean_annex < 1) %>%
-  ungroup()
+  ungroup() %>%
+  select(-mean_annex)
 
 # heckman
-probit <- feglm(annexing ~ as.factor(vra)*as.factor(time) + pop_p0 + popdensity_p0 + popgrowth + pctnhwhite_p0 + pctnhblack_p0 + pctasian_p0 + pcth_p0 + pctnative_p0 + pctemp_p0 + pctowneroccupied_p0 + pov_p0 + hinc_p0 + mhmval_p0 + pctnhwhitegrowth + pctnhblack_total + pctnhwhite_total + pcth_total + pctasian_total + pctnative_total + pctownerocc_total + pcthincjobs_total + pctincocc_total | plid, data = panel0020_did, family = binomial(link = "probit"))
+probit <- feglm(annexing ~ as.factor(vra)*as.factor(time) + pop_p0 + popdensity_p0 + popgrowth + pctnhwhite_p0 + pctnhblack_p0 + pctasian_p0 + pcth_p0 + pctnative_p0 + pctemp_p0 + pctowneroccupied_p0 + pov_p0 + hinc_p0 + mhmval_p0 + pctnhwhitegrowth + pctnhblackgrowth + pcthgrowth + pctasiangrowth + pctnativegrowth + pctnhblack_total + pctnhwhite_total + pcth_total + pctasian_total + pctnative_total + pctownerocc_total + pcthincjobs_total + pctincocc_total | plid, data = panel0020_did, family = binomial(link = "probit"))
 summary(probit)
 
 probit_lp = predict(probit)
@@ -2057,7 +2058,7 @@ mills0 = dnorm(probit_lp)/pnorm(probit_lp)
 summary(mills0)
 panel0020_did$imr <- mills0
 
-nhb_base <- fixest::feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhwhitegrowth + nhblack_total + imr | plid, data = panel0020_did)
+nhb_base <- fixest::feols(pctnhblack_p1 ~ as.factor(annexing) + as.factor(period)*as.factor(vra) + pctnhwhite_p0 + pctnhblack_p0 + pctasian_p0 + pcth_p0 + pctnative_p0 + pctemp_p0 + pctowneroccupied_p0 + pov_p0 + hinc_p0 + mhmval_p0 + pctnhwhitegrowth + pctnhblackgrowth + pcthgrowth + pctasiangrowth + pctnativegrowth + pctnhblack_total + pctnhwhite_total + pcth_total + pctasian_total + pctnative_total + pctownerocc_total + pcthincjobs_total + pctincocc_total + imr | plid, data = panel0020_did)
 summary(nhb_base) # N = 27987
 
 nhb_base <- fixest::feols(pctnhblack_p1 ~ as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhwhitegrowth + nhblack_total + imr | plid, data = panel0020_did %>% filter(annexing == 1))
@@ -2073,27 +2074,27 @@ summary(nhw_base) # N = 27987
 weight <- ipwtm(exposure = annexing, 
                 family = "binomial", 
                 link = "logit",
-                   numerator =~ as.factor(vra),
-                   denominator =~ as.factor(vra) + pop_p0 + popdensity_p0 + popgrowth + pctnhwhite_p0 + pctnhblack_p0 + pctasian_p0 + pcth_p0 + pctnative_p0 + pctemp_p0 + pctowneroccupied_p0 + pov_p0 + hinc_p0 + mhmval_p0 + pctnhwhitegrowth + pctnhblack_total + pctnhwhite_total + pcth_total + pctasian_total + pctnative_total + pctownerocc_total + pcthincjobs_total + pctincocc_total,
+                   numerator =~1 ,
+                   denominator =~ as.factor(vra) + pop_p0 + popdensity_p0 + popgrowth + pctnhwhite_p0 + pctnhblack_p0 + pctasian_p0 + pcth_p0 + pctnative_p0 + pctemp_p0 + pctowneroccupied_p0 + pov_p0 + hinc_p0 + mhmval_p0 + pctnhwhitegrowth + pctnhblackgrowth + pcthgrowth + pctasiangrowth + pctnativegrowth + pctnhblack_total + pctnhwhite_total + pcth_total + pctasian_total + pctnative_total + pctownerocc_total + pcthincjobs_total + pctincocc_total,
                    id = plid,
-                timevar = post,
+                timevar = time,
                 type = "all",
-                   trunc = 0.1, 
+                   trunc = 0.05, 
                 data = as.data.frame(panel0020_did))
 panel0020_did$ipw <- weight$weights.trunc
 
 ipwplot(weights = panel0020_did$ipw, 
-        timevar = panel0020_did$post, 
+        timevar = panel0020_did$post,
         binwidth = 0.5,
         main = "Stabilized weights", 
         xaxt = "n",
         yaxt = "n")
 
-nhb_base <- fixest::feols(pctnhblack_p1 ~ as.factor(annexing) + pctnhblack_p0 + pctnhblackgrowth + pctnhwhitegrowth + nhblack_total | plid, data = panel0020_did, weights = ipw)
+nhb_base <- fixest::feols(pctnhblack_p1 ~ as.factor(annexing) + pctnhblack_p0 + nhblack_total + pctnhwhitegrowth + pctnhblackgrowth | plid + period, data = panel0020_did, weights = ~ipw)
 summary(nhb_base) # N = 27987
 
-nhb_base <- fixest::feols(pctnhblack_p1 ~ as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhwhitegrowth + nhblack_total | plid, data = panel0020_did %>% filter(annexing == 1), weights = ~ipw)
-summary(nhb_base, cluster = ~plid) # N = 27987
+nhb_base <- fixest::feols(pctnhblack_p1 ~ as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + nhblack_total | plid, data = panel0020_did %>% filter(annexing == 1), weights = ~ipw)
+summary(nhb_base) # N = 27987
 
 ps.any <- annexing ~ as.factor(vra) + as.factor(time) + pop_p0 + popdensity_p0 + popgrowth + pctnhwhite_p0 + pctnhblack_p0 + pctasian_p0 + pcth_p0 + pctnative_p0 + pctemp_p0 + pctowneroccupied_p0 + pov_p0 + hinc_p0 + mhmval_p0 + pctnhwhitegrowth + pctnhblack_total + pctnhwhite_total + pcth_total + pctasian_total + pctnative_total + pctownerocc_total + pcthincjobs_total + pctincocc_total
 
