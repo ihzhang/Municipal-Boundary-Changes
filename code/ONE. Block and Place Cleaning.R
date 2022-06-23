@@ -97,6 +97,21 @@ write_csv(blocks2000, "blocks2000_var.csv")
 
 rm(list = ls())
 
+# make into 2010 boundaries 
+blocks2000 <- read_csv("blocks2000_var.csv")
+cw <- read_csv("cw/2000-to-2010_unique.csv")
+length(unique(blocks2000$blkid))
+
+blocks2000 %<>%
+  left_join(cw, by = c("blkid" = "GEOID00")) %>%
+  filter(!is.na(WEIGHT) & !is.na(PAREA)) %>%
+  mutate(blkid = GEOID10) %>%
+  select(-GEOID10) %>%
+  mutate_at(vars(pop00b:nbminvap00b), ~(.*WEIGHT)) %>%
+  filter(!is.na(blkid))
+
+write_csv(blocks2000, "blocks2000_var_2010b.csv")
+
 # 2010 block-level data ####
 clean_dat_10 <- function(datuse) {
     f <- rep(seq_len(ceiling(nrow(datuse) / 100000)), each = 100000, length.out = nrow(datuse))
@@ -1168,7 +1183,43 @@ write_csv(blocks2020, "blocks2020_var.csv")
 rm(list = ls())
 
 # actual interpolation on Sherlock ####
+blocks2010 <- read_csv("blocks2010_var.csv")
+blocks2010 %<>%
+  mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
+               str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0")))
 
+blocks2000 <- read_csv("blocks2000_var_2010b.csv")
+names(blocks2000) <- gsub("00b", "", names(blocks2000))
+names(blocks2010) <- gsub("10b", "", names(blocks2010))
+
+names_list <- Reduce(intersect, list(names(blocks2010), names(blocks2000)))
+blkids <- Reduce(intersect, list(unique(blocks2010$blkid), unique(blocks2000$blkid)))
+
+blocks2010 %<>%
+  filter(blkid %in% blkids) %>%
+  select(all_of(names_list)) %>%
+  mutate(Year = 2010)
+blocks2000 %<>%
+  filter(blkid %in% blkids) %>%
+  select(all_of(names_list)) %>%
+  mutate(Year = 2000)
+
+blocks <- base::rbind(blocks2010, blocks2000)
+rm(blocks2010)
+
+blocks2007 <- blocks2000 %>%
+  mutate_at(all_of(names_list[6:(length(names_list)-1)]), ~NA) %>%
+  mutate(Year = "2007")
+
+blocks <- base::rbind(blocks, blocks2007)
+
+blocks %<>%
+  group_by(blkid) %>%
+  arrange(Year) %>%
+  mutate_at(all_of(names_list[6:(length(names_list)-1)]), ~zoo::na.approx(., na.rm = F)) 
+
+blocks2007 <- blocks %>%
+  filter(Year==2007)
 # clean up 2007 and 2014 ####
 #2007 
 blocks2007 <- read_csv("blocks2007_int.csv")

@@ -696,7 +696,7 @@ place_all <- aa1420 %>%
          pctother_total = (other_total/pop_total)*100,
          pctnbmin_total = (nbmin_total/pop_total)*100,
          pctownerocc_total = (owneroccupied_total/hu_total)*100,
-         pctincocc_total = (incopp_total/nwork_total)*100,
+         pctincopp_total = (incopp_total/nwork_total)*100,
          pcthincjobs_total = (nhincjobs_total/njobs_total)*100,
          pctnhblackvap_total = (nhblackvap_total/vap_total)*100,
          pcthvap_total = (hvap_total/vap_total)*100,
@@ -1323,7 +1323,7 @@ place_all <- aa0007 %>%
          pctother_total = (other_total/pop_total)*100,
          pctnbmin_total = (nbmin_total/pop_total)*100,
          pctownerocc_total = (owneroccupied_total/hu_total)*100,
-         pctincocc_total = (incopp_total/nwork_total)*100,
+         pctincopp_total = (incopp_total/nwork_total)*100,
          pcthincjobs_total = (nhincjobs_total/njobs_total)*100,
          pctnhblackvap_total = (nhblackvap_total/vap_total)*100,
          pcthvap_total = (hvap_total/vap_total)*100,
@@ -1687,7 +1687,10 @@ pl_annex_var_0007 %<>%
 names(pl_annex_var_0007)
 names(pl_annex_var_0007) <- gsub("07p", "_p1", names(pl_annex_var_0007))
 
-pl_annex_var_0007 %>% filter(annexing == 1) %>% select(vra, post) %>% table()
+pl_annex_var_0007 %>% 
+  filter(annexing == 1) %>% 
+  select(vra, post) %>% 
+  table()
 
 write_csv(pl_annex_var_0007, "analyticalfiles/pl_annex_var_0007.csv")
 pl_annex_var_0007 <- read_csv("analyticalfiles/pl_annex_var_0007.csv")
@@ -1964,14 +1967,14 @@ plot
 ggsave(filename = "analyticalfiles/VRA_VRAA_vap_nowhite_noannex_newdenom.png",
        plot = plot,
        dpi = 300)
+
+vraplids <- unique(c(places_vra_0007, places_vra_0713, places_vra_1420))
+write_csv(as.data.frame(vraplids), "analyticalfiles/vra_places.csv")
 rm(list = ls())
 
 # make panel data!!!!! ####
 # take out ne and hawaii
-vraplids <- unique(c(places_vra_0007, places_vra_0713, places_vra_1420))
-write_csv(as.data.frame(vraplids), "analyticalfiles/vra_places.csv")
 vraplids <- read_csv("analyticalfiles/vra_places.csv")
-
 NE <- c("09", "23", "25", "33", "34", "36", "42", "24", "44", "50", "15")
 pl0007 <- read_csv("analyticalfiles/pl_annex_var_0007.csv") %>%
   mutate(STATE = substr(plid, 1, 2)) %>%
@@ -2003,6 +2006,14 @@ pl1420 %<>%
 panel0020_did <- base::rbind(
     pl0007, pl0713, pl1420
 )
+
+laws <- read_csv("statelawsdatabase1.csv")
+laws %<>%
+  mutate(statefips = str_pad(`FIPS Code`, 2, "left", "0")) %>%
+  mutate_at(vars(referenda_risk:township_state), ~as.character(.))
+
+panel0020_did %<>%
+  left_join(laws, by = c("STATE" = "statefips"))
 
 rm(pl0007, pl0713, pl1420)
 
@@ -2037,9 +2048,24 @@ set_label(panel0020_did$pctowneroccupied_p0) <- "% Owner-Occupied Units"
 set_label(panel0020_did$mhmval_p0) <- "Median Home Value"
 set_label(panel0020_did$incomepp_p0) <- "Per Capita Income"
 
-dclus1<-svydesign(id=~plid, data=panel0020_did)
-ann_test <- svyglm(annexing ~vra*period, design = dclus1, family = "binomial", data = panel0020_did)
+dclus1 <- svydesign(id=~plid, data=panel0020_did)
+
+annex_basic <- glm(annexing ~ as.factor(vra)*as.factor(period) + referenda_risk + referenda_annexing + hearing + commission + petition + county_approval_required + city_ordinance + judicial_review + noncontiguous_land + township_state + financial_autonomy + functional_autonomy + structural_autonomy, family = "binomial", data = panel0020_did)
+summary(annex_basic)
+coeftest(annex_basic, vcov = vcovCL, cluster = ~plid)
+
+ann_test <- glm(annexing ~as.factor(vra)*as.factor(period) + pop_p0 + popdensity_p0 + popgrowth + pctnhwhite_p0 + pctnhblack_p0 + pctasian_p0 + pcth_p0 + pctnative_p0 + pctemp_p0 + pctowneroccupied_p0 + pov_p0 + hinc_p0 + mhmval_p0 + pctnhwhitegrowth + pctnhblackgrowth + pcthgrowth + pctasiangrowth + pctnativegrowth + pctnhblack_total + pctnhwhite_total + pcth_total + pctasian_total + pctnative_total + pctownerocc_total + pcthincjobs_total + pctincopp_total + referenda_risk + referenda_annexing + hearing + commission + petition + county_approval_required + city_ordinance + judicial_review + noncontiguous_land + township_state + financial_autonomy + functional_autonomy + structural_autonomy, family = "binomial", data = panel0020_did)
 summary(ann_test)
+coeftest(ann_test, vcov = vcovCL, cluster = ~plid)
+
+# heckman
+probit <- glm(annexing ~ as.factor(vra)*as.factor(time) + pop_p0 + popdensity_p0 + popgrowth + pctnhwhite_p0 + pctnhblack_p0 + pctasian_p0 + pcth_p0 + pctnative_p0 + pctemp_p0 + pctowneroccupied_p0 + pov_p0 + hinc_p0 + mhmval_p0 + pctnhwhitegrowth + pctnhblackgrowth + pcthgrowth + pctasiangrowth + pctnativegrowth + pctnhblack_total + pctnhwhite_total + pcth_total + pctasian_total + pctnative_total + pctownerocc_total + pcthincjobs_total + pctincopp_total + referenda_risk + referenda_annexing + hearing + commission + petition + county_approval_required + city_ordinance + judicial_review + noncontiguous_land + township_state + financial_autonomy + functional_autonomy + structural_autonomy, data = panel0020_did, family = binomial(link = "probit"))
+summary(probit)
+
+probit_lp = predict(probit, vcov = vcovCL, cluster = ~plid)
+mills0 = dnorm(probit_lp)/pnorm(probit_lp)
+summary(mills0)
+panel0020_did$imr <- mills0
 
 # remove always annex or never annex 
 panel0020_did %<>%
@@ -2049,16 +2075,10 @@ panel0020_did %<>%
   ungroup() %>%
   select(-mean_annex)
 
-# heckman
-probit <- feglm(annexing ~ as.factor(vra)*as.factor(time) + pop_p0 + popdensity_p0 + popgrowth + pctnhwhite_p0 + pctnhblack_p0 + pctasian_p0 + pcth_p0 + pctnative_p0 + pctemp_p0 + pctowneroccupied_p0 + pov_p0 + hinc_p0 + mhmval_p0 + pctnhwhitegrowth + pctnhblackgrowth + pcthgrowth + pctasiangrowth + pctnativegrowth + pctnhblack_total + pctnhwhite_total + pcth_total + pctasian_total + pctnative_total + pctownerocc_total + pcthincjobs_total + pctincocc_total | plid, data = panel0020_did, family = binomial(link = "probit"))
-summary(probit)
+nhb_base <- lm(pctnhblack_p1 ~ as.factor(annexing) + imr, data = panel0020_did)
+summary(nhb_base) # N = 27987
 
-probit_lp = predict(probit)
-mills0 = dnorm(probit_lp)/pnorm(probit_lp)
-summary(mills0)
-panel0020_did$imr <- mills0
-
-nhb_base <- fixest::feols(pctnhblack_p1 ~ as.factor(annexing) + as.factor(period)*as.factor(vra) + pctnhwhite_p0 + pctnhblack_p0 + pctasian_p0 + pcth_p0 + pctnative_p0 + pctemp_p0 + pctowneroccupied_p0 + pov_p0 + hinc_p0 + mhmval_p0 + pctnhwhitegrowth + pctnhblackgrowth + pcthgrowth + pctasiangrowth + pctnativegrowth + pctnhblack_total + pctnhwhite_total + pcth_total + pctasian_total + pctnative_total + pctownerocc_total + pcthincjobs_total + pctincocc_total + imr | plid, data = panel0020_did)
+nhb_base <- fixest::feols(pctnhblack_p1 ~ as.factor(annexing) + as.factor(period) + pctnhwhite_p0 + pctnhblack_p0 + pctnhwhitegrowth + pctnhblackgrowth + pctnhblack_total + pctnhwhite_total + imr | plid, data = panel0020_did)
 summary(nhb_base) # N = 27987
 
 nhb_base <- fixest::feols(pctnhblack_p1 ~ as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhwhitegrowth + nhblack_total + imr | plid, data = panel0020_did %>% filter(annexing == 1))
@@ -2108,7 +2128,7 @@ summary(nhw)
 annex <- tidy(nhw)
 openxlsx::write.xlsx(annex, "analyticalfiles/results/annex.xlsx")
 
-nhw_full <- feglm(annexing ~ as.factor(vra)*as.factor(period) + pop_p0 + popdensity_p0 + popgrowth + pctnhwhite_p0 + pctnhwhitegrowth + pctnhblack_total + pctownerocc_total + pcthincjobs_total + pctincocc_total | plid, data = panel0020_did, family = "binomial", glm.iter = 100)
+nhw_full <- feglm(annexing ~ as.factor(vra)*as.factor(period) + pop_p0 + popdensity_p0 + popgrowth + pctnhwhite_p0 + pctnhwhitegrowth + pctnhblack_total + pctownerocc_total + pcthincjobs_total + pctincopp_total | plid, data = panel0020_did, family = "binomial", glm.iter = 100)
 
 sjPlot::plot_model(nhw_full, dot.size = 1,
                    show.values = TRUE)
