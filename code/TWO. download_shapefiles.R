@@ -23,6 +23,8 @@ state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09",
                  "WA_53", "WV_54", "WI_55", "WY_56"
 )
 
+state_codes <- "HI_15"
+
 state_codes <- substr(state_codes, nchar(state_codes)-1, nchar(state_codes))
 state_list <- state_list[substr(state_list, 1, 2) %in% state_codes]
 url_list <- list()

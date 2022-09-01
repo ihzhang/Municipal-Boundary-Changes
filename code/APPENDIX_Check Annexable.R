@@ -326,24 +326,38 @@ ggplot() +
 
 # 2014
 blocks14 <- st_read("SHP_blk_0010/2014/GA_13/tl_2014_13_tabblock10.shp") %>%
+  st_transform(., 3488) %>%
+  mutate(area_blk = st_area(.))
+
+places20 <- st_read("SHP_pl/2020/tl_2020_13_place.shp") %>%
   st_transform(., 3488)
 
-places14 <- st_read("SHP_pl/2014/GA_13/tl_2014_13_place.shp") %>%
-  st_transform(., 3488)
-
-places14 %<>%
+places20 %<>%
   filter(GEOID == "1342604")
 
 # 4.1 get intersection between "annexed" blocks and the place 
-p1blocks_14 <- c(st_contains(places14, blocks14), st_overlaps(places14, blocks14))
-b14 <- blocks14[unique(c(p1blocks_14[[1]], p1blocks_14[[2]])),]
+p1blocks_20 <- c(st_contains(places20, blocks14), st_overlaps(places20, blocks14))
+b14 <- blocks14[unique(c(p1blocks_20[[1]], p1blocks_20[[2]])),]
+ann_int <- st_intersection(b14, places20) %>%
+  mutate(area_int = st_area(.),
+         pct_int = (area_int/area_blk)*100, 
+         pct_int = as.numeric(pct_int)) %>%
+  filter(pct_int >= 90)
+
+jones_ann <- aa1420 %>%
+  filter(plid == "1342604" & annexed==1)
+jones_ann_shp <- blocks14 %>%
+  filter(GEOID10 %in% jones_ann$blkid)
 
 p1blocks_14 <- st_contains(places14, blocks14)
 b14 <- blocks14[p1blocks_14[[1]],]
 
 a <- ggplot() + 
-  geom_sf(data = places14, fill = "grey") + 
-  geom_sf(data = b14, color = "red", fill = "transparent")
+  geom_sf(data = ann_int, color = "red") +
+  geom_sf(data = places20, fill = "transparent") +
+  geom_sf(data = jones_ann_shp, color = "black") #+
+  #geom_sf(data = b14, color = "red", fill = "transparent") + 
+  
 
 b <- ggplot() + 
   geom_sf(data = places14, fill = "grey") + 
@@ -465,4 +479,215 @@ b14 %<>%
   anti_join(annexed_14, )
 
 
+ggplot() + 
+  geom_sf(data = place, fill = "grey") + 
+  geom_sf(data = block_buff, color = "red", fill = "transparent")
+
+# why is 1979948 wrong...
+blocks14 <- st_read("SHP_blk_0010/2014/GA_13/tl_2014_13_tabblock10.shp") %>%
+  st_transform(., 3488)
+
+places20 <- st_read("SHP_pl/2020/tl_2020_13_place.shp") %>%
+  st_transform(., 3488)
+
+places20 %<>%
+  filter(GEOID == "1379948")
+
+# 4.1 get intersection between "annexed" blocks and the place 
+p1blocks_14 <- c(st_contains(places20, blocks14), st_overlaps(places20, blocks14))
+b14 <- blocks14[unique(c(p1blocks_14[[1]], p1blocks_14[[2]])),]
+
+a <- ggplot() + 
+  geom_sf(data = places20, fill = "grey") + 
+  geom_sf(data = b14, color = "red", fill = "transparent") + 
+  ggtitle("2014 blocks on 2020 places, \ncontains and overlaps")
+a
+
+p1blocks_14 <- st_contains(places20, blocks14)
+b14 <- blocks14[p1blocks_14[[1]],]
+
+b <- ggplot() + 
+  geom_sf(data = places20, fill = "grey") + 
+  geom_sf(data = ann_int, color = "red", fill = "transparent") + 
+  ggtitle("2014 blocks on 2020 places, \n90% contain thresh.")
+b
+
+# and 2014? 
+places14 <- st_read("SHP_pl/2014/GA_13/tl_2014_13_place.shp") %>%
+  st_transform(., 3488)
+
+places14 %<>%
+  filter(GEOID == "1379948")
+
+# 4.1 get intersection between "annexed" blocks and the place 
+p1blocks_14 <- c(st_contains(places14, blocks14), st_overlaps(places14, blocks14))
+b14 <- blocks14[unique(c(p1blocks_14[[1]], p1blocks_14[[2]])),]
+
+c <- ggplot() + 
+  geom_sf(data = places14, fill = "grey") + 
+  geom_sf(data = b14, color = "red", fill = "transparent") + 
+  ggtitle("2014 blocks on 2014 places, \ncontains and overlaps")
+c
+
+p1blocks_14 <- st_contains(places14, blocks14)
+b14 <- blocks14[p1blocks_14[[1]],]
+
+d <- ggplot() + 
+  geom_sf(data = places14, fill = "grey") + 
+  geom_sf(data = b14, color = "red", fill = "transparent") + 
+  ggtitle("2014 blocks on 2014 places, \ncontains only")
+d
+
+grid <- ggarrange(a, b, c, d, 
+               nrow = 2, ncol = 2) 
+grid
+
+ggsave("analyticalfiles/differing_boundaries_2014-2020.pdf",
+       grid, 
+       dpi = 300)
+
+ggsave("analyticalfiles/differing_boundaries_fixed_2014-2020.pdf",
+       grid, 
+       dpi = 300)
+
+# intersection of 2014 blocks on 2020 boundaries 
+blocks14 <- st_read("SHP_blk_0010/2014/GA_13/tl_2014_13_tabblock10.shp") %>%
+  st_transform(., 3488) %>%
+  mutate(area_blk = st_area(.))
+
+p1blocks_14 <- c(st_contains(places20, blocks14), st_overlaps(places20, blocks14))
+b14 <- blocks14[unique(c(p1blocks_14[[1]], p1blocks_14[[2]])),]
+
+# 4.1 get intersection between "annexed" blocks and the place 
+ann_int <- st_intersection(b14, places20) %>%
+  mutate(area_int = st_area(.),
+         pct_int = (area_int/area_blk)*100, 
+         pct_int = as.numeric(pct_int)) %>%
+  filter(pct_int >= 90)
+
+ggplot() +  
+  geom_sf(data = places20, size = 0.4, fill = "white") +
+  geom_sf(data = ann_int, size = 0.4, fill= "grey", color = "red")
+
+places20 <- st_read("SHP_pl/2020/tl_2020_13_place.shp") %>%
+  st_transform(., 3488)
+
+places20 %<>%
+  filter(GEOID == "1379948")
+
+# 4.1 get intersection between "annexed" blocks and the place 
+
+a <- ggplot() + 
+  geom_sf(data = places20, fill = "grey") + 
+  geom_sf(data = b14, color = "red", fill = "transparent") + 
+  ggtitle("2014 blocks on 2020 places, \ncontains and overlaps")
+a
+
+p1blocks_14 <- st_contains(places20, blocks14)
+b14 <- blocks14[p1blocks_14[[1]],]
+
+b <- ggplot() + 
+  geom_sf(data = places20, fill = "grey") + 
+  geom_sf(data = b14, color = "red", fill = "transparent") + 
+  ggtitle("2014 blocks on 2020 places, \ncontains only")
+b
+
+# what about on 2020 boundaries 
+blocks20 <- st_read("SHP_blk_0010/2020/tl_2020_13_tabblock20.shp") %>%
+  st_transform(., 3488)
+
+places20 <- st_read("SHP_pl/2020/tl_2020_13_place.shp") %>%
+  st_transform(., 3488)
+
+places20 %<>%
+  filter(GEOID == "1379948")
+
+# 4.1 get intersection between "annexed" blocks and the place 
+p1blocks_20 <- c(st_contains(places20, blocks20), st_overlaps(places20, blocks20))
+b14 <- blocks20[unique(c(p1blocks_20[[1]], p1blocks_20[[2]])),]
+
+a <- ggplot() + 
+  geom_sf(data = places20, fill = "grey") + 
+  geom_sf(data = b20, color = "red", fill = "transparent") + 
+  ggtitle("2020 blocks on 2020 places, \ncontains and overlaps")
+a
+
+p1blocks_14 <- st_contains(places20, blocks14)
+b14 <- blocks14[p1blocks_14[[1]],]
+
+b <- ggplot() + 
+  geom_sf(data = places20, fill = "grey") + 
+  geom_sf(data = b14, color = "red", fill = "transparent") + 
+  ggtitle("2014 blocks on 2020 places, \ncontains only")
+b
+
+# 2014 and 2010 comparison 
+# why is 1979948 wrong...
+blocks10 <- st_read("SHP_blk_0010/2010/GA_13/tl_2010_13_tabblock10.shp") %>%
+  st_transform(., 3488)
+
+places10 <- st_read("SHP_pl/2010/GA_13/tl_2010_13_place10.shp") %>%
+  st_transform(., 3488)
+
+places10 %<>%
+  mutate(plid = paste0(str_pad(STATEFP10, 2, "left", "0"), 
+                       str_pad(PLACEFP10, 5, "left", "0"))) %>%
+  filter(plid == "1379948")
+
+# 4.1 get intersection between "annexed" blocks and the place 
+p1blocks_10 <- c(st_contains(places14, blocks10), st_overlaps(places14, blocks10))
+b10 <- blocks10[unique(c(p1blocks_10[[1]], p1blocks_10[[2]])),]
+
+a <- ggplot() + 
+  geom_sf(data = places14, fill = "grey") + 
+  geom_sf(data = b10, color = "red", fill = "transparent") + 
+  ggtitle("2010 blocks on 2014 places, \ncontains and overlaps")
+a
+
+p1blocks_10 <- st_contains(places14, blocks10)
+b10 <- blocks10[p1blocks_10[[1]],]
+
+b <- ggplot() + 
+  geom_sf(data = places14, fill = "grey") + 
+  geom_sf(data = b10, color = "red", fill = "transparent") + 
+  ggtitle("2010 blocks on 2014 places, \ncontains only")
+b
+
+c <- ggarrange(a, b)
+c
+
+# check whether the identified contained blocks are right
+blocks14_20 <- read_csv("2014blk-2020plid.csv")
+blocks14 <- st_read(paste0("SHP_blk_0010/2014/", state_code, "/tl_2014_", substr(state_code, 4, 5), "_tabblock10.shp")) %>%
+  st_transform(., 3488) %>%
+  mutate(area_blk = st_area(.)) %>%
+  left_join(blocks14_20 %>% select(blkid, plid), by = c("GEOID10" = "blkid"))
+
+places20 <- st_read(paste0("SHP_pl/2020/tl_2020_", substr(state_code, 4, 5), "_place.shp")) %>%
+  st_transform(., 3488) %>%
+  mutate(plid = paste0(str_pad(.[[1]], 2, "left", "0"),
+                       str_pad(.[[2]], 5, "left", "0")))
+
+places_df <- split(places20, f = places20$plid)
+datalist <- list()
+datalist <- foreach (i = 1:length(places_df)) %dopar% {
+  b14 <- blocks14 %>% 
+    filter(plid %in% places_df[[i]]) 
+  
+  pl <- st_as_sf(places_df[[i]])
+  
+  ann_int <- st_intersection(b14, pl) %>%
+    mutate(area_int = st_area(.),
+           pct_int = (area_int/area_blk)*100, 
+           pct_int = as.numeric(pct_int)) %>%
+    filter(pct_int >= 90)
+  
+  if(nrow(as.data.frame(ann_int)) < 1) return(NULL)
+  test <- as.data.frame(ann_int) %>% 
+    select(GEOID10, plid, pct_int)
+  return(test)
+  
+}
+
+# 4.1 get intersection between "annexed" blocks and the place 
 

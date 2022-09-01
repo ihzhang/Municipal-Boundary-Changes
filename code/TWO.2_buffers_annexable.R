@@ -213,10 +213,10 @@ write_csv(blocks_list, "2000buffers.csv")
 # 2007
 blocks_list <- list()
 for(i in 1:length(state_codes)) {
-  blocks <- list.files(paste0("SHP_blk_0010/2007/", state_codes[[i]], "/"), pattern = "buffers.csv")
-  blocks_list[[i]] <- read_csv(file = paste0("SHP_blk_0010/2007/", state_codes[[i]], "/", blocks))
+  blocks <- list.files(paste0("SHP_blk_0010/2007/states/"), pattern = "buffers.csv")
+  blocks_list[[i]] <- read_csv(file = paste0("SHP_blk_0010/2007/states/", blocks[[i]]))
 }
-blocks_list <- rbindlist(blocks_list)
+blocks_list <- rbindlist(blocks_list, fill = T)
 write_csv(blocks_list, "2007buffers.csv")
 
 # NEW ANNEX SCHEME ####
