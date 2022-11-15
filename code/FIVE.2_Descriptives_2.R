@@ -17,11 +17,11 @@ vra_time <- panel0020_did %>%
 # just look at VRA places ####
 annex_time_vra <- panel0020_did %>%
   mutate(vra = as.numeric(as.character(vra))) %>%
-  group_by(annexing, time, vra) %>%
+  group_by(time, vra) %>%
   mutate(n = n()) %>%
   ungroup() %>%
-  group_by(annexing, time, vra, n) %>%
-  summarize_at(vars(c(contains("p0"), contains("p1"), ends_with("growth"), ends_with("total"), contains("diff"))), ~mean(., na.rm = T)) %>%
+  group_by(time, vra, n) %>%
+  summarize_at(vars(c(contains("p0"), contains("p1"), ends_with("growth"), ends_with("total"), contains("diff"), annexing, more_white)), ~mean(., na.rm = T)) %>%
   t() %>%
   as.data.frame() %>%
   tibble::rownames_to_column(., "variable")
@@ -44,8 +44,23 @@ sd_outcome <- panel0020_did %>%
   as.data.frame() %>%
   tibble::rownames_to_column(., "variable")
 
-x <- list(vra_time, annex_time_vra, annex_time, sd_outcome)
+x <- list(annex_time_vra, annex_time, vra_time, sd_outcome)
 write.xlsx(x, "analyticalfiles/annex_time_desc_vra.xlsx", rowNames = T)
+
+
+# diff_outcome
+annex_time_vra <- panel0020_did %>%
+  mutate(vra = as.numeric(as.character(vra))) %>%
+  group_by(annexing, time, vra) %>%
+  mutate(n = n()) %>%
+  ungroup() %>%
+  group_by(annexing, time, vra, n) %>%
+  summarize_at(vars(c(pctnhblack_diff, pctnhwhite_diff, pctnbmin_diff)), ~mean(., na.rm = T)) %>%
+  t() %>%
+  as.data.frame() %>%
+  tibble::rownames_to_column(., "variable")
+
+write.xlsx(annex_time_vra, "analyticalfiles/differences.xlsx", rowNames = T)
 
 # annex or not ####
 x <- panel0020_did %>%
@@ -65,6 +80,9 @@ plot_pct <- ggplot(x, aes(y = Percent, x = Period, group = vra)) +
   ggtitle("Proportion") + 
   labs(linetype = "Section 5")
 plot_pct
+
+ggsave("analyticalfiles/final/Annex_bin_PTA_bas_pct.pdf", 
+       plot = plot_pct)
 
 # number
 x <- panel0020_did %>%

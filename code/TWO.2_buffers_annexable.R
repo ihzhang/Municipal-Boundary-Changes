@@ -202,22 +202,97 @@ state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09",
                  "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VT_50", "VA_51",
                  "WA_53", "WV_54", "WI_55", "WY_56"
 )
+
+blocks2000 <- read_csv("blocks2000_var.csv")
+blocks2000 %<>%
+  mutate(plid = ifelse(PLACEA=="99999", NA, 
+                       paste0(str_pad(STATEA, 2, "left", "0"), 
+                              str_pad(PLACEA, 5, "left", "0")))) %>%
+  select(plid, blkid)
+blocks2000 %<>%
+  filter(!duplicated(blkid)) 
+
+blocks2000 %<>%
+  filter(!is.na(plid))
+
 blocks_list <- list()
 for(i in 1:length(state_codes)) {
   blocks <- list.files(paste0("SHP_blk_0010/2000/", state_codes[[i]], "/"), pattern = "buffers.csv")
-  blocks_list[[i]] <- read_csv(file = paste0("SHP_blk_0010/2000/", state_codes[[i]], "/", blocks))
+  block_file <- read_csv(file = paste0("SHP_blk_0010/2000/", state_codes[[i]], "/", blocks))
+  block_file %<>%
+    filter(!is.na(bufferplace))
+  plid_list <- unique(block_file$bufferplace)
+  for (j in 1:length(plid_list)) {
+    blocklist <- blocks2000 %>%
+      filter(plid == plid_list[[j]]) 
+    block_file %<>%
+      filter(!blkid %in% blocklist$blkid)
+  }
+  blocks_list[[i]] <- block_file
 }
 blocks_list <- rbindlist(blocks_list)
 write_csv(blocks_list, "2000buffers.csv")
+rm(list = ls())
 
-# 2007
+# 2007 ----
+blocks2007 <- read_csv("2007blk-2007plid_90pct.csv")
+blocks2007 %<>%
+ select(plid, blkid)
+
+blocks2007 %<>%
+  filter(!duplicated(blkid)) 
+
+blocks2007 %<>%
+  filter(!is.na(plid))
+
 blocks_list <- list()
 for(i in 1:length(state_codes)) {
-  blocks <- list.files(paste0("SHP_blk_0010/2007/states/"), pattern = "buffers.csv")
-  blocks_list[[i]] <- read_csv(file = paste0("SHP_blk_0010/2007/states/", blocks[[i]]))
+  blocks <- list.files(paste0("SHP_blk_0010/2007/states/"), pattern = paste0(substr(state_codes[[i]], 1, 2), "_buffers.csv"))
+  block_file <- read_csv(file = paste0("SHP_blk_0010/2007/states/", blocks))
+  block_file %<>%
+    filter(!is.na(bufferplace))
+  plid_list <- unique(block_file$bufferplace)
+  for (j in 1:length(plid_list)) {
+    blocklist <- blocks2007 %>%
+      filter(plid == plid_list[[j]]) 
+    block_file %<>%
+      filter(!blkid %in% blocklist$blkid)
+  }
+  blocks_list[[i]] <- block_file
 }
 blocks_list <- rbindlist(blocks_list, fill = T)
 write_csv(blocks_list, "2007buffers.csv")
+
+rm(blocks2007, blocks_list)
+
+# 2014 ----
+blocks2014 <- read_csv("2014blk-2014plid_90pct.csv")
+blocks2014 %<>%
+  select(plid, blkid)
+
+blocks2014 %<>%
+  filter(!duplicated(blkid)) 
+
+blocks2014 %<>%
+  filter(!is.na(plid))
+
+blocks_list <- list()
+for(i in 1:length(state_codes)) {
+  blocks <- list.files(paste0("SHP_blk_0010/2014/", state_codes[[i]], "/"), pattern = "_buffers.csv")
+  block_file <- read_csv(file = paste0("SHP_blk_0010/2014/", state_codes[[i]], "/", blocks))
+  block_file %<>%
+    filter(!is.na(bufferplace))
+  plid_list <- unique(block_file$bufferplace)
+  for (j in 1:length(plid_list)) {
+    blocklist <- blocks2014 %>%
+      filter(plid == plid_list[[j]]) 
+    block_file %<>%
+      filter(!blkid %in% blocklist$blkid)
+  }
+  blocks_list[[i]] <- block_file
+}
+blocks_list <- rbindlist(blocks_list, fill = T)
+write_csv(blocks_list, "2014buffers.csv")
 
 # NEW ANNEX SCHEME ####
 # 2000 blocks (2010b) with 2000 place (2010b) shapefiles; 2000 blocks (2010b) with 2007 (2000b) place shapefiles

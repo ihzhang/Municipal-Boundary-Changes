@@ -65,7 +65,7 @@ pl0007 %<>%
   mutate(annexing_bas = ifelse(plid %in% bas$plid[bas$period=="2000 to 2007"], 1, 0),
          annexing_use = ifelse(annexing == 1 & annexing_bas == 1, 1, 0))
 table(pl0007$annexing, pl0007$annexing_use)
-1715/(1715 + 100)
+2149/(2149 + 118)
 # 94.5% agreement
 
 pl0713 <- read_csv("analyticalfiles/pl_annex_var_0713.csv") %>%
@@ -76,8 +76,8 @@ pl0713 %<>%
   mutate(annexing_bas = ifelse(plid %in% bas$plid[bas$period=="2007 to 2013"], 1, 0),
          annexing_use = ifelse(annexing == 1 & annexing_bas == 1, 1, 0))
 table(pl0713$annexing, pl0713$annexing_use)
-1903/(1903+897)
-#68%
+2287/(2287+828)
+#73.4%
 
 pl1420 <- read_csv("analyticalfiles/pl_annex_var_1420.csv") %>%
   mutate(STATE = substr(plid, 1, 2)) %>%
@@ -87,8 +87,8 @@ pl1420 %<>%
   mutate(annexing_bas = ifelse(plid %in% bas$plid[bas$period=="2014 to 2020"], 1, 0),
          annexing_use = ifelse(annexing == 1 & annexing_bas == 1, 1, 0))
 table(pl1420$annexing, pl1420$annexing_use)
-272/(272+1197)
-# 18.5% agreement - very bad 
+330/(330+1085)
+# 23.3% agreement - very bad 
 
 plids <- Reduce(intersect, list(unique(pl0713$plid), unique(pl1420$plid)))
 names_list <- Reduce(intersect, list(names(pl0007), names(pl0713), names(pl1420)))
@@ -204,7 +204,7 @@ table(panel0020_did$lag_annexed, exclude = NULL)
 
 # event study ####
 mod_sa = feols(annexing ~ i(post, vra, ref = -1) + 
-                 pop_p0 + popgrowth + popdensity_p0 + pctnhwhite_p0 + pctnhwhitegrowth + pctnhblackgrowth + pctnbmingrowth + pctowneroccupied_p0 + mhmval_p0 + hinc_p0 + pctpov_p0 + as.factor(more_white) + pctnhblack_total + pctnbmin_total + pctownerocc_total + pcthincjobs_total + pctincopp_total |
+                 pop_p0 + popgrowth + popdensity_p0 + pctnhblack_p0 + pctnbmin_p0 + pctnhblackgrowth + pctnbmingrowth + pctowneroccupied_p0 + mhmval_p0 + hinc_p0 + pctpov_p0 + as.factor(more_white) + pctnhblack_total + pctnbmin_total + pctownerocc_total + pcthincjobs_total + pctincopp_total |
                  plid + STATE,
                NW(0.5) ~ plid + post,
                data = panel0020_did)
@@ -217,10 +217,16 @@ annex_basic <- feols(annexing ~ period*vra | plid + STATE, data = panel0020_did 
 summary(annex_basic)
 
 # add variables 
-annex <- feols(annexing ~ as.factor(vra)*as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid, fixef.rm = "none")
+annex <- feols(annexing ~ as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid, fixef.rm = "none")
 summary(annex)
 
-annex_twop <- feols(annexing ~ as.factor(vra)*as.factor(period) + pop_p0 + popdensity_p0 + popgrowth + pctnhwhite_p0 + pctnhwhitegrowth + pctnhblack_p0 + pctnhblackgrowth + pctnbmingrowth + pctblackpov_p0 + pctnbminpov_p0 + pctowneroccupied_p0 + mhmval_p0 + hinc_p0 + pctpov_p0 + as.factor(more_white) + pctnhblack_total + pctnbmin_total + pctownerocc_total + pcthincjobs_total + pctincopp_total + lag_annexed | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid, fixef.rm = "none")
+annex_st <- feols(annexing ~ as.factor(vra)*as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid, fixef.rm = "none")
+summary(annex)
+
+annex_twop <- feols(annexing ~ as.factor(vra)*as.factor(period) + pop_p0 + popdensity_p0 + popgrowth + pctnhblack_p0 + pctnhblackgrowth + pctnbmin_p0 + pctnbmingrowth + pctblackpov_p0 + pctnbminpov_p0 + pctowneroccupied_p0 + mhmval_p0 + hinc_p0 + pctpov_p0 + as.factor(more_white) + pctnhblack_total + pctnbmin_total + pctownerocc_total + pcthincjobs_total + pctincopp_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid, fixef.rm = "none")
+summary(annex_twop)
+
+annex_twop_st <- feols(annexing ~ as.factor(vra)*as.factor(period) + pop_p0 + popdensity_p0 + popgrowth + pctnhblack_p0 + pctnhblackgrowth + pctnbmin_p0 + pctnbmingrowth + pctblackpov_p0 + pctnbminpov_p0 + pctowneroccupied_p0 + mhmval_p0 + hinc_p0 + pctpov_p0 + as.factor(more_white) + pctnhblack_total + pctnbmin_total + pctownerocc_total + pcthincjobs_total + pctincopp_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid, fixef.rm = "none")
 summary(annex_twop)
 
 ann_tid <- tidy(annex)
@@ -233,7 +239,17 @@ for (model_stat in names(glance(annex_twop))) {
   ann_2_tid[[model_stat]] <- glance(annex_twop)[[model_stat]]
 }
 
-annex_list <- list(ann_tid, ann_2_tid)
+ann_tid_st <- tidy(annex_st)
+for (model_stat in names(glance(annex_st))) {
+  ann_tid[[model_stat]] <- glance(annex_st)[[model_stat]]
+}
+
+ann_2_tid_st <- tidy(annex_twop_st)
+for (model_stat in names(glance(annex_twop_st))) {
+  ann_2_tid[[model_stat]] <- glance(annex_twop_st)[[model_stat]]
+}
+
+annex_list <- list(ann_tid, ann_tid_st, ann_2_tid, ann_2_tid_st)
 
 openxlsx::write.xlsx(annex_list, "analyticalfiles/results/annex_reg.xlsx")
 
@@ -258,22 +274,22 @@ panel0020_did %<>%
          period = relevel(as.factor(period), ref = "0"),
          vra = relevel(as.factor(vra), ref = "0"))
 
-nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base)
 
-nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base_cov) # N = 27987
 
-nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base) # N = 27987
 
-nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base_cov) # N = 27987
 
-nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base) # N = 27987
 
-nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base_cov) # N = 27987
 
 p1_diff <- list(tidy(nhb_base), tidy(nhb_base_cov), tidy(nhw_base), tidy(nhw_base_cov), tidy(nbmin_base), tidy(nbmin_base_cov))
@@ -292,28 +308,22 @@ panel0020_did %<>%
          period = relevel(as.factor(period), ref = "0"),
          vra = relevel(as.factor(vra), ref = "1"))
 
-panel0020_did %<>%
-  mutate(black_dilute = ifelse(pctnhblack_diff < 0, 1, 0),
-         white_growth = ifelse(pctnhwhite_diff > 0, 1, 0),
-         nbmin_dilute = ifelse(pctnbmin_diff < 0, 1, 0))
-
-
-nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base)
 
-nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base_cov) # N = 27987
 
-nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base) # N = 27987
 
-nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base_cov) # N = 27987
 
-nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base) # N = 27987
 
-nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base_cov) # N = 27987
 
 p1_diff <- list(tidy(nhb_base), tidy(nhb_base_cov), tidy(nhw_base), tidy(nhw_base_cov), tidy(nbmin_base), tidy(nbmin_base_cov))
@@ -332,22 +342,22 @@ panel0020_did %<>%
          period = relevel(as.factor(period), ref = "1"),
          vra = relevel(as.factor(vra), ref = "1"))
 
-nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base)
 
-nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base_cov) # N = 27987
 
-nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base) # N = 27987
 
-nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base_cov) # N = 27987
 
-nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base) # N = 27987
 
-nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base_cov) # N = 27987
 
 p1_diff <- list(tidy(nhb_base), tidy(nhb_base_cov), tidy(nhw_base), tidy(nhw_base_cov), tidy(nbmin_base), tidy(nbmin_base_cov))
@@ -366,22 +376,22 @@ panel0020_did %<>%
          period = relevel(as.factor(period), ref = "1"),
          vra = relevel(as.factor(vra), ref = "0"))
 
-nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base)
 
-nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base_cov) # N = 27987
 
-nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base) # N = 27987
 
-nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base_cov) # N = 27987
 
-nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base) # N = 27987
 
-nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base_cov) # N = 27987
 
 p1_diff <- list(tidy(nhb_base), tidy(nhb_base_cov), tidy(nhw_base), tidy(nhw_base_cov), tidy(nbmin_base), tidy(nbmin_base_cov))
@@ -397,28 +407,31 @@ openxlsx::write.xlsx(p1_diff, "analyticalfiles/results/p1_post_uncovered.xlsx")
 # is it just an anticipation effect? ----
 plids <- Reduce(intersect, list(unique(panel0020_did$plid[panel0020_did$time == "2000 to 2007"]), unique(panel0020_did$plid[panel0020_did$time == "2014 to 2020"])))
 
+panel0020_did %<>%
+  filter(plid %in% plids)
+
 # ref: pre, no VRA, no annexing ----
 panel0020_did %<>%
   mutate(vra = relevel(as.factor(vra), ref = "0"),
          period = relevel(as.factor(period), ref = "0"), 
          annexing = relevel(as.factor(annexing), ref = "0"))
 
-nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nhb_base)
 
-nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nhb_base_cov) # N = 27987
 
-nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nhw_base) # N = 27987
 
-nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nhw_base_cov) # N = 27987
 
-nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nbmin_base) # N = 27987
 
-nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nbmin_base_cov) # N = 27987
 
 p1_diff <- list(tidy(nhb_base), tidy(nhb_base_cov), tidy(nhw_base), tidy(nhw_base_cov), tidy(nbmin_base), tidy(nbmin_base_cov))
@@ -436,22 +449,22 @@ panel0020_did %<>%
   mutate(vra = relevel(as.factor(vra), ref = "0"),
          period = relevel(as.factor(period), ref = "1"))
 
-nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nhb_base)
 
-nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nhb_base_cov) # N = 27987
 
-nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nhw_base) # N = 27987
 
-nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nhw_base_cov) # N = 27987
 
-nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nbmin_base) # N = 27987
 
-nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nbmin_base_cov) # N = 27987
 
 p1_diff <- list(tidy(nhb_base), tidy(nhb_base_cov), tidy(nhw_base), tidy(nhw_base_cov), tidy(nbmin_base), tidy(nbmin_base_cov))
@@ -469,22 +482,22 @@ panel0020_did %<>%
   mutate(vra = relevel(as.factor(vra), ref = "1"),
          period = relevel(as.factor(period), ref = "0"))
 
-nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nhb_base)
 
-nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nhb_base_cov) # N = 27987
 
-nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nhw_base) # N = 27987
 
-nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nhw_base_cov) # N = 27987
 
-nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nbmin_base) # N = 27987
 
-nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nbmin_base_cov) # N = 27987
 
 p1_diff <- list(tidy(nhb_base), tidy(nhb_base_cov), tidy(nhw_base), tidy(nhw_base_cov), tidy(nbmin_base), tidy(nbmin_base_cov))
@@ -502,22 +515,22 @@ panel0020_did %<>%
   mutate(vra = relevel(as.factor(vra), ref = "1"),
          period = relevel(as.factor(period), ref = "1"))
 
-nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nhb_base)
 
-nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nhb_base_cov) # N = 27987
 
-nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nhw_base) # N = 27987
 
-nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nhw_base_cov) # N = 27987
 
-nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nbmin_base) # N = 27987
 
-nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
+nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid)
 summary(nbmin_base_cov) # N = 27987
 
 p1_diff <- list(tidy(nhb_base), tidy(nhb_base_cov), tidy(nhw_base), tidy(nhw_base_cov), tidy(nbmin_base), tidy(nbmin_base_cov))
@@ -535,40 +548,40 @@ panel0020_did %<>%
   mutate(vra = relevel(as.factor(vra), ref = "0"),
          period = relevel(as.factor(period), ref = "0"))
 
-ppov_v0p0 <- feols(pctpov_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctpov_p0 | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+ppov_v0p0 <- feols(pctpov_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctpov_p0 | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(ppov_v0p0) 
 
-hinc_v0p0 <- feols(hinc_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + hinc_p0 | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+hinc_v0p0 <- feols(hinc_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + hinc_p0 | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(hinc_v0p0) 
 
 panel0020_did %<>%
   mutate(vra = relevel(as.factor(vra), ref = "0"),
          period = relevel(as.factor(period), ref = "1"))
 
-ppov_v0p1 <- feols(pctpov_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctpov_p0 | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+ppov_v0p1 <- feols(pctpov_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctpov_p0 | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(ppov_v0p1) 
 
-hinc_v0p1 <- feols(hinc_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + hinc_p0 | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+hinc_v0p1 <- feols(hinc_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + hinc_p0 | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(hinc_v0p1) 
 
 panel0020_did %<>%
   mutate(vra = relevel(as.factor(vra), ref = "1"),
          period = relevel(as.factor(period), ref = "0"))
 
-ppov_v1p0 <- feols(pctpov_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctpov_p0 | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+ppov_v1p0 <- feols(pctpov_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctpov_p0 | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(ppov_v1p0) 
 
-hinc_v1p0 <- feols(hinc_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + hinc_p0 | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+hinc_v1p0 <- feols(hinc_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + hinc_p0 | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(hinc_v1p0) 
 
 panel0020_did %<>%
   mutate(vra = relevel(as.factor(vra), ref = "1"),
          period = relevel(as.factor(period), ref = "1"))
 
-ppov_v1p1 <- feols(pctpov_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctpov_p0 | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+ppov_v1p1 <- feols(pctpov_p1 ~ as.factor(annexing)*as.factor(period)*as.factor(vra) + pctpov_p0 | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(ppov_v1p1) 
 
-hinc_v1p1 <- feols(hinc_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + hinc_p0 | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+hinc_v1p1 <- feols(hinc_p1 ~ as.factor(annexing)*as.factor(vra)*as.factor(period) + hinc_p0 | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(hinc_v1p1) 
 
 p1_diff <- list(tidy(ppov_v0p0), tidy(hinc_v0p0), tidy(ppov_v0p1), tidy(hinc_v0p1), tidy(ppov_v1p0), tidy(hinc_v1p0), tidy(ppov_v1p1), tidy(hinc_v1p1))
@@ -586,13 +599,13 @@ panel0020_did %<>%
   mutate(vra = relevel(as.factor(vra), ref = "0"),
          period = relevel(as.factor(period), ref = "0"))
 
-nhb_base <- feols(pctnhblack_total ~ period | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhb_base <- feols(pctnhblack_total ~ period | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base)
 
-nhw_base <- feols(pctnhwhite_total ~ as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhw_base <- feols(pctnhwhite_total ~ as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base) # N = 27987
 
-nbmin_base <- feols(pctnbmin_total ~ as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nbmin_base <- feols(pctnbmin_total ~ as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base) # N = 27987
 
 p1_diff <- list(tidy(nhb_base), tidy(nhw_base), tidy(nbmin_base))
@@ -605,12 +618,17 @@ for (model_stat in names(glance(nhb_base))) {
 }
 openxlsx::write.xlsx(p1_diff, "analyticalfiles/results/periphery_pct.xlsx")
 
-# do again for non-validated sample...----
+# do again for validated sample...----
+panel0020_did <- read_csv("analyticalfiles/panel_prestandard.csv")
+panel0020_did %<>%
+  mutate_at(vars(c(ends_with("total"), ends_with("_p0"), ends_with("_p1"), ends_with("_total_1"), contains("growth"), contains("_annexed"), ends_with("_log"), contains("diff"))), 
+            ~((.-mean(., na.rm = T))/sd(., na.rm = T))) 
+
 # add variables 
-annex <- feols(annexing_bas ~ as.factor(vra)*as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid, fixef.rm = "none")
+annex <- feols(annexing_bas ~ as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid, fixef.rm = "none")
 summary(annex)
 
-annex_twop <- feols(annexing_bas ~ as.factor(vra)*as.factor(period) + pop_p0 + popdensity_p0 + popgrowth + pctnhwhite_p0 + pctnhwhitegrowth + pctnhblack_p0 + pctnhblackgrowth + pctnbmingrowth + pctblackpov_p0 + pctnbminpov_p0 + pctowneroccupied_p0 + mhmval_p0 + hinc_p0 + pctpov_p0 + as.factor(more_white) + pctnhblack_total + pctnbmin_total + pctownerocc_total + pcthincjobs_total + pctincopp_total + lag_annexed | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid, fixef.rm = "none")
+annex_twop <- feols(annexing_bas ~ as.factor(vra)*as.factor(period) + pop_p0 + popdensity_p0 + popgrowth +  pctnhblack_p0 + pctnhblackgrowth + pctnbmin_p0 + pctnbmingrowth + pctblackpov_p0 + pctnbminpov_p0 + pctowneroccupied_p0 + mhmval_p0 + hinc_p0 + pctpov_p0 + as.factor(more_white) + pctnhblack_total + pctnbmin_total + pctownerocc_total + pcthincjobs_total + pctincopp_total + lag_annexed | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid, fixef.rm = "none")
 summary(annex_twop)
 
 ann_tid <- tidy(annex)
@@ -628,28 +646,62 @@ annex_list <- list(ann_tid, ann_2_tid)
 openxlsx::write.xlsx(annex_list, "analyticalfiles/results/bas/annex_reg.xlsx")
 
 # consequences of annexing ####
+# ref: pre, uncovered ----
+panel0020_did %<>%
+  mutate(annexing = relevel(as.factor(annexing), ref = "0"),
+         period = relevel(as.factor(period), ref = "0"),
+         vra = relevel(as.factor(vra), ref = "0"))
+
+nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+summary(nhb_base)
+
+nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+summary(nhb_base_cov) # N = 27987
+
+nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+summary(nhw_base) # N = 27987
+
+nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+summary(nhw_base_cov) # N = 27987
+
+nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+summary(nbmin_base) # N = 27987
+
+nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+summary(nbmin_base_cov) # N = 27987
+
+p1_diff <- list(tidy(nhb_base), tidy(nhb_base_cov), tidy(nhw_base), tidy(nhw_base_cov), tidy(nbmin_base), tidy(nbmin_base_cov))
+p1_diff_glance <- list(nhb_base, nhb_base_cov, nhw_base, nhw_base_cov, nbmin_base, nbmin_base_cov)
+
+for (model_stat in names(glance(nhb_base))) {
+  for (i in 1:6) {
+    p1_diff[[i]][[model_stat]] <- glance(p1_diff_glance[[i]])[[model_stat]]
+  }
+}
+openxlsx::write.xlsx(p1_diff, "analyticalfiles/results/bas/p1_pre-Shelby_uncovered.xlsx")
+
 # ref: before Shelby, VRA, not annexing ----
 panel0020_did %<>%
   mutate(annexing = relevel(as.factor(annexing), ref = "0"),
          period = relevel(as.factor(period), ref = "0"),
          vra = relevel(as.factor(vra), ref = "1"))
 
-nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base)
 
-nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base_cov) # N = 27987
 
-nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base) # N = 27987
 
-nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base_cov) # N = 27987
 
-nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base) # N = 27987
 
-nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base_cov) # N = 27987
 
 p1_diff <- list(tidy(nhb_base), tidy(nhb_base_cov), tidy(nhw_base), tidy(nhw_base_cov), tidy(nbmin_base), tidy(nbmin_base_cov))
@@ -668,22 +720,22 @@ panel0020_did %<>%
          period = relevel(as.factor(period), ref = "1"),
          vra = relevel(as.factor(vra), ref = "1"))
 
-nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base)
 
-nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base_cov) # N = 27987
 
-nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base) # N = 27987
 
-nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base_cov) # N = 27987
 
-nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base) # N = 27987
 
-nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base_cov) # N = 27987
 
 p1_diff <- list(tidy(nhb_base), tidy(nhb_base_cov), tidy(nhw_base), tidy(nhw_base_cov), tidy(nbmin_base), tidy(nbmin_base_cov))
@@ -702,22 +754,22 @@ panel0020_did %<>%
          period = relevel(as.factor(period), ref = "1"),
          vra = relevel(as.factor(vra), ref = "0"))
 
-nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base)
 
-nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base_cov) # N = 27987
 
-nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base) # N = 27987
 
-nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base_cov) # N = 27987
 
-nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base) # N = 27987
 
-nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base_cov) # N = 27987
 
 p1_diff <- list(tidy(nhb_base), tidy(nhb_base_cov), tidy(nhw_base), tidy(nhw_base_cov), tidy(nbmin_base), tidy(nbmin_base_cov))
@@ -732,27 +784,32 @@ openxlsx::write.xlsx(p1_diff, "analyticalfiles/results/bas/p1_post_uncovered.xls
 
 # is it just an anticipation effect? ----
 # ref: pre, no VRA, no annexing_bas ----
+plids <- Reduce(intersect, list(unique(panel0020_did$plid[panel0020_did$time == "2000 to 2007"]), unique(panel0020_did$plid[panel0020_did$time == "2014 to 2020"])))
+
+panel0020_did %<>%
+  filter(plid %in% plids)
+
 panel0020_did %<>%
   mutate(vra = relevel(as.factor(vra), ref = "0"),
          period = relevel(as.factor(period), ref = "0"), 
          annexing_bas = relevel(as.factor(annexing_bas), ref = "0"))
 
-nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base)
 
-nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base_cov) # N = 27987
 
-nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base) # N = 27987
 
-nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base_cov) # N = 27987
 
-nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base) # N = 27987
 
-nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base_cov) # N = 27987
 
 p1_diff <- list(tidy(nhb_base), tidy(nhb_base_cov), tidy(nhw_base), tidy(nhw_base_cov), tidy(nbmin_base), tidy(nbmin_base_cov))
@@ -770,22 +827,22 @@ panel0020_did %<>%
   mutate(vra = relevel(as.factor(vra), ref = "0"),
          period = relevel(as.factor(period), ref = "1"))
 
-nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base)
 
-nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base_cov) # N = 27987
 
-nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base) # N = 27987
 
-nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base_cov) # N = 27987
 
-nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base) # N = 27987
 
-nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base_cov) # N = 27987
 
 p1_diff <- list(tidy(nhb_base), tidy(nhb_base_cov), tidy(nhw_base), tidy(nhw_base_cov), tidy(nbmin_base), tidy(nbmin_base_cov))
@@ -803,22 +860,22 @@ panel0020_did %<>%
   mutate(vra = relevel(as.factor(vra), ref = "1"),
          period = relevel(as.factor(period), ref = "0"))
 
-nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base)
 
-nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base_cov) # N = 27987
 
-nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base) # N = 27987
 
-nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base_cov) # N = 27987
 
-nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base) # N = 27987
 
-nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base_cov) # N = 27987
 
 p1_diff <- list(tidy(nhb_base), tidy(nhb_base_cov), tidy(nhw_base), tidy(nhw_base_cov), tidy(nbmin_base), tidy(nbmin_base_cov))
@@ -836,22 +893,22 @@ panel0020_did %<>%
   mutate(vra = relevel(as.factor(vra), ref = "1"),
          period = relevel(as.factor(period), ref = "1"))
 
-nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nhb_base <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base)
 
-nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nhb_base_cov <- feols(pctnhblack_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctnhblack_p0 + pctnhblackgrowth + pctnhblack_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nhb_base_cov) # N = 27987
 
-nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nhw_base <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base) # N = 27987
 
-nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nhw_base_cov <- feols(pctnhwhite_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + pctnhwhite_p0 + pctnhwhitegrowth + pctnhwhite_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nhw_base_cov) # N = 27987
 
-nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nbmin_base <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base) # N = 27987
 
-nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid + STATE, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
+nbmin_base_cov <- feols(pctnbmin_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + pctnbmin_p0 + pctnbmingrowth + pctnbmin_total | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020")), cluster = ~plid)
 summary(nbmin_base_cov) # N = 27987
 
 p1_diff <- list(tidy(nhb_base), tidy(nhb_base_cov), tidy(nhw_base), tidy(nhw_base_cov), tidy(nbmin_base), tidy(nbmin_base_cov))
@@ -869,40 +926,40 @@ panel0020_did %<>%
   mutate(vra = relevel(as.factor(vra), ref = "0"),
          period = relevel(as.factor(period), ref = "0"))
 
-ppov_v0p0 <- feols(pctpov_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctpov_p0 | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+ppov_v0p0 <- feols(pctpov_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctpov_p0 | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(ppov_v0p0) 
 
-hinc_v0p0 <- feols(hinc_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + hinc_p0 | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+hinc_v0p0 <- feols(hinc_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + hinc_p0 | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(hinc_v0p0) 
 
 panel0020_did %<>%
   mutate(vra = relevel(as.factor(vra), ref = "0"),
          period = relevel(as.factor(period), ref = "1"))
 
-ppov_v0p1 <- feols(pctpov_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctpov_p0 | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+ppov_v0p1 <- feols(pctpov_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctpov_p0 | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(ppov_v0p1) 
 
-hinc_v0p1 <- feols(hinc_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + hinc_p0 | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+hinc_v0p1 <- feols(hinc_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + hinc_p0 | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(hinc_v0p1) 
 
 panel0020_did %<>%
   mutate(vra = relevel(as.factor(vra), ref = "1"),
          period = relevel(as.factor(period), ref = "0"))
 
-ppov_v1p0 <- feols(pctpov_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctpov_p0 | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+ppov_v1p0 <- feols(pctpov_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctpov_p0 | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(ppov_v1p0) 
 
-hinc_v1p0 <- feols(hinc_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + hinc_p0 | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+hinc_v1p0 <- feols(hinc_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + hinc_p0 | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(hinc_v1p0) 
 
 panel0020_did %<>%
   mutate(vra = relevel(as.factor(vra), ref = "1"),
          period = relevel(as.factor(period), ref = "1"))
 
-ppov_v1p1 <- feols(pctpov_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctpov_p0 | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+ppov_v1p1 <- feols(pctpov_p1 ~ as.factor(annexing_bas)*as.factor(period)*as.factor(vra) + pctpov_p0 | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(ppov_v1p1) 
 
-hinc_v1p1 <- feols(hinc_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + hinc_p0 | plid + STATE, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
+hinc_v1p1 <- feols(hinc_p1 ~ as.factor(annexing_bas)*as.factor(vra)*as.factor(period) + hinc_p0 | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid)
 summary(hinc_v1p1) 
 
 p1_diff <- list(tidy(ppov_v0p0), tidy(hinc_v0p0), tidy(ppov_v0p1), tidy(hinc_v0p1), tidy(ppov_v1p0), tidy(hinc_v1p0), tidy(ppov_v1p1), tidy(hinc_v1p1))
@@ -914,3 +971,4 @@ for (model_stat in names(glance(ppov_v0p0))) {
   }
 }
 openxlsx::write.xlsx(p1_diff, "analyticalfiles/results/bas/ppov_hinc.xlsx")
+

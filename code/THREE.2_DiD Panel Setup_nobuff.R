@@ -12,6 +12,8 @@ library("openxlsx")
 library("broom")
 library("sjPlot")
 library("ipw")
+library("ggplot")
+library("tidyr")
 
 # make DiD panel ####
 # 1. get plid for annexations to 2007-2013 and 2014-2020
@@ -167,7 +169,7 @@ places_vra_0713 <- unique(places_vra$plid[places_vra$vra==1])
 # i.e. pcth given growth rate by 2013 
 pl0007 <- read_csv("pl0007_var.csv")
 summary(pl0007$popgrowth)
-table(pl_annex_var_0713$plid %in% pl0007$plid) #239 false
+table(pl_annex_var_0713$plid %in% pl0007$plid) #217 false
 
 cdps07 <- read_csv("pl2007_cleaned.csv") %>% # want to know which places are CDPs--they do not annex
   select(Geo_NAME, plid) %>%
@@ -346,7 +348,7 @@ pl_annex_var_0713 %<>%
   )
 
 pl_annex_var_0713 %<>%
-  filter(pop_total > 1 & hu_total > 1 & pop07p > 0) 
+  filter(pop_total > 0 & hu_total > 0 & pop07p > 0) 
 
 table(pl_annex_var_0713$underbound_blackvap)
 table(pl_annex_var_0713$underbound_hispvap)
@@ -757,7 +759,7 @@ pl_annex_var_1420 %<>%
   )
 
 pl_annex_var_1420 %<>%
-  filter(pop_total > 1 & hu_total > 1 & pop14p > 0) 
+  filter(pop_total > 0 & hu_total > 0 & pop14p > 0) 
 
 table(pl_annex_var_1420$underbound_blackvap)
 table(pl_annex_var_1420$underbound_hispvap)
@@ -1174,7 +1176,7 @@ pl_annex_var_0007 %<>%
   )
 
 pl_annex_var_0007 %<>%
-  filter(pop_total > 1 & hu_total > 1 & pop00p > 1) 
+  filter(pop_total > 0 & hu_total > 0 & pop00p > 1) 
 
 table(pl_annex_var_0007$underbound_blackvap)
 table(pl_annex_var_0007$underbound_hispvap)
@@ -1365,11 +1367,11 @@ panel0020_did %<>%
   mutate(blackdiff = pctnhblack_total - pctnhblack_p0)
 
 panel0020_did %>%
-  filter(underbound_black_hpct == 1 & period == 1 & vra == 1) %>%
-  arrange(desc(blackdiff), desc(pop_p0)) %>%
+  filter(underbound_black == 1 & period == 1 & vra == 1) %>%
+  arrange(desc(pct_annexed), desc(pctnhblack_diff), desc(pop_p0)) %>%
   View()
 
 panel0020_did %>%
   filter(underbound_black_10pct == 1 & period == 1 & vra == 1) %>%
-  arrange(desc(blackdiff), desc(annexing)) %>%
+  arrange(desc(black_diff), desc(annexing)) %>%
   View()
