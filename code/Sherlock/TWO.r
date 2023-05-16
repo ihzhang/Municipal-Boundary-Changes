@@ -190,6 +190,83 @@ for (state_code in state_codes) {
   Sys.sleep(60)
 }
 
+# 2008 blocks on 2008 and 2009 places ----
+state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "HI_15", "IA_19", "ID_16", "IL_17", "IN_18",
+                 "KS_20", "KY_21", "LA_22", "MD_24",
+                 "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
+                 "NC_37", "ND_38", "NE_31", "NM_35", "NV_32", 
+                 "OH_39", "OK_40", "OR_41", 
+                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VA_51",
+                 "WA_53", "WV_54", "WI_55", "WY_56"
+)
+
+get_block_ids_2008 <- function (state_code, place_year) {
+  blocks <- st_read(paste0("shapefiles/blocks/2008/tl_2008_", substr(state_code, 4, 5), "_tabblock.shp")) %>%
+    st_transform(., 3488) %>%
+    mutate(area_blk = st_area(.))
+  
+  blocks %<>%
+    mutate(blkid = paste0(str_pad(as.character(STATEFP00), 2, side = "left", pad = "0"), str_pad(as.character(COUNTYFP00), 3, side = "left", pad = "0"),
+                          str_pad(as.character(TRACTCE00), 6, side = "left", pad = "0"), str_pad(as.character(BLOCKCE00), 4, side = "left", pad = "0"))) %>%
+    filter(!duplicated(blkid))
+  
+  place_file <- paste0("shapefiles/places/", year, "/tl_", year, "_", substr(state_code, 4, 5), "_place.shp")
+  if (state_code == "HI_15" & place_year == 2007) {
+    places <- st_read(place_file) %>%
+      st_set_crs(., 4135) %>%
+      st_transform(., 3488)
+  } else {
+    places <- st_read(place_file) %>%
+      st_transform(., 3488)
+  }
+  
+  places %<>%
+    mutate(plid = paste0(
+      str_pad(as.character(.[[1]]), 2, side = "left", pad = "0"), 
+      str_pad(as.character(.[[2]]), 5, side = "left", pad = "0")))
+  
+  datalist <- list()
+  places_df <- split(places, f = unique(places$plid))
+  cl <- makeCluster(16) 
+  registerDoParallel(cl)
+  getDoParWorkers()
+  datalist <- foreach (i = 1:length(places_df), 
+                       .packages = c("sf", "dplyr", "data.table", "readr", "magrittr")) %dopar% {
+                         p1 <- st_as_sf(places_df[[i]])
+                         p1blocks <- c(sf::st_contains(p1, blocks), sf::st_overlaps(p1, blocks))
+                         if(nrow(as.data.frame(blocks[unique(c(p1blocks[[1]], p1blocks[[2]])),])) < 1) return(NULL)
+                         test <- as.data.frame(blocks[unique(c(p1blocks[[1]], p1blocks[[2]])),])
+                         blkids <- blocks %>% filter(blkid %in% test$blkid)
+                         area_int <- st_intersection(blkids, p1) %>%
+                           mutate(area_int = st_area(.),
+                                  pct_int = (area_int/area_blk)*100, 
+                                  pct_int = as.numeric(pct_int)) %>%
+                           filter(pct_int >= 90)
+                         test$plid <- p1$plid
+                         test %<>% 
+                           filter(blkid %in% area_int$blkid) %>%
+                           select(c(1:6), blkid, plid)
+                         return(test)
+                       }
+  contig <- data.table::rbindlist(datalist) 
+  readr::write_csv(contig, file = paste0("spatial_files/2008/", state_code, "_block_plids_2008blk-", place_year, "pl_90pct.csv"))
+  
+  stopCluster(cl)
+}
+
+for (state_code in state_codes) {
+  start_time <- Sys.time()
+  print(start_time)
+  get_block_ids_2007(state_code, 2008)
+  get_block_ids_2007(state_code, 2009)
+  end_time <- Sys.time()
+  print(state_code)
+  print(end_time - start_time)
+  print(end_time)
+  Sys.sleep(60)
+}
+
 # 2014 blocks on 2014 and 2020 places ####
 state_codes <- c("AL_01", "AR_05", "AS_02", "AZ_04", "CA_06", "CO_08", 
                  "DE_10", "FL_12", "GA_13", "HI_15", "IA_19", "ID_16", "IL_17", "IN_18",
