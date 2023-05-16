@@ -1,4 +1,4 @@
-# Create universe of annexable blocks in the 14 states ####
+# Create universe of annexable blocks in all states ####
 # 400-m buffers (Durst 2018) for every place ##############
 # return .csvs for merging with Census data ###############
 # Created by: Iris Zhang, Sept 27, 2021 ###################
@@ -7,6 +7,7 @@
 # 10/1: note that various files have references to "contiguity" that are 
 # outdated from prior analytical attempts relying on contiguity to define 
 # annexable. Future versions of code will correct the naming convention. 
+# 5/16/2023 
 
 library("rgeos")
 library("sf")
@@ -15,23 +16,27 @@ library("tidyverse")
 library("magrittr")
 library("foreach")
 library("doParallel")
-#library("tigris")
 
 setwd("~/Google Drive/My Drive/Stanford/QE2")
 
 # 1. 2000 blocks in buffers of 2000 places (for 2000-2007)
 # 2. 2007 blocks in buffers of 2007 places (for 2007-2013)
 # 3. 2014 blocks in buffers of 2014 places (for 2014-2020)
+# 4. 2008 blocks in buffers of 2008 places
+# 5. 2009 blocks in buffers of 2009 places
+# 6. 2010 blocks in buffers of 2010 places 
+# 7. 2011 blocks in buffers of 2011 places
+# 8. 2012 blocks in buffers of 2012 places 
+# 9. 2015 blocks in buffers of 2015 places
+# 10. 2016 blocks in buffers of 2016 places 
+# 11. 2017 blocks in buffers of 2017 places 
+# 12. 2018 blocks in buffers of 2018 places 
+# 13. 2019 blocks in buffers of 2019 places 
+# 14. 2020 blocks in buffers of 2020 places 
 
 # 1. 
-# find all blocks within 400-m buffer of every place in 2000 ####
+# find all blocks within 400-m buffer of every place in 2007 ####
 # this forms universe of "annexable" blocks 
-blocks2010 <- fread("ipumsblocks_allstates/2010blocks/nhgis0036_ds172_2010_block.csv", select = 
-                            c("GISJOIN", "STATEA", "COUNTYA", "TRACTA", "BLOCKA", "PLACEA")) %>%
-  mutate(blkid = paste0(str_pad(STATEA, 2, side = "left", pad = "0"), str_pad(COUNTYA, 3, side = "left", pad = "0"),
-                        str_pad(TRACTA, 6, side = "left", pad = "0"), str_pad(BLOCKA, 4, side = "left", pad = "0")),
-         plid = paste0(str_pad(STATEA, 2, "left", "0"), str_pad(PLACEA, 5, "left", "0")))
-
 get_buffers <- function(state_code, year) {
   blocks <- st_read(paste0("SHP_blk_0010/", year, "/", state_code, "/tl_2010_", substr(state_code, 4, 5), "_tabblock", substr(year, 3, 4), ".shp"))
   blocks <- st_transform(blocks, 3488)
@@ -46,10 +51,10 @@ get_buffers <- function(state_code, year) {
     filter(cdp==1)
   
   blocks %<>%
-    left_join(blocks2007 %>% dplyr::select(blkid, PLACEA, plid), 
+    left_join(blocks2010 %>% dplyr::select(blkid, PLACEA, plid), 
               by = "blkid") %>% 
     filter(is.na(PLACEA) | PLACEA=="99999" | plid %in% cdps07$plid) 
-  rm(blocks2007)
+  rm(blocks2010)
   
   places <- st_read(paste0("SHP_pl/", year, "/", state_code, "/tl_2010_", substr(state_code, 4, 5), "_place", substr(year, 3, 4), ".shp"))
   places <- st_transform(places, 3488)
