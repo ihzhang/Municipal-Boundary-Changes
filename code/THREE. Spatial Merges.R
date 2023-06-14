@@ -725,3 +725,351 @@ table(aa$annexed)
 aa$period <- "1420"
 write_csv(aa, "analyticalfiles/annexedblocks1420dem.csv") 
 rm(list = ls())
+
+# 2007-2008 ----
+state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "HI_15", "IA_19", "ID_16", "IL_17", "IN_18",
+                 "KS_20", "KY_21", "LA_22", "MD_24",
+                 "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
+                 "NC_37", "ND_38", "NE_31", "NM_35", "NV_32", 
+                 "OH_39", "OK_40", "OR_41", 
+                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VA_51",
+                 "WA_53", "WV_54", "WI_55", "WY_56"
+)
+
+# the 2007blk-2007pl_90pct.csv file exists already 
+blocks_list <- list()
+for(i in 1:length(state_codes)) {
+  blocks_list[[i]] <- read_csv(paste0("spatial_files/2008/", state_codes[[i]], "_block_plids_2007blk-2008pl_90pct.csv"))
+}
+blocks_list <- rbindlist(blocks_list, fill = T)
+write_csv(blocks_list, "2007blk-2008plid_90pct.csv")
+
+rm(blocks_list)
+
+# annex 
+# get 2008 IDs 
+blocks_list <- list()
+for(i in 1:length(state_codes)) {
+  blocks_list[[i]] <- st_read(paste0("SHP_blk_0010/2008/tl_2008_", substr(state_codes[[i]], 4, 5), "_tabblock.shp")) %>%
+    as.data.frame() %>%
+    mutate(blkid = paste0(str_pad(as.character(STATEFP00), 2, side = "left", pad = "0"), str_pad(as.character(COUNTYFP00), 3, side = "left", pad = "0"),
+                          str_pad(as.character(TRACTCE00), 6, side = "left", pad = "0"), str_pad(as.character(BLOCKCE00), 4, side = "left", pad = "0"))) %>%
+    select(blkid)
+}
+
+blocks_list <- rbindlist(blocks_list, fill = T)
+write_csv(blocks_list, "all2008blocks.csv")
+rm(blocks_list)
+
+# annex 
+blocks2007 <- read_csv("2007blk-2007plid_90pct.csv") %>%
+  filter(!duplicated(blkid)) %>%
+  select(plid, blkid)
+
+blocks2007_na <- read_csv("all2007blocks.csv") %>%
+  filter(!duplicated(blkid)) %>%
+  filter(!blkid %in% blocks2007$blkid) %>%
+  mutate(plid = NA) %>%
+  select(plid, blkid)
+
+# universe of annexable
+blocks2007 <- base::rbind(blocks2007 %>% select(blkid, plid), blocks2007_na)
+rm(blocks2007_na)
+
+# want to know which places are CDPs
+cdps07 <- read_csv("places2007_cleaned.csv") %>% 
+  select(Geo_NAME, plid) %>%
+  mutate(cdp = ifelse(grepl("CDP|cdp", Geo_NAME), 1, 0)) %>%
+  filter(cdp==1)
+
+# filter out places in 2007 that are CDPs/na
+blocks2007 %<>% 
+  filter((plid %in% cdps07$plid) | is.na(plid))
+rm(cdps07)
+
+blocks2008 <- read_csv("2007blk-2008plid_90pct.csv") %>%
+  filter(!duplicated(blkid))
+
+# want to know which places are CDPs--they do not annex
+cdps08 <- read_csv("places2008_cleaned.csv") %>% 
+  select(Geo_NAME, plid) %>%
+  mutate(cdp = ifelse(grepl("CDP|cdp", Geo_NAME), 1, 0)) %>%
+  filter(cdp==1)
+
+# filter out places in 2008 that are CDPs
+blocks2008 %<>% 
+  filter(!(plid %in% cdps08$plid) & !is.na(plid))
+rm(cdps08)
+
+blocks2008 %<>% 
+  select(blkid, plid)
+
+length(unique(blocks2008$blkid))
+length(unique(blocks2007$blkid))
+
+# find only blocks common to each other 
+blkids <- Reduce(intersect, list(unique(blocks2008$blkid), unique(blocks2007$blkid))) 
+
+blocks2007 %<>%
+  filter(blkid %in% blkids) 
+blocks2008 %<>%
+  filter(blkid %in% blkids) 
+rm(blkids, cw)
+
+# annexed if in place in 2020 but not in 2014
+blocks2008 %<>%
+  select(blkid, plid) %>%
+  rename(plid_annexed = plid) %>%
+  filter(blkid %in% blocks2007$blkid) %>%
+  left_join(blocks2007, by = "blkid") 
+
+write_csv(blocks2008, "aa_baseline_full_0708.csv")
+
+rm(list = ls())
+
+# start with all blocks in 2007 and identify those that were annexed 
+aa <- read_csv("blocks2007_buffers.csv")
+
+aa %<>%
+  rename(plid = bufferplace) %>%
+  filter(!duplicated(blkid))
+
+annexed <- read_csv("aa_baseline_full_0708.csv") #53869
+table(annexed$blkid %in% aa$blkid)
+1963777 + 58381
+
+aa %<>%
+  full_join(annexed %>% select(blkid, plid_annexed), by = "blkid") %>%
+  mutate(annexed = ifelse(is.na(plid_annexed), 0, 1),
+         plid_use = ifelse(annexed == 1, plid_annexed, plid)) %>%
+  select(-plid_annexed, -plid) %>%
+  rename(plid = plid_use) %>%
+  filter(!is.na(plid))
+
+table(aa$annexed)
+rm(annexed)
+
+blocks2007 <- read_csv("blocks2007_int.csv")
+table(aa$blkid %in% blocks2007$blkid)
+
+aa %<>%
+  filter(blkid %in% blocks2007$blkid) %>%
+  left_join(blocks2007 %>% select(blkid, pop), by = "blkid")
+rm(blocks2007)
+
+aa %<>% 
+  group_by(plid) %>%
+  mutate(n = sum(annexed==1),
+         annexing_place = ifelse(n==0, 0, 1)) %>%
+  ungroup() %>%
+  dplyr::select(-n) 
+table(aa$annexing_place)
+
+# we can't have places that only had 1 contiguous block
+aa %<>%
+  group_by(plid) %>%
+  mutate(npop = sum(pop > 0)) %>%
+  ungroup() %>%
+  filter(npop > 0) %>%
+  select(-npop)
+
+# merge in vra 
+vrastates <- c("01", "02", "04", "13", "22", "28", "45", "48", "51")
+vra.df <- read_csv("vra_counties.csv")
+vra.df %<>% 
+  mutate(countyfips = str_pad(countyfips, 5, side = "left", pad = "0"),
+         sectionv = 1)
+
+aa %<>%
+  mutate(countyfips = paste0(STATEFP10, COUNTYFP10), 
+         vra = case_when(
+           STATEFP10 %in% vrastates ~ 1,
+           countyfips %in% vra.df$countyfips ~ 1,
+           TRUE ~ 0
+         ))
+table(aa$annexed)
+
+# prep for rbind 
+aa$period <- "0708"
+write_csv(aa, "analyticalfiles/annexedblocks0708dem.csv") 
+rm(list = ls())
+
+# 2008-2009 ----
+state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "HI_15", "IA_19", "ID_16", "IL_17", "IN_18",
+                 "KS_20", "KY_21", "LA_22", "MD_24",
+                 "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
+                 "NC_37", "ND_38", "NE_31", "NM_35", "NV_32", 
+                 "OH_39", "OK_40", "OR_41", 
+                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VA_51",
+                 "WA_53", "WV_54", "WI_55", "WY_56"
+)
+
+# 2008-2008
+blocks_list <- list()
+for(i in 1:length(state_codes)) {
+  blocks_list[[i]] <- read_csv(paste0("spatial_files/2008/", state_codes[[i]], "_block_plids_2008blk-2008pl_90pct.csv"))
+}
+blocks_list <- rbindlist(blocks_list, fill = T)
+write_csv(blocks_list, "2008blk-2008plid_90pct.csv")
+
+rm(blocks_list)
+
+blocks_list <- list()
+for(i in 1:length(state_codes)) {
+  blocks_list[[i]] <- read_csv(paste0("spatial_files/2008/", state_codes[[i]], "_block_plids_2008blk-2009pl_90pct.csv"))
+}
+blocks_list <- rbindlist(blocks_list, fill = T)
+write_csv(blocks_list, "2008blk-2009plid_90pct.csv")
+
+rm(blocks_list)
+
+# annex 
+# get 2009 IDs 
+blocks_list <- list()
+for(i in 1:length(state_codes)) {
+  blocks_list[[i]] <- st_read(paste0("SHP_blk_0010/2009/tl_2009_", substr(state_codes[[i]], 4, 5), "_tabblock.shp")) %>%
+    as.data.frame() %>%
+    mutate(blkid = paste0(str_pad(as.character(STATEFP00), 2, side = "left", pad = "0"), str_pad(as.character(COUNTYFP00), 3, side = "left", pad = "0"),
+                          str_pad(as.character(TRACTCE00), 6, side = "left", pad = "0"), str_pad(as.character(BLOCKCE00), 4, side = "left", pad = "0"))) %>%
+    select(blkid)
+}
+
+blocks_list <- rbindlist(blocks_list, fill = T)
+write_csv(blocks_list, "all2009blocks.csv")
+rm(blocks_list)
+
+# annex 
+blocks2008 <- read_csv("2008blk-2008plid_90pct.csv") %>%
+  filter(!duplicated(blkid)) %>%
+  select(plid, blkid)
+
+blocks2008_na <- read_csv("all2008blocks.csv") %>%
+  filter(!duplicated(blkid)) %>%
+  filter(!blkid %in% blocks2008$blkid) %>%
+  mutate(plid = NA) %>%
+  select(plid, blkid)
+
+# universe of annexable
+blocks2008 <- base::rbind(blocks2008 %>% select(blkid, plid), blocks2008_na)
+rm(blocks2008_na)
+
+# want to know which places are CDPs
+cdps08 <- read_csv("plids/pl2008.csv") %>% 
+  select(Geo_NAME, plid) %>%
+  mutate(cdp = ifelse(grepl("CDP|cdp", Geo_NAME), 1, 0)) %>%
+  filter(cdp==1)
+
+# filter out places in 2007 that are CDPs/na
+blocks2008 %<>% 
+  filter((plid %in% cdps08$plid) | is.na(plid))
+rm(cdps08)
+
+blocks2009 <- read_csv("2008blk-2009plid_90pct.csv") %>%
+  filter(!duplicated(blkid))
+
+# want to know which places are CDPs--they do not annex
+cdps09 <- read_csv("plids/pl2009.csv") %>% 
+  select(Geo_NAME, plid) %>%
+  mutate(cdp = ifelse(grepl("CDP|cdp", Geo_NAME), 1, 0)) %>%
+  filter(cdp==1)
+
+# filter out places in 2008 that are CDPs
+blocks2009 %<>% 
+  filter(!(plid %in% cdps09$plid) & !is.na(plid))
+rm(cdps09)
+
+blocks2009 %<>% 
+  select(blkid, plid)
+
+length(unique(blocks2008$blkid))
+length(unique(blocks2009$blkid))
+
+# find only blocks common to each other 
+blkids <- Reduce(intersect, list(unique(blocks2008$blkid), unique(blocks2009$blkid))) 
+
+blocks2008 %<>%
+  filter(blkid %in% blkids) 
+blocks2009 %<>%
+  filter(blkid %in% blkids) 
+rm(blkids)
+
+# annexed if in place in 2020 but not in 2014
+blocks2009 %<>%
+  select(blkid, plid) %>%
+  rename(plid_annexed = plid) %>%
+  filter(blkid %in% blocks2008$blkid) %>%
+  left_join(blocks2008, by = "blkid") 
+
+write_csv(blocks2009, "aa_baseline_full_0809.csv")
+
+rm(list = ls())
+
+# start with all blocks in 2007 and identify those that were annexed 
+aa <- read_csv("blocks2008_buffers.csv")
+
+aa %<>%
+  rename(plid = bufferplace) %>%
+  filter(!duplicated(blkid))
+
+annexed <- read_csv("aa_baseline_full_0708.csv") #53869
+table(annexed$blkid %in% aa$blkid)
+1963777 + 58381
+
+aa %<>%
+  full_join(annexed %>% select(blkid, plid_annexed), by = "blkid") %>%
+  mutate(annexed = ifelse(is.na(plid_annexed), 0, 1),
+         plid_use = ifelse(annexed == 1, plid_annexed, plid)) %>%
+  select(-plid_annexed, -plid) %>%
+  rename(plid = plid_use) %>%
+  filter(!is.na(plid))
+
+table(aa$annexed)
+rm(annexed)
+
+blocks2007 <- read_csv("blocks2007_int.csv")
+table(aa$blkid %in% blocks2007$blkid)
+
+aa %<>%
+  filter(blkid %in% blocks2007$blkid) %>%
+  left_join(blocks2007 %>% select(blkid, pop), by = "blkid")
+rm(blocks2007)
+
+aa %<>% 
+  group_by(plid) %>%
+  mutate(n = sum(annexed==1),
+         annexing_place = ifelse(n==0, 0, 1)) %>%
+  ungroup() %>%
+  dplyr::select(-n) 
+table(aa$annexing_place)
+
+# we can't have places that only had 1 contiguous block
+aa %<>%
+  group_by(plid) %>%
+  mutate(npop = sum(pop > 0)) %>%
+  ungroup() %>%
+  filter(npop > 0) %>%
+  select(-npop)
+
+# merge in vra 
+vrastates <- c("01", "02", "04", "13", "22", "28", "45", "48", "51")
+vra.df <- read_csv("vra_counties.csv")
+vra.df %<>% 
+  mutate(countyfips = str_pad(countyfips, 5, side = "left", pad = "0"),
+         sectionv = 1)
+
+aa %<>%
+  mutate(countyfips = paste0(STATEFP10, COUNTYFP10), 
+         vra = case_when(
+           STATEFP10 %in% vrastates ~ 1,
+           countyfips %in% vra.df$countyfips ~ 1,
+           TRUE ~ 0
+         ))
+table(aa$annexed)
+
+# prep for rbind 
+aa$period <- "0708"
+write_csv(aa, "analyticalfiles/annexedblocks0708dem.csv") 
+rm(list = ls())
+

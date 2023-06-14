@@ -21,6 +21,7 @@ library("zoo") # for na.approx function
 # updates log ----
 # 5/18: double-check decade, place-level data and fix interpolation probably 
 # 7/7 remove bottom-coding of NA values since discovered that was wrong in the process of  interpolate_ACS.R 
+# 6/1/23: do additional place-level data cleaning 
 
 #2020 dollars ###
 #1990, 2000, 05-09 for 2007 (2009), 08-12 for 2010 (2012), 11-15 for 2013 (2015), 15-19 for 2017 (2019)
@@ -513,6 +514,29 @@ sapply(places2007, function(x) sum(is.na(x)))
 write_csv(places2007, "pl2007_cleaned.csv")
 rm(places2007)
 
+# 2008 plid/cps ----
+places2008 <- read_csv(file = "seplaces_allstates/2008places.csv")
+
+places2008 %<>%
+  mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+         PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
+         plid = paste0(STATE, PLACE)) %>%
+  select(Geo_NAME, plid) 
+
+write_csv(places2008, "pl2008_cleaned.csv")
+rm(places2008)
+
+# 2009 plid/cdp ----
+places2009 <- read_csv(file = "seplaces_allstates/2009places.csv")
+
+places2009 %<>%
+  mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+         PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
+         plid = paste0(STATE, PLACE)) %>%
+  select(Geo_NAME, plid) 
+
+write_csv(places2009, "pl2009_cleaned.csv")
+rm(places2009)
 
 # 2010 places ####
 # $3333 Lodes 2010 = 3486.48 in 2012 = 41837 --> 40K above threshold
@@ -621,6 +645,30 @@ sapply(places2010, function(x) sum(is.na(x)))
 
 write_csv(places2010, "pl2010_cleaned.csv")
 
+# 2011 plid/cdp ----
+places2011 <- read_csv(file = "seplaces_allstates/2011places.csv")
+
+places2011 %<>%
+  mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+         PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
+         plid = paste0(STATE, PLACE)) %>%
+  select(Geo_NAME, plid) 
+
+write_csv(places2011, "pl2011_cleaned.csv")
+rm(places2011)
+
+# 2012 plid/cdp ----
+places2012 <- read_csv(file = "seplaces_allstates/2012places.csv")
+
+places2012 %<>%
+  mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+         PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
+         plid = paste0(STATE, PLACE)) %>%
+  select(Geo_NAME, plid) 
+
+write_csv(places2012, "pl2012_cleaned.csv")
+rm(places2012)
+
 # 2013 ACS places ####
 vapacs13 <- read_csv("seplaces_allstates/vap/1115acsvap.csv") %>%
   mutate(plid = paste0(
@@ -701,6 +749,7 @@ rm(acs13, vapacs13, inc13)
 # 
 # write_csv(pl0713, "pl0713_var.csv")
 rm(acs13, pl0713, vapacs13)
+
 
 # 2017 ####
 # 3333 LODES $ is 3454.78 in 2019 = 41454 --> 40K threshold
@@ -870,6 +919,54 @@ names(places2014)[3:59] <- str_c(names(places2014)[3:59], "14p")
 
 write_csv(places2014, "places2014_cleaned.csv")
 rm(places, places2010, places2014, places2017)
+
+# 2015 plid/cdp ----
+places2015 <- read_csv(file = "seplaces_allstates/2015places.csv")
+
+places2015 %<>%
+  mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+         PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
+         plid = paste0(STATE, PLACE)) %>%
+  select(Geo_NAME, plid) 
+
+write_csv(places2015, "pl2015_cleaned.csv")
+rm(places2015)
+
+# 2016 plid/cdp ----
+places2016 <- read_csv(file = "seplaces_allstates/2016places.csv")
+
+places2016 %<>%
+  mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+         PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
+         plid = paste0(STATE, PLACE)) %>%
+  select(Geo_NAME, plid) 
+
+write_csv(places2016, "pl2016_cleaned.csv")
+rm(places2016)
+
+# 2018 plid/cdp ----
+places2018 <- read_csv(file = "seplaces_allstates/2018places.csv")
+
+places2018 %<>%
+  mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+         PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
+         plid = paste0(STATE, PLACE)) %>%
+  select(Geo_NAME, plid) 
+
+write_csv(places2018, "pl2018_cleaned.csv")
+rm(places2018)
+
+# 2019 plid/cdp ----
+places2019 <- read_csv(file = "seplaces_allstates/2019places.csv")
+
+places2019 %<>%
+  mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
+         PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
+         plid = paste0(STATE, PLACE)) %>%
+  select(Geo_NAME, plid) 
+
+write_csv(places2019, "pl2019_cleaned.csv")
+rm(places2019)
 
 # 2020 places ####
 places2020 <- read_csv("seplaces_allstates/2020places.csv") 
