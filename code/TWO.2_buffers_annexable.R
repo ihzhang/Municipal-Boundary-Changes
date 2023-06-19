@@ -309,7 +309,7 @@ for(i in 1:length(state_codes)) {
 blocks_list <- rbindlist(blocks_list, fill = T)
 write_csv(blocks_list, "2008buffers.csv")
 
-rm(blocks2007, blocks_list)
+rm(blocks2008, blocks_list)
 
 # 2014 ----
 blocks2014 <- read_csv("2014blk-2014plid_90pct.csv")

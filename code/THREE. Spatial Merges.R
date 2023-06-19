@@ -1007,15 +1007,14 @@ write_csv(blocks2009, "aa_baseline_full_0809.csv")
 rm(list = ls())
 
 # start with all blocks in 2007 and identify those that were annexed 
-aa <- read_csv("blocks2008_buffers.csv")
+aa <- read_csv("2008buffers.csv")
 
 aa %<>%
   rename(plid = bufferplace) %>%
   filter(!duplicated(blkid))
 
-annexed <- read_csv("aa_baseline_full_0708.csv") #53869
+annexed <- read_csv("aa_baseline_full_0809.csv") #53869
 table(annexed$blkid %in% aa$blkid)
-1963777 + 58381
 
 aa %<>%
   full_join(annexed %>% select(blkid, plid_annexed), by = "blkid") %>%
@@ -1028,13 +1027,13 @@ aa %<>%
 table(aa$annexed)
 rm(annexed)
 
-blocks2007 <- read_csv("blocks2007_int.csv")
-table(aa$blkid %in% blocks2007$blkid)
+blocks2008 <- read_csv("blocks2008_int.csv")
+table(aa$blkid %in% blocks2008$blkid)
 
 aa %<>%
-  filter(blkid %in% blocks2007$blkid) %>%
-  left_join(blocks2007 %>% select(blkid, pop), by = "blkid")
-rm(blocks2007)
+  filter(blkid %in% blocks2008$blkid) %>%
+  left_join(blocks2008 %>% select(blkid, pop), by = "blkid")
+rm(blocks2008)
 
 aa %<>% 
   group_by(plid) %>%
