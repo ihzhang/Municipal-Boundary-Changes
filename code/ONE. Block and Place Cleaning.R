@@ -521,7 +521,8 @@ places2008 %<>%
   mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
          PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
          plid = paste0(STATE, PLACE)) %>%
-  select(Geo_NAME, plid) 
+  rename(pop08p = SE_A00001_001) %>%
+  select(Geo_NAME, plid, pop08p) 
 
 write_csv(places2008, "pl2008_cleaned.csv")
 rm(places2008)
@@ -533,7 +534,8 @@ places2009 %<>%
   mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
          PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
          plid = paste0(STATE, PLACE)) %>%
-  select(Geo_NAME, plid) 
+  rename(pop09p = SE_A00001_001) %>%
+  select(Geo_NAME, plid, pop09p) 
 
 write_csv(places2009, "pl2009_cleaned.csv")
 rm(places2009)
@@ -652,7 +654,8 @@ places2011 %<>%
   mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
          PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
          plid = paste0(STATE, PLACE)) %>%
-  select(Geo_NAME, plid) 
+  rename(pop11p = SE_A00001_001) %>%
+  select(Geo_NAME, plid, pop11p) 
 
 write_csv(places2011, "pl2011_cleaned.csv")
 rm(places2011)
@@ -664,7 +667,8 @@ places2012 %<>%
   mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
          PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
          plid = paste0(STATE, PLACE)) %>%
-  select(Geo_NAME, plid) 
+  rename(pop12p = SE_A00001_001) %>%
+  select(Geo_NAME, plid, pop12p) 
 
 write_csv(places2012, "pl2012_cleaned.csv")
 rm(places2012)
@@ -927,6 +931,7 @@ places2015 %<>%
   mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
          PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
          plid = paste0(STATE, PLACE)) %>%
+  rename(pop15p = SE_A00001_001) %>%
   select(Geo_NAME, plid) 
 
 write_csv(places2015, "pl2015_cleaned.csv")
@@ -939,6 +944,7 @@ places2016 %<>%
   mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
          PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
          plid = paste0(STATE, PLACE)) %>%
+  rename(pop16p = SE_A00001_001) %>%
   select(Geo_NAME, plid) 
 
 write_csv(places2016, "pl2016_cleaned.csv")
@@ -951,7 +957,8 @@ places2018 %<>%
   mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
          PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
          plid = paste0(STATE, PLACE)) %>%
-  select(Geo_NAME, plid) 
+  rename(pop18p = SE_A00001_001) %>%
+  select(Geo_NAME, plid, pop18p) 
 
 write_csv(places2018, "pl2018_cleaned.csv")
 rm(places2018)
@@ -963,7 +970,8 @@ places2019 %<>%
   mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
          PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
          plid = paste0(STATE, PLACE)) %>%
-  select(Geo_NAME, plid) 
+  rename(pop19p = SE_A00001_001) %>%
+  select(Geo_NAME, plid, pop19p) 
 
 write_csv(places2019, "pl2019_cleaned.csv")
 rm(places2019)
