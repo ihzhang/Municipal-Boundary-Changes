@@ -384,9 +384,45 @@ for(i in 1:length(state_codes)) {
   blocks_list[[i]] <- block_file
 }
 blocks_list <- rbindlist(blocks_list, fill = T)
-write_csv(blocks_list, "2009buffers.csv")
+write_csv(blocks_list, "2010buffers.csv")
 
-rm(blocks2008, blocks_list)
+rm(blocks2010, blocks_list)
+
+# 2011 ----
+state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "HI_15", "IA_19", "ID_16", "IL_17", "IN_18",
+                 "KS_20", "KY_21", "LA_22", "MD_24",
+                 "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
+                 "NC_37", "ND_38", "NE_31", "NM_35", "NV_32", 
+                 "OH_39", "OK_40", "OR_41", 
+                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VA_51",
+                 "WA_53", "WV_54", "WI_55", "WY_56"
+)
+
+blocks2011 <- read_csv("2011blk-2011plid_90pct.csv")
+blocks2011 %<>%
+  select(plid, blkid) %>%
+  filter(!duplicated(blkid) & !is.na(plid)) 
+
+blocks_list <- list()
+for(i in 1:length(state_codes)) {
+  blocks <- list.files(paste0("spatial_files/2011/"), pattern = paste0(substr(state_codes[[i]], 1, 2), "_buffers.csv"), full.names = T)
+  block_file <- read_csv(blocks)
+  block_file %<>%
+    filter(!is.na(bufferplace))
+  plid_list <- unique(block_file$bufferplace)
+  for (j in 1:length(plid_list)) {
+    blocklist <- blocks2011 %>%
+      filter(plid == plid_list[[j]]) 
+    block_file %<>%
+      filter(!blkid %in% blocklist$blkid)
+  }
+  blocks_list[[i]] <- block_file
+}
+blocks_list <- rbindlist(blocks_list, fill = T)
+write_csv(blocks_list, "2011buffers.csv")
+
+rm(blocks2010, blocks_list)
 
 # 2014 ----
 blocks2014 <- read_csv("2014blk-2014plid_90pct.csv")
