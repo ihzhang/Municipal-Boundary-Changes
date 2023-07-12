@@ -2327,7 +2327,7 @@ aa %<>%
   rename(plid = bufferplace) %>%
   filter(!duplicated(blkid))
 
-annexed <- read_csv("aa_baseline_full_1617.csv") #53869
+annexed <- read_csv("aa_baseline_full_1718.csv") 
 table(annexed$blkid %in% aa$blkid)
 
 aa %<>%
@@ -2341,13 +2341,13 @@ aa %<>%
 table(aa$annexed)
 rm(annexed)
 
-blocks2016 <- read_csv("blocks2016_int.csv")
-table(aa$blkid %in% blocks2016$blkid)
+blocks2017 <- read_csv("blocks2017_int.csv")
+table(aa$blkid %in% blocks2017$blkid)
 
 aa %<>%
-  filter(blkid %in% blocks2016$blkid) %>%
-  left_join(blocks2016 %>% select(blkid, pop), by = "blkid")
-rm(blocks2016)
+  filter(blkid %in% blocks2017$blkid) %>%
+  left_join(blocks2017 %>% select(blkid, pop), by = "blkid")
+rm(blocks2017)
 
 aa %<>% 
   group_by(plid) %>%
