@@ -189,12 +189,6 @@ summary(panel0020_did$popgrowth)
 summary(panel0020_did)
 
 # models ####
-# event study -- need to do this with annual periods ####
-# mod_sa = feols(annexing ~ i(post, ref = 0),
-#                cluster = "plid",
-#                data = panel0020_did)
-# 
-# coefplot(mod_sa, drop = "(Intercept)")
 
 # annex or not ----
 annex <- feols(annexing ~ as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid + STATE, fixef.rm = "none")

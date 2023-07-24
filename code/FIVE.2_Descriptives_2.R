@@ -63,10 +63,38 @@ annex_time_vra <- panel0020_did %>%
 write.xlsx(annex_time_vra, "analyticalfiles/differences.xlsx", rowNames = T)
 
 # annex or not ####
+# conditional PTA 
+reg = lm(annexing~vra*post + popdensity_p0 + pctnhwhite_p0 + pop_total, data=panel0020_did)
+
+# Fictitious data set where control variables
+# have a constant value for treatment and control group: here just set everywhere 0
+dat0 = mutate(panel0020_did, 
+              popdensity_p0 = 0,
+              pctnhwhite_p0 = 0, 
+              pop_total = 0)
+
+# Now predict y and add residuals of original regression
+panel0020_did$y = predict(reg, dat0) + resid(reg)
+
+gdat = panel0020_did %>%
+    group_by(vra, time) %>%
+    dplyr::summarize(y = mean(y)) %>%
+    ungroup() %>%
+  mutate(vra = as.factor(vra))
+  
+gg = ggplot(gdat, aes(y=y,x=time, group = vra)) +
+    geom_point() + geom_line(aes(linetype = vra)) + 
+    geom_vline(xintercept="2007 to 2013") +
+    theme_bw() + 
+  ylab("% of Places Annexing") + 
+  xlab("Time Period") + 
+ labs(linetype = "VRA Coverage")
+gg
+
 x <- panel0020_did %>%
   mutate(vra = as.character(vra)) %>%
   group_by(vra, time) %>%
-  dplyr::summarize(Percent = mean(as.numeric(as.character(annexing)), na.rm = T)*100) %>%
+  dplyr::summarize(Percent = Hmisc::wtd.mean(as.numeric(as.character(annexing)), weights = popdensity_p0 + pctnhwhite_p0 + pop_total, na.rm = T)*100) %>%
   ungroup() %>%
   rename("Period" = "time")
 
