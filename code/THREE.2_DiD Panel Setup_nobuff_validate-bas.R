@@ -27,8 +27,8 @@ rm(list = ls())
 # Directories: 
 setwd("~/Google Drive/My Drive/Stanford/QE2")
 
-curdir <- paste0(dirname(rstudioapi::getSourceEditorContext()$path))
-savedir <- paste0(curdir, "/../results/")
+curdir <- paste0(dirname(rstudioapi::getSourceEditorContext()$path), "/")
+savedir <- paste0(curdir, "../results/")
 
 # homedir <- The smallest directory that contains all input/output folders.
 # workdir <- The smallest directory that contains all necessary inputs.
@@ -54,7 +54,7 @@ library("openxlsx")
 library("broom")
 library("sjPlot")
 
-load(paste0(curdir, "/", savedir, "THREE_July.RData"))
+load(paste0(savedir, "THREE_July.RData"))
 
 # make panel data!!!!! ####
 # take out ne, alaska, and hawaii
@@ -166,11 +166,9 @@ panel0020_did %<>%
 
 table(panel0020_did$annexing[panel0020_did$time=="2000 to 2007"], panel0020_did$annexing_use[panel0020_did$time=="2000 to 2007"])
 2092/(2092+109)
-# 94.8
 
 table(panel0020_did$annexing[panel0020_did$time=="2007 to 2013"], panel0020_did$annexing_use[panel0020_did$time=="2007 to 2013"])
 2272/(2272+795)
-# 68.7%
 
 table(panel0020_did$annexing[panel0020_did$time=="2014 to 2020"], panel0020_did$annexing_use[panel0020_did$time=="2014 to 2020"])
 328/(328+1049)
@@ -189,6 +187,10 @@ summary(panel0020_did$popgrowth)
 summary(panel0020_did)
 
 # models ####
+panel0020_did %<>%
+  group_by(plid) %>%
+  arrange(Year) %>%
+  mutate(lag_annexed = dplyr::lag(annexing, 1))
 
 # annex or not ----
 annex <- feols(annexing ~ as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid + STATE, fixef.rm = "none")
