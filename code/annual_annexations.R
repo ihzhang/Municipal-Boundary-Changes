@@ -24,14 +24,14 @@ rm(list = ls())
 # Directories: 
 setwd("~/Google Drive/My Drive/Stanford/QE2")
 curdir <- paste0(dirname(rstudioapi::getSourceEditorContext()$path))
-savedir <- paste0("../results/")
+savedir <- paste0(curdir, "/../results/")
 # homedir <- The smallest directory that contains all input/output folders.
 # workdir <- The smallest directory that contains all necessary inputs.
 # savedir <- The smallest directory that contains all output folders.
 # setwd(paste0(homedir, workdir))
 
 # Import data: 
-
+load(paste0(savedir, "annual_annexations.RData"))
 # Parameters:
 
 # Main Script -------------------------------------------------------------
@@ -986,17 +986,17 @@ save.image(paste0(curdir, "/", savedir, "annual_annexations.RData"))
 
 # make cross-tab 
 pl1314 <- panel_annual %>%
-  filter(time == "2012-2013") %>%
-  mutate(time = "2013-2014", 
-         annexing_place = 0) 
+  filter(time == "2012 to 2013") %>%
+  mutate(time = "2013 to 2014", 
+         annexing = 0) 
 
-panel_annual <- rbind(panel_annual, pl1314)
+panel_annual <- bind_rows(panel_annual, pl1314)
 
 panel_annual_xt <- panel_annual %>%
   group_by(time, vra) %>%
-  summarize(annex = mean(annexing, na.rm = T)*100) %>%
+  dplyr::summarize(annex = mean(annexing, na.rm = T)*100) %>%
   mutate(vra = as.character(vra),
-         annex = ifelse(time == "2013-2014", NA, annex))
+         annex = ifelse(time == "2013 to 2014", NA, annex))
 
 annual_xt <- ggplot(panel_annual_xt, aes(x = time, y = annex, group = vra)) + 
   geom_line(aes(linetype = vra)) + geom_point() + 
@@ -1010,7 +1010,7 @@ annual_xt <- ggplot(panel_annual_xt, aes(x = time, y = annex, group = vra)) +
 
 annual_xt
 
-ggsave(filename = paste0(curdir, "/", savedir, "annual_xt_viz.pdf"),
+ggsave(filename = paste0(savedir, "annual_xt_viz.pdf"),
        plot = annual_xt,
        dpi = 300)
 

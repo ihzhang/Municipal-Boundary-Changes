@@ -456,7 +456,8 @@ annex_list <- list(base_tid, base_cov_tid,
 
 openxlsx::write.xlsx(annex_list, paste0(savedir, "outcome_reg_bas.xlsx"))
 
-# repeat with 2000-2007 as pre-period ----
+# falsification test ----
+# randomly assign "treatment" to untreated units and run did on them 
 plids <- Reduce(intersect, list(unique(panel0020_did$plid[panel0020_did$time == "2000 to 2007"]), unique(panel0020_did$plid[panel0020_did$time == "2014 to 2020"])))
 
 annex <- feols(annexing ~ as.factor(vra)*as.factor(period) | plid, data = panel0020_did %>% filter(time %in% c("2000 to 2007", "2014 to 2020") & plid %in% plids), cluster = ~plid + STATE, fixef.rm = "none")
