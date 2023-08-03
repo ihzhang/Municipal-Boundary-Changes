@@ -198,13 +198,13 @@ for (state_code in state_codes) {
 }
 
 # make buffer file for 2000, 2007, and 2014 ####
-state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", "CT_09", 
-                 "DE_10", "FL_12", "GA_13", "HI_15", "IA_19", "ID_16", "IL_17", "IN_18",
-                 "KS_20", "KY_21", "LA_22", 
-                 "MA_25", "MD_24", "ME_23", "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
-                 "NC_37", "ND_38", "NE_31", "NH_33", "NJ_34", "NM_35", "NV_32", "NY_36",
-                 "OH_39", "OK_40", "OR_41", "PA_42", "RI_44",
-                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VT_50", "VA_51",
+state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "IA_19", "ID_16", "IL_17", "IN_18",
+                 "KS_20", "KY_21", "LA_22", "MD_24",
+                 "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
+                 "NC_37", "ND_38", "NE_31", "NM_35", "NV_32", 
+                 "OH_39", "OK_40", "OR_41", 
+                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VA_51",
                  "WA_53", "WV_54", "WI_55", "WY_56"
 )
 
@@ -251,9 +251,9 @@ blocks2007 %<>%
   filter(!is.na(plid))
 
 blocks_list <- list()
-for(i in 1:length(state_codes)) {
-  blocks <- list.files(paste0("SHP_blk_0010/2007/states/"), pattern = paste0(substr(state_codes[[i]], 1, 2), "_buffers.csv"))
-  block_file <- read_csv(file = paste0("SHP_blk_0010/2007/states/", blocks))
+for(i in 28:length(state_codes)) {
+  blocks <- list.files(paste0("spatial_files/2007/"), pattern = paste0(substr(state_codes[[i]], 1, 2), "_buffers.csv"), full.names = T)
+  block_file <- read_csv(blocks)
   block_file %<>%
     filter(!is.na(bufferplace))
   plid_list <- unique(block_file$bufferplace)

@@ -827,7 +827,7 @@ write_csv(blocks2008, "aa_baseline_full_0708.csv")
 rm(list = ls())
 
 # start with all blocks in 2007 and identify those that were annexed 
-aa <- read_csv("blocks2007_buffers.csv")
+aa <- read_csv("2007buffers.csv")
 
 aa %<>%
   rename(plid = bufferplace) %>%
@@ -851,9 +851,27 @@ blocks2007 <- read_csv("blocks2007_int.csv")
 table(aa$blkid %in% blocks2007$blkid)
 
 aa %<>%
-  filter(blkid %in% blocks2007$blkid) %>%
-  left_join(blocks2007 %>% select(blkid, pop), by = "blkid")
+  #filter(blkid %in% blocks2007$blkid) %>%
+  left_join(blocks2007, by = "blkid")
 rm(blocks2007)
+
+rac2007 <- read_csv("LODES data/rac_2007.csv")
+names(rac2007)
+
+wac2007 <- read_csv("LODES data/wac_2007.csv")
+names(wac2007)
+
+# check they seem to be in comparable formats
+head(aa$blkid)
+head(rac2007$h_geocode)
+head(wac2007$w_geocode)
+
+aa %<>%
+  left_join(rac2007 %>% select(h_geocode:nhincjobs07), by = c("blkid" = "h_geocode")) %>%
+  mutate_at(c("njobs07", "nhincjobs07"), ~ifelse(is.na(.), 0, .)) %>%
+  left_join(wac2007 %>% select(w_geocode:ret), by = c("blkid" = "w_geocode")) %>%
+  mutate_at(c("jobs", "man", "ret"), ~ifelse(is.na(.), 0, .))
+rm(rac2007, wac2007)
 
 # merge in vra 
 vrastates <- c("01", "02", "04", "13", "22", "28", "45", "48", "51")
@@ -873,6 +891,12 @@ aa %<>%
 table(aa$annexed, exclude = NULL)
 table(aa$vra, exclude = NULL)
 names(aa)
+
+aa %>%
+  filter(!plid %in% cdps08$plid) %>%
+  group_by(plid) %>%
+  tally()
+
 aa %<>%
   select(5:ncol(aa))
 
@@ -1013,8 +1037,26 @@ table(aa$blkid %in% blocks2008$blkid)
 
 aa %<>%
   #filter(blkid %in% blocks2008$blkid) %>%
-  left_join(blocks2008 %>% select(blkid, pop), by = "blkid")
+  left_join(blocks2008, by = "blkid")
 rm(blocks2008)
+
+rac2008 <- read_csv("LODES data/rac_2008.csv")
+names(rac2008)
+
+wac2008 <- read_csv("LODES data/wac_2008.csv")
+names(wac2008)
+
+# check they seem to be in comparable formats
+head(aa$blkid)
+head(rac2008$h_geocode)
+head(wac2008$w_geocode)
+
+aa %<>%
+  left_join(rac2008 %>% select(h_geocode:nhincjobs08), by = c("blkid" = "h_geocode")) %>%
+  mutate_at(c("njobs08", "nhincjobs08"), ~ifelse(is.na(.), 0, .)) %>%
+  left_join(wac2008 %>% select(w_geocode:ret), by = c("blkid" = "w_geocode")) %>%
+  mutate_at(c("jobs", "man", "ret"), ~ifelse(is.na(.), 0, .))
+rm(rac2008, wac2008)
 
 # merge in vra 
 vrastates <- c("01", "02", "04", "13", "22", "28", "45", "48", "51")
@@ -1040,7 +1082,7 @@ aa %<>%
 write_csv(aa, "analyticalfiles/annexedblocks0809dem.csv") 
 rm(list = ls())
 
-# 2009-2010 ----
+8# 2009-2010 ----
 state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", 
                  "DE_10", "FL_12", "GA_13", "IA_19", "ID_16", "IL_17", "IN_18",
                  "KS_20", "KY_21", "LA_22", "MD_24",
@@ -1177,8 +1219,26 @@ table(aa$blkid %in% blocks2009$blkid)
 
 aa %<>%
   #filter(blkid %in% blocks2009$blkid) %>%
-  left_join(blocks2009 %>% select(blkid, pop), by = "blkid")
+  left_join(blocks2009, by = "blkid")
 rm(blocks2009)
+
+rac2009 <- read_csv("LODES data/rac_2009.csv")
+names(rac2009)
+
+wac2009 <- read_csv("LODES data/wac_2009.csv")
+names(wac2009)
+
+# check they seem to be in comparable formats
+head(aa$blkid)
+head(rac2009$h_geocode)
+head(wac2009$w_geocode)
+
+aa %<>%
+  left_join(rac2009 %>% select(h_geocode:nhincjobs09), by = c("blkid" = "h_geocode")) %>%
+  mutate_at(c("njobs09", "nhincjobs09"), ~ifelse(is.na(.), 0, .)) %>%
+  left_join(wac2009 %>% select(w_geocode:ret), by = c("blkid" = "w_geocode")) %>%
+  mutate_at(c("jobs", "man", "ret"), ~ifelse(is.na(.), 0, .))
+rm(rac2009, wac2009)
 
 # merge in vra 
 vrastates <- c("01", "02", "04", "13", "22", "28", "45", "48", "51")
@@ -1317,11 +1377,30 @@ blocks2010 <- read_csv("blocks2010_var.csv") %>%
          plid = paste0(str_pad(as.character(STATEA), 2, side = "left", pad = "0"), str_pad(as.character(PLACEA), 3, side = "left", pad = "0")))
 table(aa$blkid %in% blocks2010$blkid)
 
+names(blocks2010) <- gsub("10b", "", names(blocks2010))
+
 aa %<>%
   filter(blkid %in% blocks2010$blkid) %>%
-  left_join(blocks2010 %>% select(blkid, pop10b), by = "blkid") %>%
-  rename(pop = pop10b)
+  left_join(blocks2010 %>% select(-plid), by = "blkid") 
 rm(blocks2010)
+
+rac2010 <- read_csv("LODES data/rac_2010.csv")
+names(rac2010)
+
+wac2010 <- read_csv("LODES data/wac_2010.csv")
+names(wac2010)
+
+# check they seem to be in comparable formats
+head(aa$blkid)
+head(rac2010$h_geocode)
+head(wac2010$w_geocode)
+
+aa %<>%
+  left_join(rac2010 %>% select(h_geocode:nhincjobs10), by = c("blkid" = "h_geocode")) %>%
+  mutate_at(c("njobs10", "nhincjobs10"), ~ifelse(is.na(.), 0, .)) %>%
+  left_join(wac2010 %>% select(w_geocode:ret), by = c("blkid" = "w_geocode")) %>%
+  mutate_at(c("jobs", "man", "ret"), ~ifelse(is.na(.), 0, .))
+rm(rac2010, wac2010)
 
 # merge in vra 
 vrastates <- c("01", "02", "04", "13", "22", "28", "45", "48", "51")
@@ -1485,8 +1564,26 @@ table(aa$blkid %in% blocks2011$blkid)
 
 aa %<>%
   filter(blkid %in% blocks2011$blkid) %>%
-  left_join(blocks2011 %>% select(blkid, pop), by = "blkid")
+  left_join(blocks2011, by = "blkid")
 rm(blocks2011)
+
+rac2011 <- read_csv("LODES data/rac_2011.csv")
+names(rac2011)
+
+wac2011 <- read_csv("LODES data/wac_2011.csv")
+names(wac2011)
+
+# check they seem to be in comparable formats
+head(aa$blkid)
+head(rac2011$h_geocode)
+head(wac2011$w_geocode)
+
+aa %<>%
+  left_join(rac2011 %>% select(h_geocode:nhincjobs11), by = c("blkid" = "h_geocode")) %>%
+  mutate_at(c("njobs11", "nhincjobs11"), ~ifelse(is.na(.), 0, .)) %>%
+  left_join(wac2011 %>% select(w_geocode:ret), by = c("blkid" = "w_geocode")) %>%
+  mutate_at(c("jobs", "man", "ret"), ~ifelse(is.na(.), 0, .))
+rm(rac2011, wac2011)
 
 # merge in vra 
 vrastates <- c("01", "02", "04", "13", "22", "28", "45", "48", "51")
@@ -1650,9 +1747,27 @@ table(aa$blkid %in% blocks2012$blkid)
 
 aa %<>%
   filter(blkid %in% blocks2012$blkid) %>%
-  left_join(blocks2012 %>% select(blkid, pop), by = "blkid")
+  left_join(blocks2012, by = "blkid")
 rm(blocks2012)
 length(unique(aa$plid))
+
+rac2012 <- read_csv("LODES data/rac_2012.csv")
+names(rac2012)
+
+wac2012 <- read_csv("LODES data/wac_2012.csv")
+names(wac2012)
+
+# check they seem to be in comparable formats
+head(aa$blkid)
+head(rac2012$h_geocode)
+head(wac2012$w_geocode)
+
+aa %<>%
+  left_join(rac2012 %>% select(h_geocode:nhincjobs12), by = c("blkid" = "h_geocode")) %>%
+  mutate_at(c("njobs12", "nhincjobs12"), ~ifelse(is.na(.), 0, .)) %>%
+  left_join(wac2012 %>% select(w_geocode:ret), by = c("blkid" = "w_geocode")) %>%
+  mutate_at(c("jobs", "man", "ret"), ~ifelse(is.na(.), 0, .))
+rm(rac2012, wac2012)
 
 # merge in vra 
 vrastates <- c("01", "02", "04", "13", "22", "28", "45", "48", "51")
@@ -1793,9 +1908,27 @@ table(aa$blkid %in% blocks2014$blkid)
 
 aa %<>%
   filter(blkid %in% blocks2014$blkid) %>%
-  left_join(blocks2014 %>% select(blkid, pop), by = "blkid")
+  left_join(blocks2014, by = "blkid")
 rm(blocks2014)
 length(unique(aa$plid))
+
+rac2014 <- read_csv("LODES data/rac_2014.csv")
+names(rac2014)
+
+wac2014 <- read_csv("LODES data/wac_2014.csv")
+names(wac2014)
+
+# check they seem to be in comparable formats
+head(aa$blkid)
+head(rac2014$h_geocode)
+head(wac2014$w_geocode)
+
+aa %<>%
+  left_join(rac2014 %>% select(h_geocode:nhincjobs14), by = c("blkid" = "h_geocode")) %>%
+  mutate_at(c("njobs14", "nhincjobs14"), ~ifelse(is.na(.), 0, .)) %>%
+  left_join(wac2014 %>% select(w_geocode:ret), by = c("blkid" = "w_geocode")) %>%
+  mutate_at(c("jobs", "man", "ret"), ~ifelse(is.na(.), 0, .))
+rm(rac2014, wac2014)
 
 # merge in vra 
 vrastates <- c("01", "02", "04", "13", "22", "28", "45", "48", "51")
@@ -1954,9 +2087,27 @@ table(aa$blkid %in% blocks2015$blkid)
 
 aa %<>%
   filter(blkid %in% blocks2015$blkid) %>%
-  left_join(blocks2015 %>% select(blkid, pop), by = "blkid")
+  left_join(blocks2015, by = "blkid")
 rm(blocks2015)
 length(unique(aa$plid))
+
+rac2015 <- read_csv("LODES data/rac_2015.csv")
+names(rac2015)
+
+wac2015 <- read_csv("LODES data/wac_2015.csv")
+names(wac2015)
+
+# check they seem to be in comparable formats
+head(aa$blkid)
+head(rac2015$h_geocode)
+head(wac2015$w_geocode)
+
+aa %<>%
+  left_join(rac2015 %>% select(h_geocode:nhincjobs15), by = c("blkid" = "h_geocode")) %>%
+  mutate_at(c("njobs15", "nhincjobs15"), ~ifelse(is.na(.), 0, .)) %>%
+  left_join(wac2015 %>% select(w_geocode:ret), by = c("blkid" = "w_geocode")) %>%
+  mutate_at(c("jobs", "man", "ret"), ~ifelse(is.na(.), 0, .))
+rm(rac2015, wac2015)
 
 # merge in vra 
 vrastates <- c("01", "02", "04", "13", "22", "28", "45", "48", "51")
@@ -2119,8 +2270,26 @@ table(aa$blkid %in% blocks2016$blkid)
 
 aa %<>%
   filter(blkid %in% blocks2016$blkid) %>%
-  left_join(blocks2016 %>% select(blkid, pop), by = "blkid")
+  left_join(blocks2016, by = "blkid")
 rm(blocks2016)
+
+rac2016 <- read_csv("LODES data/rac_2016.csv")
+names(rac2016)
+
+wac2016 <- read_csv("LODES data/wac_2016.csv")
+names(wac2016)
+
+# check they seem to be in comparable formats
+head(aa$blkid)
+head(rac2016$h_geocode)
+head(wac2016$w_geocode)
+
+aa %<>%
+  left_join(rac2016 %>% select(h_geocode:nhincjobs16), by = c("blkid" = "h_geocode")) %>%
+  mutate_at(c("njobs16", "nhincjobs16"), ~ifelse(is.na(.), 0, .)) %>%
+  left_join(wac2016 %>% select(w_geocode:ret), by = c("blkid" = "w_geocode")) %>%
+  mutate_at(c("jobs", "man", "ret"), ~ifelse(is.na(.), 0, .))
+rm(rac2016, wac2016)
 
 # merge in vra 
 vrastates <- c("01", "02", "04", "13", "22", "28", "45", "48", "51")
@@ -2283,9 +2452,27 @@ table(aa$blkid %in% blocks2017$blkid)
 
 aa %<>%
   filter(blkid %in% blocks2017$blkid) %>%
-  left_join(blocks2017 %>% select(blkid, pop), by = "blkid")
+  left_join(blocks2017, by = "blkid")
 rm(blocks2017)
 length(unique(aa$plid))
+
+rac2017 <- read_csv("LODES data/rac_2017.csv")
+names(rac2017)
+
+wac2017 <- read_csv("LODES data/wac_2017.csv")
+names(wac2017)
+
+# check they seem to be in comparable formats
+head(aa$blkid)
+head(rac2017$h_geocode)
+head(wac2017$w_geocode)
+
+aa %<>%
+  left_join(rac2017 %>% select(h_geocode:nhincjobs17), by = c("blkid" = "h_geocode")) %>%
+  mutate_at(c("njobs17", "nhincjobs17"), ~ifelse(is.na(.), 0, .)) %>%
+  left_join(wac2017 %>% select(w_geocode:ret), by = c("blkid" = "w_geocode")) %>%
+  mutate_at(c("jobs", "man", "ret"), ~ifelse(is.na(.), 0, .))
+rm(rac2017, wac2017)
 
 # merge in vra 
 vrastates <- c("01", "02", "04", "13", "22", "28", "45", "48", "51")
@@ -2448,9 +2635,27 @@ table(aa$blkid %in% blocks2018$blkid)
 
 aa %<>%
   filter(blkid %in% blocks2018$blkid) %>%
-  left_join(blocks2018 %>% select(blkid, pop), by = "blkid")
+  left_join(blocks2018, by = "blkid")
 rm(blocks2018)
 length(unique(aa$plid))
+
+rac2018 <- read_csv("LODES data/rac_2018.csv")
+names(rac2018)
+
+wac2018 <- read_csv("LODES data/wac_2018.csv")
+names(wac2018)
+
+# check they seem to be in comparable formats
+head(aa$blkid)
+head(rac2018$h_geocode)
+head(wac2018$w_geocode)
+
+aa %<>%
+  left_join(rac2018 %>% select(h_geocode:nhincjobs18), by = c("blkid" = "h_geocode")) %>%
+  mutate_at(c("njobs18", "nhincjobs18"), ~ifelse(is.na(.), 0, .)) %>%
+  left_join(wac2018 %>% select(w_geocode:ret), by = c("blkid" = "w_geocode")) %>%
+  mutate_at(c("jobs", "man", "ret"), ~ifelse(is.na(.), 0, .))
+rm(rac2018, wac2018)
 
 # merge in vra 
 vrastates <- c("01", "02", "04", "13", "22", "28", "45", "48", "51")
@@ -2612,9 +2817,27 @@ table(aa$blkid %in% blocks2019$blkid)
 
 aa %<>%
   filter(blkid %in% blocks2019$blkid) %>%
-  left_join(blocks2019 %>% select(blkid, pop), by = "blkid")
+  left_join(blocks2019, by = "blkid")
 rm(blocks2019)
 length(unique(aa$plid))
+
+rac2019 <- read_csv("LODES data/rac_2019.csv")
+names(rac2019)
+
+wac2019 <- read_csv("LODES data/wac_2019.csv")
+names(wac2019)
+
+# check they seem to be in comparable formats
+head(aa$blkid)
+head(rac2019$h_geocode)
+head(wac2019$w_geocode)
+
+aa %<>%
+  left_join(rac2019 %>% select(h_geocode:nhincjobs19), by = c("blkid" = "h_geocode")) %>%
+  mutate_at(c("njobs19", "nhincjobs19"), ~ifelse(is.na(.), 0, .)) %>%
+  left_join(wac2019 %>% select(w_geocode:ret), by = c("blkid" = "w_geocode")) %>%
+  mutate_at(c("jobs", "man", "ret"), ~ifelse(is.na(.), 0, .))
+rm(rac2019, wac2019)
 
 # merge in vra 
 vrastates <- c("01", "02", "04", "13", "22", "28", "45", "48", "51")

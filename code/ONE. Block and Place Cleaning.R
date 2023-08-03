@@ -23,10 +23,10 @@ library("zoo") # for na.approx function
 # 7/7 remove bottom-coding of NA values since discovered that was wrong in the process of  interpolate_ACS.R 
 # 6/1/23: do additional place-level data cleaning 
 
-#2020 dollars ###
-#1990, 2000, 05-09 for 2007 (2009), 08-12 for 2010 (2012), 11-15 for 2013 (2015), 15-19 for 2017 (2019)
-cpi <- c(2.13, 1.57, 1.22, 1.14, 1.1, 1.02) 
-names(cpi) <- c("1990", "2000", "2007", "2010", "2013", "2017")
+# 2020 dollars ----
+# 1990 (Jan 1989), 2000 (Jan 1999), 05-09 for 2007 (Jan 2009), 06-10 for 2010 (Jan 2010), 07-11 (Jan 2011) 08-12 for 2010 (Jan 2012), 09-13 for 2011 (Jan 2013), 10-14 for 2012 (Jan 2014), 11-15 for 2013 (Jan 2015), 12-16 for 2014 (Jan 2016), 13-17 for 2015 (Jan 2017), 14-18 for 2016 (Jan 2018), 15-19 for 2017 (Jan 2019), 16-20 for 2018 (Jan 2020), 17-21 for 2019 (Jan 2021)
+cpi <- c(2.13, 1.57, 1.22, 1.19, 1.17, 1.14, 1.12, 1.1, 1.1, 1.09, 1.06, 1.04, 1.02, 1, 0.99) 
+names(cpi) <- c("1990", "2000", "2007", "2008", "2009", "2010", "2011", "2012", "2013", "2014", "2015", "2016", "2017", "2018", "2019")
 
 # 2000 block-level data ####
 blocks2000 <- fread(file = "ipumsblocks_allstates/2000blocks/nhgis0032_ds147_2000_block.csv")
@@ -520,9 +520,47 @@ places2008 <- read_csv(file = "seplaces_allstates/2008places.csv")
 places2008 %<>%
   mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
          PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
-         plid = paste0(STATE, PLACE)) %>%
-  rename(pop08p = SE_A00001_001) %>%
-  select(Geo_NAME, plid, pop08p) 
+         plid = paste0(STATE, PLACE), 
+         pop08p = SE_A00002_001, 
+         popdensity08p = SE_A00002_002,
+         nhblack08p = SE_A04001_004, 
+         nhwhite08p = SE_A04001_003, 
+         h08p = SE_A04001_010, 
+         asian08p = SE_A04001_006 + SE_A04001_007, 
+         native08p = SE_A04001_005,
+         other08p = SE_A04001_008 + SE_A04001_009, 
+         nbmin08p = (pop08p - nhwhite08p - nhblack08p),
+         pctnhblack08p = (nhblack08p/pop08p) * 100,
+         pctnhwhite08p = (nhwhite08p/pop08p) * 100, 
+         pctasian08p = (asian08p/pop08p) * 100,
+         pctnative08p = (native08p/pop08p) * 100, 
+         pcth08p = (h08p/pop08p) * 100,
+         pctnbmin08p = (nbmin08p/pop08p)*100,
+         pctother08p = (other08p/pop08p) * 100, 
+         hu08p = SE_A10060_001,
+         owneroccupied08p = SE_A10060_002,
+         mhmval08p = SE_A10036_001*cpi[["2008"]],
+         hinc08p = SE_A14006_001 * cpi[["2008"]], 
+         pov08p = rowSums(across(c(SE_A13001I_002, SE_A13001B_002, SE_A13001H_002, SE_A13001D_002, SE_A13001E_002, SE_A13001C_002, SE_A13001F_002))),
+         ppov08p = (pov08p/pop08p)*100,
+         whitepov08p = SE_A13001I_002,
+         blackpov08p = SE_A13001B_002,
+         hpov08p = SE_A13001H_002,
+         asianpov08p = (SE_A13001D_002 + SE_A13001E_002),
+         nativepov08p = SE_A13001C_002, 
+         otherpov08p = (SE_A13001F_002 + SE_A13001G_002),
+         nbminpov08p = (pov08p - whitepov08p - blackpov08p),
+         pctwhitepov08p = ifelse(SE_A13001I_001 == 0, 0, (SE_A13001I_002/SE_A13001I_001)*100),
+         pctblackpov08p = ifelse(SE_A13001B_001 == 0, 0, (SE_A13001B_002/SE_A13001B_001)*100),
+         pcthpov08p = ifelse(SE_A13001H_001 == 0, 0, (SE_A13001H_002/SE_A13001H_001)*100),
+         pctasianpov08p = ifelse((SE_A13001D_001 + SE_A13001E_001) == 0, 0, ((SE_A13001D_002 + SE_A13001E_002)/(SE_A13001D_001 + SE_A13001E_001))*100),
+         pctnativepov08p = ifelse(SE_A13001C_001 == 0, 0, (SE_A13001C_002/SE_A13001C_001)*100), 
+         pctotherpov08p = ifelse((SE_A13001F_001 + SE_A13001G_001) == 0, 0, ((SE_A13001F_002 + SE_A13001G_002)/(SE_A13001F_001 + SE_A13001G_001))*100),
+         pctnbminpov08p = ifelse(rowSums(across(c(SE_A13001H_001, SE_A13001D_001, SE_A13001E_001, SE_A13001C_001, SE_A13001F_001, SE_A13001G_001))) == 0, 0, (nbminpov08p/rowSums(across(c(SE_A13001H_001, SE_A13001D_001, SE_A13001E_001, SE_A13001C_001, SE_A13001F_001, SE_A13001G_001))))*100)
+  ) %>%
+  select(Geo_NAME, plid, pop08p:pctnbminpov08p) 
+
+sapply(places2008, function(x) sum(is.na(x)))
 
 write_csv(places2008, "pl2008_cleaned.csv")
 rm(places2008)
@@ -533,9 +571,47 @@ places2009 <- read_csv(file = "seplaces_allstates/2009places.csv")
 places2009 %<>%
   mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
          PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
-         plid = paste0(STATE, PLACE)) %>%
-  rename(pop09p = SE_A00001_001) %>%
-  select(Geo_NAME, plid, pop09p) 
+         plid = paste0(STATE, PLACE), 
+         pop09p = SE_A00002_001, 
+         popdensity09p = SE_A00002_002,
+         nhblack09p = SE_A04001_004, 
+         nhwhite09p = SE_A04001_003, 
+         h09p = SE_A04001_010, 
+         asian09p = SE_A04001_006 + SE_A04001_007, 
+         native09p = SE_A04001_005,
+         other09p = SE_A04001_008 + SE_A04001_009, 
+         nbmin09p = (pop09p - nhwhite09p - nhblack09p),
+         pctnhblack09p = (nhblack09p/pop09p) * 100,
+         pctnhwhite09p = (nhwhite09p/pop09p) * 100, 
+         pctasian09p = (asian09p/pop09p) * 100,
+         pctnative09p = (native09p/pop09p) * 100, 
+         pcth09p = (h09p/pop09p) * 100,
+         pctnbmin09p = (nbmin09p/pop09p)*100,
+         pctother09p = (other09p/pop09p) * 100, 
+         hu09p = SE_A10060_001,
+         owneroccupied09p = SE_A10060_002,
+         mhmval09p = SE_A10036_001*cpi[["2009"]],
+         hinc09p = SE_A14006_001 * cpi[["2009"]], 
+         pov09p = rowSums(across(c(SE_A13001I_002, SE_A13001B_002, SE_A13001H_002, SE_A13001D_002, SE_A13001E_002, SE_A13001C_002, SE_A13001F_002))),
+         ppov09p = (pov09p/pop09p)*100,
+         whitepov09p = SE_A13001I_002,
+         blackpov09p = SE_A13001B_002,
+         hpov09p = SE_A13001H_002,
+         asianpov09p = (SE_A13001D_002 + SE_A13001E_002),
+         nativepov09p = SE_A13001C_002, 
+         otherpov09p = (SE_A13001F_002 + SE_A13001G_002),
+         nbminpov09p = (pov09p - whitepov09p - blackpov09p),
+         pctwhitepov09p = ifelse(SE_A13001I_001 == 0, 0, (SE_A13001I_002/SE_A13001I_001)*100),
+         pctblackpov09p = ifelse(SE_A13001B_001 == 0, 0, (SE_A13001B_002/SE_A13001B_001)*100),
+         pcthpov09p = ifelse(SE_A13001H_001 == 0, 0, (SE_A13001H_002/SE_A13001H_001)*100),
+         pctasianpov09p = ifelse((SE_A13001D_001 + SE_A13001E_001) == 0, 0, ((SE_A13001D_002 + SE_A13001E_002)/(SE_A13001D_001 + SE_A13001E_001))*100),
+         pctnativepov09p = ifelse(SE_A13001C_001 == 0, 0, (SE_A13001C_002/SE_A13001C_001)*100), 
+         pctotherpov09p = ifelse((SE_A13001F_001 + SE_A13001G_001) == 0, 0, ((SE_A13001F_002 + SE_A13001G_002)/(SE_A13001F_001 + SE_A13001G_001))*100),
+         pctnbminpov09p = ifelse(rowSums(across(c(SE_A13001H_001, SE_A13001D_001, SE_A13001E_001, SE_A13001C_001, SE_A13001F_001, SE_A13001G_001))) == 0, 0, (nbminpov09p/rowSums(across(c(SE_A13001H_001, SE_A13001D_001, SE_A13001E_001, SE_A13001C_001, SE_A13001F_001, SE_A13001G_001))))*100)
+  ) %>%
+  select(Geo_NAME, plid, pop09p:pctnbminpov09p) 
+
+sapply(places2009, function(x) sum(is.na(x)))
 
 write_csv(places2009, "pl2009_cleaned.csv")
 rm(places2009)
@@ -653,9 +729,47 @@ places2011 <- read_csv(file = "seplaces_allstates/2011places.csv")
 places2011 %<>%
   mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
          PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
-         plid = paste0(STATE, PLACE)) %>%
-  rename(pop11p = SE_A00001_001) %>%
-  select(Geo_NAME, plid, pop11p) 
+         plid = paste0(STATE, PLACE), 
+         pop11p = SE_A00002_001, 
+         popdensity11p = SE_A00002_002,
+         nhblack11p = SE_A04001_004, 
+         nhwhite11p = SE_A04001_003, 
+         h11p = SE_A04001_010, 
+         asian11p = SE_A04001_006 + SE_A04001_007, 
+         native11p = SE_A04001_005,
+         other11p = SE_A04001_008 + SE_A04001_009, 
+         nbmin11p = (pop11p - nhwhite11p - nhblack11p),
+         pctnhblack11p = (nhblack11p/pop11p) * 100,
+         pctnhwhite11p = (nhwhite11p/pop11p) * 100, 
+         pctasian11p = (asian11p/pop11p) * 100,
+         pctnative11p = (native11p/pop11p) * 100, 
+         pcth11p = (h11p/pop11p) * 100,
+         pctnbmin11p = (nbmin11p/pop11p)*100,
+         pctother11p = (other11p/pop11p) * 100, 
+         hu11p = SE_A10060_001,
+         owneroccupied11p = SE_A10060_002,
+         mhmval11p = SE_A10036_001*cpi[["2011"]],
+         hinc11p = SE_A14006_001 * cpi[["2011"]], 
+         pov11p = rowSums(across(c(SE_A13001I_002, SE_A13001B_002, SE_A13001H_002, SE_A13001D_002, SE_A13001E_002, SE_A13001C_002, SE_A13001F_002))),
+         ppov11p = (pov11p/pop11p)*100,
+         whitepov11p = SE_A13001I_002,
+         blackpov11p = SE_A13001B_002,
+         hpov11p = SE_A13001H_002,
+         asianpov11p = (SE_A13001D_002 + SE_A13001E_002),
+         nativepov11p = SE_A13001C_002, 
+         otherpov11p = (SE_A13001F_002 + SE_A13001G_002),
+         nbminpov11p = (pov11p - whitepov11p - blackpov11p),
+         pctwhitepov11p = ifelse(SE_A13001I_001 == 0, 0, (SE_A13001I_002/SE_A13001I_001)*100),
+         pctblackpov11p = ifelse(SE_A13001B_001 == 0, 0, (SE_A13001B_002/SE_A13001B_001)*100),
+         pcthpov11p = ifelse(SE_A13001H_001 == 0, 0, (SE_A13001H_002/SE_A13001H_001)*100),
+         pctasianpov11p = ifelse((SE_A13001D_001 + SE_A13001E_001) == 0, 0, ((SE_A13001D_002 + SE_A13001E_002)/(SE_A13001D_001 + SE_A13001E_001))*100),
+         pctnativepov11p = ifelse(SE_A13001C_001 == 0, 0, (SE_A13001C_002/SE_A13001C_001)*100), 
+         pctotherpov11p = ifelse((SE_A13001F_001 + SE_A13001G_001) == 0, 0, ((SE_A13001F_002 + SE_A13001G_002)/(SE_A13001F_001 + SE_A13001G_001))*100),
+         pctnbminpov11p = ifelse(rowSums(across(c(SE_A13001H_001, SE_A13001D_001, SE_A13001E_001, SE_A13001C_001, SE_A13001F_001, SE_A13001G_001))) == 0, 0, (nbminpov11p/rowSums(across(c(SE_A13001H_001, SE_A13001D_001, SE_A13001E_001, SE_A13001C_001, SE_A13001F_001, SE_A13001G_001))))*100)
+  ) %>%
+  select(Geo_NAME, plid, pop11p:pctnbminpov11p) 
+
+sapply(places2011, function(x) sum(is.na(x)))
 
 write_csv(places2011, "pl2011_cleaned.csv")
 rm(places2011)
@@ -666,9 +780,47 @@ places2012 <- read_csv(file = "seplaces_allstates/2012places.csv")
 places2012 %<>%
   mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
          PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
-         plid = paste0(STATE, PLACE)) %>%
-  rename(pop12p = SE_A00001_001) %>%
-  select(Geo_NAME, plid, pop12p) 
+         plid = paste0(STATE, PLACE), 
+         pop12p = SE_A00002_001, 
+         popdensity12p = SE_A00002_002,
+         nhblack12p = SE_A04001_004, 
+         nhwhite12p = SE_A04001_003, 
+         h12p = SE_A04001_010, 
+         asian12p = SE_A04001_006 + SE_A04001_007, 
+         native12p = SE_A04001_005,
+         other12p = SE_A04001_008 + SE_A04001_009, 
+         nbmin12p = (pop12p - nhwhite12p - nhblack12p),
+         pctnhblack12p = (nhblack12p/pop12p) * 100,
+         pctnhwhite12p = (nhwhite12p/pop12p) * 100, 
+         pctasian12p = (asian12p/pop12p) * 100,
+         pctnative12p = (native12p/pop12p) * 100, 
+         pcth12p = (h12p/pop12p) * 100,
+         pctnbmin12p = (nbmin12p/pop12p)*100,
+         pctother12p = (other12p/pop12p) * 100, 
+         hu12p = SE_A10060_001,
+         owneroccupied12p = SE_A10060_002,
+         mhmval12p = SE_A10036_001*cpi[["2012"]],
+         hinc12p = SE_A14006_001 * cpi[["2012"]], 
+         pov12p = rowSums(across(c(SE_A13001I_002, SE_A13001B_002, SE_A13001H_002, SE_A13001D_002, SE_A13001E_002, SE_A13001C_002, SE_A13001F_002))),
+         ppov12p = (pov12p/pop12p)*100,
+         whitepov12p = SE_A13001I_002,
+         blackpov12p = SE_A13001B_002,
+         hpov12p = SE_A13001H_002,
+         asianpov12p = (SE_A13001D_002 + SE_A13001E_002),
+         nativepov12p = SE_A13001C_002, 
+         otherpov12p = (SE_A13001F_002 + SE_A13001G_002),
+         nbminpov12p = (pov12p - whitepov12p - blackpov12p),
+         pctwhitepov12p = ifelse(SE_A13001I_001 == 0, 0, (SE_A13001I_002/SE_A13001I_001)*100),
+         pctblackpov12p = ifelse(SE_A13001B_001 == 0, 0, (SE_A13001B_002/SE_A13001B_001)*100),
+         pcthpov12p = ifelse(SE_A13001H_001 == 0, 0, (SE_A13001H_002/SE_A13001H_001)*100),
+         pctasianpov12p = ifelse((SE_A13001D_001 + SE_A13001E_001) == 0, 0, ((SE_A13001D_002 + SE_A13001E_002)/(SE_A13001D_001 + SE_A13001E_001))*100),
+         pctnativepov12p = ifelse(SE_A13001C_001 == 0, 0, (SE_A13001C_002/SE_A13001C_001)*100), 
+         pctotherpov12p = ifelse((SE_A13001F_001 + SE_A13001G_001) == 0, 0, ((SE_A13001F_002 + SE_A13001G_002)/(SE_A13001F_001 + SE_A13001G_001))*100),
+         pctnbminpov12p = ifelse(rowSums(across(c(SE_A13001H_001, SE_A13001D_001, SE_A13001E_001, SE_A13001C_001, SE_A13001F_001, SE_A13001G_001))) == 0, 0, (nbminpov12p/rowSums(across(c(SE_A13001H_001, SE_A13001D_001, SE_A13001E_001, SE_A13001C_001, SE_A13001F_001, SE_A13001G_001))))*100)
+  ) %>%
+  select(Geo_NAME, plid, pop12p:pctnbminpov12p) 
+
+sapply(places2012, function(x) sum(is.na(x)))
 
 write_csv(places2012, "pl2012_cleaned.csv")
 rm(places2012)
@@ -753,7 +905,6 @@ rm(acs13, vapacs13, inc13)
 # 
 # write_csv(pl0713, "pl0713_var.csv")
 rm(acs13, pl0713, vapacs13)
-
 
 # 2017 ####
 # 3333 LODES $ is 3454.78 in 2019 = 41454 --> 40K threshold
@@ -924,28 +1075,104 @@ names(places2014)[3:59] <- str_c(names(places2014)[3:59], "14p")
 write_csv(places2014, "places2014_cleaned.csv")
 rm(places, places2010, places2014, places2017)
 
-# 2015 plid/cdp ----
+# 2015 ----
 places2015 <- read_csv(file = "seplaces_allstates/2015places.csv")
 
 places2015 %<>%
   mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
          PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
-         plid = paste0(STATE, PLACE)) %>%
-  rename(pop15p = SE_A00001_001) %>%
-  select(Geo_NAME, plid) 
+         plid = paste0(STATE, PLACE), 
+         pop15p = SE_A00002_001, 
+         popdensity15p = SE_A00002_002,
+         nhblack15p = SE_A04001_004, 
+         nhwhite15p = SE_A04001_003, 
+         h15p = SE_A04001_010, 
+         asian15p = SE_A04001_006 + SE_A04001_007, 
+         native15p = SE_A04001_005,
+         other15p = SE_A04001_008 + SE_A04001_009, 
+         nbmin15p = (pop15p - nhwhite15p - nhblack15p),
+         pctnhblack15p = (nhblack15p/pop15p) * 100,
+         pctnhwhite15p = (nhwhite15p/pop15p) * 100, 
+         pctasian15p = (asian15p/pop15p) * 100,
+         pctnative15p = (native15p/pop15p) * 100, 
+         pcth15p = (h15p/pop15p) * 100,
+         pctnbmin15p = (nbmin15p/pop15p)*100,
+         pctother15p = (other15p/pop15p) * 100, 
+         hu15p = SE_A10060_001,
+         owneroccupied15p = SE_A10060_002,
+         mhmval15p = SE_A10036_001*cpi[["2015"]],
+         hinc15p = SE_A14006_001 * cpi[["2015"]], 
+         pov15p = rowSums(across(c(SE_A13001I_002, SE_A13001B_002, SE_A13001H_002, SE_A13001D_002, SE_A13001E_002, SE_A13001C_002, SE_A13001F_002))),
+         ppov15p = (pov15p/pop15p)*100,
+         whitepov15p = SE_A13001I_002,
+         blackpov15p = SE_A13001B_002,
+         hpov15p = SE_A13001H_002,
+         asianpov15p = (SE_A13001D_002 + SE_A13001E_002),
+         nativepov15p = SE_A13001C_002, 
+         otherpov15p = (SE_A13001F_002 + SE_A13001G_002),
+         nbminpov15p = (pov15p - whitepov15p - blackpov15p),
+         pctwhitepov15p = ifelse(SE_A13001I_001 == 0, 0, (SE_A13001I_002/SE_A13001I_001)*100),
+         pctblackpov15p = ifelse(SE_A13001B_001 == 0, 0, (SE_A13001B_002/SE_A13001B_001)*100),
+         pcthpov15p = ifelse(SE_A13001H_001 == 0, 0, (SE_A13001H_002/SE_A13001H_001)*100),
+         pctasianpov15p = ifelse((SE_A13001D_001 + SE_A13001E_001) == 0, 0, ((SE_A13001D_002 + SE_A13001E_002)/(SE_A13001D_001 + SE_A13001E_001))*100),
+         pctnativepov15p = ifelse(SE_A13001C_001 == 0, 0, (SE_A13001C_002/SE_A13001C_001)*100), 
+         pctotherpov15p = ifelse((SE_A13001F_001 + SE_A13001G_001) == 0, 0, ((SE_A13001F_002 + SE_A13001G_002)/(SE_A13001F_001 + SE_A13001G_001))*100),
+         pctnbminpov15p = ifelse(rowSums(across(c(SE_A13001H_001, SE_A13001D_001, SE_A13001E_001, SE_A13001C_001, SE_A13001F_001, SE_A13001G_001))) == 0, 0, (nbminpov15p/rowSums(across(c(SE_A13001H_001, SE_A13001D_001, SE_A13001E_001, SE_A13001C_001, SE_A13001F_001, SE_A13001G_001))))*100)
+  ) %>%
+  select(Geo_NAME, plid, pop15p:pctnbminpov15p) 
+
+sapply(places2015, function(x) sum(is.na(x)))
 
 write_csv(places2015, "pl2015_cleaned.csv")
 rm(places2015)
 
-# 2016 plid/cdp ----
+# 2016 ----
 places2016 <- read_csv(file = "seplaces_allstates/2016places.csv")
 
 places2016 %<>%
   mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
          PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
-         plid = paste0(STATE, PLACE)) %>%
-  rename(pop16p = SE_A00001_001) %>%
-  select(Geo_NAME, plid) 
+         plid = paste0(STATE, PLACE), 
+         pop16p = SE_A00002_001, 
+         popdensity16p = SE_A00002_002,
+         nhblack16p = SE_A04001_004, 
+         nhwhite16p = SE_A04001_003, 
+         h16p = SE_A04001_010, 
+         asian16p = SE_A04001_006 + SE_A04001_007, 
+         native16p = SE_A04001_005,
+         other16p = SE_A04001_008 + SE_A04001_009, 
+         nbmin16p = (pop16p - nhwhite16p - nhblack16p),
+         pctnhblack16p = (nhblack16p/pop16p) * 100,
+         pctnhwhite16p = (nhwhite16p/pop16p) * 100, 
+         pctasian16p = (asian16p/pop16p) * 100,
+         pctnative16p = (native16p/pop16p) * 100, 
+         pcth16p = (h16p/pop16p) * 100,
+         pctnbmin16p = (nbmin16p/pop16p)*100,
+         pctother16p = (other16p/pop16p) * 100, 
+         hu16p = SE_A10060_001,
+         owneroccupied16p = SE_A10060_002,
+         mhmval16p = SE_A10036_001*cpi[["2016"]],
+         hinc16p = SE_A14006_001 * cpi[["2016"]], 
+         pov16p = rowSums(across(c(SE_A13001I_002, SE_A13001B_002, SE_A13001H_002, SE_A13001D_002, SE_A13001E_002, SE_A13001C_002, SE_A13001F_002))),
+         ppov16p = (pov16p/pop16p)*100,
+         whitepov16p = SE_A13001I_002,
+         blackpov16p = SE_A13001B_002,
+         hpov16p = SE_A13001H_002,
+         asianpov16p = (SE_A13001D_002 + SE_A13001E_002),
+         nativepov16p = SE_A13001C_002, 
+         otherpov16p = (SE_A13001F_002 + SE_A13001G_002),
+         nbminpov16p = (pov16p - whitepov16p - blackpov16p),
+         pctwhitepov16p = ifelse(SE_A13001I_001 == 0, 0, (SE_A13001I_002/SE_A13001I_001)*100),
+         pctblackpov16p = ifelse(SE_A13001B_001 == 0, 0, (SE_A13001B_002/SE_A13001B_001)*100),
+         pcthpov16p = ifelse(SE_A13001H_001 == 0, 0, (SE_A13001H_002/SE_A13001H_001)*100),
+         pctasianpov16p = ifelse((SE_A13001D_001 + SE_A13001E_001) == 0, 0, ((SE_A13001D_002 + SE_A13001E_002)/(SE_A13001D_001 + SE_A13001E_001))*100),
+         pctnativepov16p = ifelse(SE_A13001C_001 == 0, 0, (SE_A13001C_002/SE_A13001C_001)*100), 
+         pctotherpov16p = ifelse((SE_A13001F_001 + SE_A13001G_001) == 0, 0, ((SE_A13001F_002 + SE_A13001G_002)/(SE_A13001F_001 + SE_A13001G_001))*100),
+         pctnbminpov16p = ifelse(rowSums(across(c(SE_A13001H_001, SE_A13001D_001, SE_A13001E_001, SE_A13001C_001, SE_A13001F_001, SE_A13001G_001))) == 0, 0, (nbminpov16p/rowSums(across(c(SE_A13001H_001, SE_A13001D_001, SE_A13001E_001, SE_A13001C_001, SE_A13001F_001, SE_A13001G_001))))*100)
+  ) %>%
+  select(Geo_NAME, plid, pop16p:pctnbminpov16p) 
+
+sapply(places2016, function(x) sum(is.na(x)))
 
 write_csv(places2016, "pl2016_cleaned.csv")
 rm(places2016)
@@ -956,9 +1183,47 @@ places2018 <- read_csv(file = "seplaces_allstates/2018places.csv")
 places2018 %<>%
   mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
          PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
-         plid = paste0(STATE, PLACE)) %>%
-  rename(pop18p = SE_A00001_001) %>%
-  select(Geo_NAME, plid, pop18p) 
+         plid = paste0(STATE, PLACE), 
+         pop18p = SE_A00002_001, 
+         popdensity18p = SE_A00002_002,
+         nhblack18p = SE_A04001_004, 
+         nhwhite18p = SE_A04001_003, 
+         h18p = SE_A04001_010, 
+         asian18p = SE_A04001_006 + SE_A04001_007, 
+         native18p = SE_A04001_005,
+         other18p = SE_A04001_008 + SE_A04001_009, 
+         nbmin18p = (pop18p - nhwhite18p - nhblack18p),
+         pctnhblack18p = (nhblack18p/pop18p) * 100,
+         pctnhwhite18p = (nhwhite18p/pop18p) * 100, 
+         pctasian18p = (asian18p/pop18p) * 100,
+         pctnative18p = (native18p/pop18p) * 100, 
+         pcth18p = (h18p/pop18p) * 100,
+         pctnbmin18p = (nbmin18p/pop18p)*100,
+         pctother18p = (other18p/pop18p) * 100, 
+         hu18p = SE_A10060_001,
+         owneroccupied18p = SE_A10060_002,
+         mhmval18p = SE_A10036_001*cpi[["2018"]],
+         hinc18p = SE_A14006_001 * cpi[["2018"]], 
+         pov18p = rowSums(across(c(SE_A13001I_002, SE_A13001B_002, SE_A13001H_002, SE_A13001D_002, SE_A13001E_002, SE_A13001C_002, SE_A13001F_002))),
+         ppov18p = (pov18p/pop18p)*100,
+         whitepov18p = SE_A13001I_002,
+         blackpov18p = SE_A13001B_002,
+         hpov18p = SE_A13001H_002,
+         asianpov18p = (SE_A13001D_002 + SE_A13001E_002),
+         nativepov18p = SE_A13001C_002, 
+         otherpov18p = (SE_A13001F_002 + SE_A13001G_002),
+         nbminpov18p = (pov18p - whitepov18p - blackpov18p),
+         pctwhitepov18p = ifelse(SE_A13001I_001 == 0, 0, (SE_A13001I_002/SE_A13001I_001)*100),
+         pctblackpov18p = ifelse(SE_A13001B_001 == 0, 0, (SE_A13001B_002/SE_A13001B_001)*100),
+         pcthpov18p = ifelse(SE_A13001H_001 == 0, 0, (SE_A13001H_002/SE_A13001H_001)*100),
+         pctasianpov18p = ifelse((SE_A13001D_001 + SE_A13001E_001) == 0, 0, ((SE_A13001D_002 + SE_A13001E_002)/(SE_A13001D_001 + SE_A13001E_001))*100),
+         pctnativepov18p = ifelse(SE_A13001C_001 == 0, 0, (SE_A13001C_002/SE_A13001C_001)*100), 
+         pctotherpov18p = ifelse((SE_A13001F_001 + SE_A13001G_001) == 0, 0, ((SE_A13001F_002 + SE_A13001G_002)/(SE_A13001F_001 + SE_A13001G_001))*100),
+         pctnbminpov18p = ifelse(rowSums(across(c(SE_A13001H_001, SE_A13001D_001, SE_A13001E_001, SE_A13001C_001, SE_A13001F_001, SE_A13001G_001))) == 0, 0, (nbminpov18p/rowSums(across(c(SE_A13001H_001, SE_A13001D_001, SE_A13001E_001, SE_A13001C_001, SE_A13001F_001, SE_A13001G_001))))*100)
+  ) %>%
+  select(Geo_NAME, plid, pop18p:pctnbminpov18p) 
+
+sapply(places2018, function(x) sum(is.na(x)))
 
 write_csv(places2018, "pl2018_cleaned.csv")
 rm(places2018)
@@ -969,9 +1234,47 @@ places2019 <- read_csv(file = "seplaces_allstates/2019places.csv")
 places2019 %<>%
   mutate(STATE = str_pad(Geo_STATE, 2, side = "left", pad = "0"),
          PLACE = str_pad(Geo_PLACE, 5, side = "left", pad = "0"), 
-         plid = paste0(STATE, PLACE)) %>%
-  rename(pop19p = SE_A00001_001) %>%
-  select(Geo_NAME, plid, pop19p) 
+         plid = paste0(STATE, PLACE), 
+         pop19p = SE_A00002_001, 
+         popdensity19p = SE_A00002_002,
+         nhblack19p = SE_A04001_004, 
+         nhwhite19p = SE_A04001_003, 
+         h19p = SE_A04001_010, 
+         asian19p = SE_A04001_006 + SE_A04001_007, 
+         native19p = SE_A04001_005,
+         other19p = SE_A04001_008 + SE_A04001_009, 
+         nbmin19p = (pop19p - nhwhite19p - nhblack19p),
+         pctnhblack19p = (nhblack19p/pop19p) * 100,
+         pctnhwhite19p = (nhwhite19p/pop19p) * 100, 
+         pctasian19p = (asian19p/pop19p) * 100,
+         pctnative19p = (native19p/pop19p) * 100, 
+         pcth19p = (h19p/pop19p) * 100,
+         pctnbmin19p = (nbmin19p/pop19p)*100,
+         pctother19p = (other19p/pop19p) * 100, 
+         hu19p = SE_A10060_001,
+         owneroccupied19p = SE_A10060_002,
+         mhmval19p = SE_A10036_001*cpi[["2019"]],
+         hinc19p = SE_A14006_001 * cpi[["2019"]], 
+         pov19p = rowSums(across(c(SE_A13001I_002, SE_A13001B_002, SE_A13001H_002, SE_A13001D_002, SE_A13001E_002, SE_A13001C_002, SE_A13001F_002))),
+         ppov19p = (pov19p/pop19p)*100,
+         whitepov19p = SE_A13001I_002,
+         blackpov19p = SE_A13001B_002,
+         hpov19p = SE_A13001H_002,
+         asianpov19p = (SE_A13001D_002 + SE_A13001E_002),
+         nativepov19p = SE_A13001C_002, 
+         otherpov19p = (SE_A13001F_002 + SE_A13001G_002),
+         nbminpov19p = (pov19p - whitepov19p - blackpov19p),
+         pctwhitepov19p = ifelse(SE_A13001I_001 == 0, 0, (SE_A13001I_002/SE_A13001I_001)*100),
+         pctblackpov19p = ifelse(SE_A13001B_001 == 0, 0, (SE_A13001B_002/SE_A13001B_001)*100),
+         pcthpov19p = ifelse(SE_A13001H_001 == 0, 0, (SE_A13001H_002/SE_A13001H_001)*100),
+         pctasianpov19p = ifelse((SE_A13001D_001 + SE_A13001E_001) == 0, 0, ((SE_A13001D_002 + SE_A13001E_002)/(SE_A13001D_001 + SE_A13001E_001))*100),
+         pctnativepov19p = ifelse(SE_A13001C_001 == 0, 0, (SE_A13001C_002/SE_A13001C_001)*100), 
+         pctotherpov19p = ifelse((SE_A13001F_001 + SE_A13001G_001) == 0, 0, ((SE_A13001F_002 + SE_A13001G_002)/(SE_A13001F_001 + SE_A13001G_001))*100),
+         pctnbminpov19p = ifelse(rowSums(across(c(SE_A13001H_001, SE_A13001D_001, SE_A13001E_001, SE_A13001C_001, SE_A13001F_001, SE_A13001G_001))) == 0, 0, (nbminpov19p/rowSums(across(c(SE_A13001H_001, SE_A13001D_001, SE_A13001E_001, SE_A13001C_001, SE_A13001F_001, SE_A13001G_001))))*100)
+  ) %>%
+  select(Geo_NAME, plid, pop19p:pctnbminpov19p) 
+
+sapply(places2019, function(x) sum(is.na(x)))
 
 write_csv(places2019, "pl2019_cleaned.csv")
 rm(places2019)
