@@ -22,7 +22,7 @@ library("sf")
 # 2. for annexed blocks, keep only eligible blocks 
 # we just need the blockids of blocks that are annexed
 state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", 
-                 "DE_10", "FL_12", "GA_13", "HI_15", "IA_19", "ID_16", "IL_17", "IN_18",
+                 "DE_10", "FL_12", "GA_13", "IA_19", "ID_16", "IL_17", "IN_18",
                  "KS_20", "KY_21", "LA_22", "MD_24",
                  "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
                  "NC_37", "ND_38", "NE_31", "NM_35", "NV_32", 
@@ -725,14 +725,12 @@ write_csv(aa, "analyticalfiles/annexedblocks1420dem.csv")
 rm(list = ls())
 
 # 2007-2008 ----
-state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", 
-                 "DE_10", "FL_12", "GA_13", "IA_19", "ID_16", "IL_17", "IN_18",
-                 "KS_20", "KY_21", "LA_22", "MD_24",
-                 "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
-                 "NC_37", "ND_38", "NE_31", "NM_35", "NV_32", 
-                 "OH_39", "OK_40", "OR_41", 
-                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VA_51",
-                 "WA_53", "WV_54", "WI_55", "WY_56"
+state_codes <- c("AL_01", "AS_02", "AZ_04", "AR_05", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "ID_16", "IL_17", "IN_18", "IA_19", 
+                 "KS_20", "KY_21", "LA_22", "MD_24", "MI_26", "MN_27", "MS_28", "MO_29", 
+                 "MT_30", "NE_31", "NV_32", "NM_35", "NC_37", "ND_38", "OH_39", 
+                 "OK_40", "OR_41", "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", 
+                 "VA_51", "WA_53", "WV_54", "WI_55", "WY_56"
 )
 
 # the 2007blk-2007pl_90pct.csv file exists already 
@@ -847,6 +845,25 @@ aa %<>%
 table(aa$annexed)
 rm(annexed)
 
+# calculate area of annexed area based on 2007 shapefile 
+aa_use <- split(aa, f = aa$STATEFP)
+
+for (i in 1:length(state_codes)) {
+  state_file <- st_read(paste0("SHP_blk_0010/2007/", state_codes[[i]], "_allblocks.shp")) 
+  state_file %<>%
+    mutate(area = st_area(.),
+           area = as.numeric(area)) %>%
+    select(BLKIDFP, area) %>% 
+    st_drop_geometry(.) %>%
+    as.data.frame(.) 
+    
+  aa_use[[i]] %<>%
+    left_join(state_file, by = c("blkid" = "BLKIDFP"))
+}
+
+aa <- rbindlist(aa_use, fill = T)
+rm(aa_use)
+
 blocks2007 <- read_csv("blocks2007_int.csv")
 table(aa$blkid %in% blocks2007$blkid)
 
@@ -892,11 +909,6 @@ table(aa$annexed, exclude = NULL)
 table(aa$vra, exclude = NULL)
 names(aa)
 
-aa %>%
-  filter(!plid %in% cdps08$plid) %>%
-  group_by(plid) %>%
-  tally()
-
 aa %<>%
   select(5:ncol(aa))
 
@@ -904,14 +916,12 @@ write_csv(aa, "analyticalfiles/annexedblocks0708dem.csv")
 rm(list = ls())
 
 # 2008-2009 ----
-state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", 
-                 "DE_10", "FL_12", "GA_13", "IA_19", "ID_16", "IL_17", "IN_18",
-                 "KS_20", "KY_21", "LA_22", "MD_24",
-                 "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
-                 "NC_37", "ND_38", "NE_31", "NM_35", "NV_32", 
-                 "OH_39", "OK_40", "OR_41", 
-                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VA_51",
-                 "WA_53", "WV_54", "WI_55", "WY_56"
+state_codes <- c("AL_01", "AS_02", "AZ_04", "AR_05", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "ID_16", "IL_17", "IN_18", "IA_19", 
+                 "KS_20", "KY_21", "LA_22", "MD_24", "MI_26", "MN_27", "MS_28", "MO_29", 
+                 "MT_30", "NE_31", "NV_32", "NM_35", "NC_37", "ND_38", "OH_39", 
+                 "OK_40", "OR_41", "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", 
+                 "VA_51", "WA_53", "WV_54", "WI_55", "WY_56"
 )
 
 # 2008-2008
@@ -1032,6 +1042,24 @@ aa %<>%
 table(aa$annexed)
 rm(annexed)
 
+aa_use <- split(aa, f = aa$STATEFP)
+
+for (i in 1:length(state_codes)) {
+  state_file <- st_read(paste0("SHP_blk_0010/2008/tl_2008_", substr(state_codes[[i]], 4, 5), "_tabblock.shp")) 
+  state_file %<>%
+    mutate(area = st_area(.),
+           area = as.numeric(area)) %>%
+    select(BLKIDFP, area) %>% 
+    st_drop_geometry(.) %>%
+    as.data.frame(.) 
+  
+  aa_use[[i]] %<>%
+    left_join(state_file, by = c("blkid" = "BLKIDFP"))
+}
+
+aa <- rbindlist(aa_use, fill = T)
+rm(aa_use)
+
 blocks2008 <- read_csv("blocks2008_int.csv")
 table(aa$blkid %in% blocks2008$blkid)
 
@@ -1082,15 +1110,13 @@ aa %<>%
 write_csv(aa, "analyticalfiles/annexedblocks0809dem.csv") 
 rm(list = ls())
 
-8# 2009-2010 ----
-state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", 
-                 "DE_10", "FL_12", "GA_13", "IA_19", "ID_16", "IL_17", "IN_18",
-                 "KS_20", "KY_21", "LA_22", "MD_24",
-                 "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
-                 "NC_37", "ND_38", "NE_31", "NM_35", "NV_32", 
-                 "OH_39", "OK_40", "OR_41", 
-                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VA_51",
-                 "WA_53", "WV_54", "WI_55", "WY_56"
+# 2009-2010 ----
+state_codes <- c("AL_01", "AS_02", "AZ_04", "AR_05", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "HI_15", "ID_16", "IL_17", "IN_18", "IA_19", 
+                 "KS_20", "KY_21", "LA_22", "MD_24", "MI_26", "MN_27", "MS_28", "MO_29", 
+                 "MT_30", "NE_31", "NV_32", "NM_35", "NC_37", "ND_38", "OH_39", 
+                 "OK_40", "OR_41", "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", 
+                 "VA_51", "WA_53", "WV_54", "WI_55", "WY_56"
 )
 
 # 2009-2009
@@ -1214,6 +1240,23 @@ aa %<>%
 table(aa$annexed)
 rm(annexed)
 
+aa_use <- split(aa, f = aa$STATEFP)
+for (i in 1:length(state_codes)) {
+  state_file <- st_read(paste0("SHP_blk_0010/2009/tl_2009_", substr(state_codes[[i]], 4, 5), "_tabblock.shp")) 
+  state_file %<>%
+    mutate(area = st_area(.),
+           area = as.numeric(area)) %>%
+    select(BLKIDFP, area) %>% 
+    st_drop_geometry(.) %>%
+    as.data.frame(.) 
+  
+  aa_use[[i]] %<>%
+    left_join(state_file, by = c("blkid" = "BLKIDFP"))
+}
+
+aa <- rbindlist(aa_use, fill = T)
+rm(aa_use)
+
 blocks2009 <- read_csv("blocks2009_int.csv")
 table(aa$blkid %in% blocks2009$blkid)
 
@@ -1264,14 +1307,12 @@ write_csv(aa, "analyticalfiles/annexedblocks0910dem.csv")
 rm(list = ls())
 
 # 2010-2011 ----
-state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", 
-                 "DE_10", "FL_12", "GA_13", "IA_19", "ID_16", "IL_17", "IN_18",
-                 "KS_20", "KY_21", "LA_22", "MD_24",
-                 "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
-                 "NC_37", "ND_38", "NE_31", "NM_35", "NV_32", 
-                 "OH_39", "OK_40", "OR_41", 
-                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VA_51",
-                 "WA_53", "WV_54", "WI_55", "WY_56"
+state_codes <- c("AL_01", "AS_02", "AZ_04", "AR_05", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "ID_16", "IL_17", "IN_18", "IA_19", 
+                 "KS_20", "KY_21", "LA_22", "MD_24", "MI_26", "MN_27", "MS_28", "MO_29", 
+                 "MT_30", "NE_31", "NV_32", "NM_35", "NC_37", "ND_38", "OH_39", 
+                 "OK_40", "OR_41", "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", 
+                 "VA_51", "WA_53", "WV_54", "WI_55", "WY_56"
 )
 
 # 2010-2010 -- for 2010, we already know all the blocks to plids because it's decennial 
@@ -1371,6 +1412,23 @@ table(aa$annexed)
 rm(annexed)
 length(unique(aa$plid))
 
+aa_use <- split(aa, f = aa$STATEFP10)
+for (i in 1:length(state_codes)) {
+  state_file <- st_read(paste0("SHP_blk_0010/2010/", state_codes[[i]], "/tl_2010_", substr(state_codes[[i]], 4, 5), "_tabblock10.shp")) 
+  state_file %<>%
+    mutate(area = st_area(.),
+           area = as.numeric(area)) %>%
+    select(GEOID10, area) %>% 
+    st_drop_geometry(.) %>%
+    as.data.frame(.) 
+  
+  aa_use[[i]] %<>%
+    left_join(state_file, by = c("blkid" = "GEOID10"))
+}
+
+aa <- rbindlist(aa_use, fill = T)
+rm(aa_use)
+
 blocks2010 <- read_csv("blocks2010_var.csv") %>%
   mutate(blkid = paste0(str_pad(as.character(STATEA), 2, side = "left", pad = "0"), str_pad(as.character(COUNTYA), 3, side = "left", pad = "0"),
                         str_pad(as.character(TRACTA), 6, side = "left", pad = "0"), str_pad(as.character(BLOCKA), 4, side = "left", pad = "0")),
@@ -1380,7 +1438,7 @@ table(aa$blkid %in% blocks2010$blkid)
 names(blocks2010) <- gsub("10b", "", names(blocks2010))
 
 aa %<>%
-  filter(blkid %in% blocks2010$blkid) %>%
+  #filter(blkid %in% blocks2010$blkid) %>%
   left_join(blocks2010 %>% select(-plid), by = "blkid") 
 rm(blocks2010)
 
@@ -1426,14 +1484,12 @@ write_csv(aa, "analyticalfiles/annexedblocks1011dem.csv")
 rm(list = ls())
 
 # 2011-2012 ----
-state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", 
-                 "DE_10", "FL_12", "GA_13", "IA_19", "ID_16", "IL_17", "IN_18",
-                 "KS_20", "KY_21", "LA_22", "MD_24",
-                 "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
-                 "NC_37", "ND_38", "NE_31", "NM_35", "NV_32", 
-                 "OH_39", "OK_40", "OR_41", 
-                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VA_51",
-                 "WA_53", "WV_54", "WI_55", "WY_56"
+state_codes <- c("AL_01", "AS_02", "AZ_04", "AR_05", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "ID_16", "IL_17", "IN_18", "IA_19", 
+                 "KS_20", "KY_21", "LA_22", "MD_24", "MI_26", "MN_27", "MS_28", "MO_29", 
+                 "MT_30", "NE_31", "NV_32", "NM_35", "NC_37", "ND_38", "OH_39", 
+                 "OK_40", "OR_41", "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", 
+                 "VA_51", "WA_53", "WV_54", "WI_55", "WY_56"
 )
 
 # 2011-2011
@@ -1559,6 +1615,23 @@ table(aa$annexed)
 rm(annexed)
 length(unique(aa$plid))
 
+aa_use <- split(aa, f = aa$STATEFP)
+for (i in 1:length(state_codes)) {
+  state_file <- st_read(paste0("SHP_blk_0010/2011/tl_2011_", substr(state_codes[[i]], 4, 5), "_tabblock.shp")) 
+  state_file %<>%
+    mutate(area = st_area(.),
+           area = as.numeric(area)) %>%
+    select(GEOID, area) %>% 
+    st_drop_geometry(.) %>%
+    as.data.frame(.) 
+  
+  aa_use[[i]] %<>%
+    left_join(state_file, by = c("blkid" = "GEOID"))
+}
+
+aa <- rbindlist(aa_use, fill = T)
+rm(aa_use)
+
 blocks2011 <- read_csv("blocks2011_int.csv")
 table(aa$blkid %in% blocks2011$blkid)
 
@@ -1609,14 +1682,12 @@ write_csv(aa, "analyticalfiles/annexedblocks1112dem.csv")
 rm(list = ls())
 
 # 2012-2013 ----
-state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", 
-                 "DE_10", "FL_12", "GA_13", "IA_19", "ID_16", "IL_17", "IN_18",
-                 "KS_20", "KY_21", "LA_22", "MD_24",
-                 "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
-                 "NC_37", "ND_38", "NE_31", "NM_35", "NV_32", 
-                 "OH_39", "OK_40", "OR_41", 
-                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VA_51",
-                 "WA_53", "WV_54", "WI_55", "WY_56"
+state_codes <- c("AL_01", "AS_02", "AZ_04", "AR_05", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "ID_16", "IL_17", "IN_18", "IA_19", 
+                 "KS_20", "KY_21", "LA_22", "MD_24", "MI_26", "MN_27", "MS_28", "MO_29", 
+                 "MT_30", "NE_31", "NV_32", "NM_35", "NC_37", "ND_38", "OH_39", 
+                 "OK_40", "OR_41", "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", 
+                 "VA_51", "WA_53", "WV_54", "WI_55", "WY_56"
 )
 
 # 2012-2012
@@ -1742,6 +1813,23 @@ table(aa$annexed)
 rm(annexed)
 length(unique(aa$plid))
 
+aa_use <- split(aa, f = aa$STATEFP)
+for (i in 1:length(state_codes)) {
+  state_file <- st_read(paste0("SHP_blk_0010/2012/tl_2012_", substr(state_codes[[i]], 4, 5), "_tabblock.shp")) 
+  state_file %<>%
+    mutate(area = st_area(.),
+           area = as.numeric(area)) %>%
+    select(GEOID, area) %>% 
+    st_drop_geometry(.) %>%
+    as.data.frame(.) 
+  
+  aa_use[[i]] %<>%
+    left_join(state_file, by = c("blkid" = "GEOID"))
+}
+
+aa <- rbindlist(aa_use, fill = T)
+rm(aa_use)
+
 blocks2012 <- read_csv("blocks2012_int.csv")
 table(aa$blkid %in% blocks2012$blkid)
 
@@ -1793,14 +1881,12 @@ rm(list = ls())
 
 # 2014-2015 ----
 # 2013-2014 is skipped because it is the treatment year 
-state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", 
-                 "DE_10", "FL_12", "GA_13", "IA_19", "ID_16", "IL_17", "IN_18",
-                 "KS_20", "KY_21", "LA_22", "MD_24",
-                 "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
-                 "NC_37", "ND_38", "NE_31", "NM_35", "NV_32", 
-                 "OH_39", "OK_40", "OR_41", 
-                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VA_51",
-                 "WA_53", "WV_54", "WI_55", "WY_56"
+state_codes <- c("AL_01", "AS_02", "AZ_04", "AR_05", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "ID_16", "IL_17", "IN_18", "IA_19", 
+                 "KS_20", "KY_21", "LA_22", "MD_24", "MI_26", "MN_27", "MS_28", "MO_29", 
+                 "MT_30", "NE_31", "NV_32", "NM_35", "NC_37", "ND_38", "OH_39", 
+                 "OK_40", "OR_41", "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", 
+                 "VA_51", "WA_53", "WV_54", "WI_55", "WY_56"
 )
 
 # 2014-2014 --> have this already from doing the 2014-2020 analysis 
@@ -1898,11 +1984,29 @@ aa %<>%
          plid_use = ifelse(annexed == 1, plid_annexed, plid)) %>%
   select(-plid_annexed, -plid) %>%
   rename(plid = plid_use) %>%
-  filter(!is.na(plid) & !(plid %in% cdps15$plid))
+  filter(!is.na(plid) & !(plid %in% cdps15$plid) & STATEFP10 %in% substr(state_codes, 4, 5))
 
 table(aa$annexed)
 rm(annexed)
 length(unique(aa$plid))
+
+aa_use <- split(aa, f = aa$STATEFP10)
+for (i in 1:length(state_codes)) {
+  state_file <- st_read(paste0("SHP_blk_0010/2014/", state_codes[[i]], "/tl_2014_", substr(state_codes[[i]], 4, 5), "_tabblock10.shp")) 
+  state_file %<>%
+    mutate(area = st_area(.),
+           area = as.numeric(area)) %>%
+    select(GEOID10, area) %>% 
+    st_drop_geometry(.) %>%
+    as.data.frame(.) 
+  
+  aa_use[[i]] %<>%
+    left_join(state_file, by = c("blkid" = "GEOID10"))
+}
+
+aa <- rbindlist(aa_use, fill = T)
+rm(aa_use)
+
 blocks2014 <- read_csv("blocks2014_int.csv")
 table(aa$blkid %in% blocks2014$blkid)
 
@@ -1953,14 +2057,12 @@ write_csv(aa, "analyticalfiles/annexedblocks1415dem.csv")
 rm(list = ls())
 
 # 2015-2016 ----
-state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", 
-                 "DE_10", "FL_12", "GA_13", "IA_19", "ID_16", "IL_17", "IN_18",
-                 "KS_20", "KY_21", "LA_22", "MD_24",
-                 "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
-                 "NC_37", "ND_38", "NE_31", "NM_35", "NV_32", 
-                 "OH_39", "OK_40", "OR_41", 
-                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VA_51",
-                 "WA_53", "WV_54", "WI_55", "WY_56"
+state_codes <- c("AL_01", "AS_02", "AZ_04", "AR_05", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "ID_16", "IL_17", "IN_18", "IA_19", 
+                 "KS_20", "KY_21", "LA_22", "MD_24", "MI_26", "MN_27", "MS_28", "MO_29", 
+                 "MT_30", "NE_31", "NV_32", "NM_35", "NC_37", "ND_38", "OH_39", 
+                 "OK_40", "OR_41", "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", 
+                 "VA_51", "WA_53", "WV_54", "WI_55", "WY_56"
 )
 
 # 2015-2015
@@ -2082,6 +2184,23 @@ table(aa$annexed)
 rm(annexed)
 length(unique(aa$plid))
 
+aa_use <- split(aa, f = aa$STATEFP10)
+for (i in 1:length(state_codes)) {
+  state_file <- st_read(paste0("SHP_blk_0010/2015/tl_2015_", substr(state_codes[[i]], 4, 5), "_tabblock10.shp")) 
+  state_file %<>%
+    mutate(area = st_area(.),
+           area = as.numeric(area)) %>%
+    select(GEOID10, area) %>% 
+    st_drop_geometry(.) %>%
+    as.data.frame(.) 
+  
+  aa_use[[i]] %<>%
+    left_join(state_file, by = c("blkid" = "GEOID10"))
+}
+
+aa <- rbindlist(aa_use, fill = T)
+rm(aa_use)
+
 blocks2015 <- read_csv("blocks2015_int.csv")
 table(aa$blkid %in% blocks2015$blkid)
 
@@ -2133,14 +2252,12 @@ write_csv(aa, "analyticalfiles/annexedblocks1516dem.csv")
 rm(list = ls())
 
 # 2016-2017 ----
-state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", 
-                 "DE_10", "FL_12", "GA_13", "IA_19", "ID_16", "IL_17", "IN_18",
-                 "KS_20", "KY_21", "LA_22", "MD_24",
-                 "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
-                 "NC_37", "ND_38", "NE_31", "NM_35", "NV_32", 
-                 "OH_39", "OK_40", "OR_41", 
-                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VA_51",
-                 "WA_53", "WV_54", "WI_55", "WY_56"
+state_codes <- c("AL_01", "AS_02", "AZ_04", "AR_05", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "ID_16", "IL_17", "IN_18", "IA_19", 
+                 "KS_20", "KY_21", "LA_22", "MD_24", "MI_26", "MN_27", "MS_28", "MO_29", 
+                 "MT_30", "NE_31", "NV_32", "NM_35", "NC_37", "ND_38", "OH_39", 
+                 "OK_40", "OR_41", "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", 
+                 "VA_51", "WA_53", "WV_54", "WI_55", "WY_56"
 )
 
 # 2016-2016
@@ -2265,6 +2382,23 @@ aa %<>%
 table(aa$annexed)
 rm(annexed)
 
+aa_use <- split(aa, f = aa$STATEFP10)
+for (i in 1:length(state_codes)) {
+  state_file <- st_read(paste0("SHP_blk_0010/2016/tl_2016_", substr(state_codes[[i]], 4, 5), "_tabblock10.shp")) 
+  state_file %<>%
+    mutate(area = st_area(.),
+           area = as.numeric(area)) %>%
+    select(GEOID10, area) %>% 
+    st_drop_geometry(.) %>%
+    as.data.frame(.) 
+  
+  aa_use[[i]] %<>%
+    left_join(state_file, by = c("blkid" = "GEOID10"))
+}
+
+aa <- rbindlist(aa_use, fill = T)
+rm(aa_use)
+
 blocks2016 <- read_csv("blocks2016_int.csv")
 table(aa$blkid %in% blocks2016$blkid)
 
@@ -2315,14 +2449,12 @@ write_csv(aa, "analyticalfiles/annexedblocks1617dem.csv")
 rm(list = ls())
 
 # 2017-2018 ----
-state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", 
-                 "DE_10", "FL_12", "GA_13", "IA_19", "ID_16", "IL_17", "IN_18",
-                 "KS_20", "KY_21", "LA_22", "MD_24",
-                 "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
-                 "NC_37", "ND_38", "NE_31", "NM_35", "NV_32", 
-                 "OH_39", "OK_40", "OR_41", 
-                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VA_51",
-                 "WA_53", "WV_54", "WI_55", "WY_56"
+state_codes <- c("AL_01", "AS_02", "AZ_04", "AR_05", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "ID_16", "IL_17", "IN_18", "IA_19", 
+                 "KS_20", "KY_21", "LA_22", "MD_24", "MI_26", "MN_27", "MS_28", "MO_29", 
+                 "MT_30", "NE_31", "NV_32", "NM_35", "NC_37", "ND_38", "OH_39", 
+                 "OK_40", "OR_41", "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", 
+                 "VA_51", "WA_53", "WV_54", "WI_55", "WY_56"
 )
 
 # 2017-2017
@@ -2447,6 +2579,23 @@ table(aa$annexed)
 rm(annexed)
 length(unique(aa$plid))
 
+aa_use <- split(aa, f = aa$STATEFP10)
+for (i in 1:length(state_codes)) {
+  state_file <- st_read(paste0("SHP_blk_0010/2017/tl_2017_", substr(state_codes[[i]], 4, 5), "_tabblock10/tl_2017_", substr(state_codes[[i]], 4, 5), "_tabblock10.shp")) 
+  state_file %<>%
+    mutate(area = st_area(.),
+           area = as.numeric(area)) %>%
+    select(GEOID10, area) %>% 
+    st_drop_geometry(.) %>%
+    as.data.frame(.) 
+  
+  aa_use[[i]] %<>%
+    left_join(state_file, by = c("blkid" = "GEOID10"))
+}
+
+aa <- rbindlist(aa_use, fill = T)
+rm(aa_use)
+
 blocks2017 <- read_csv("blocks2017_int.csv")
 table(aa$blkid %in% blocks2017$blkid)
 
@@ -2497,14 +2646,12 @@ write_csv(aa, "analyticalfiles/annexedblocks1718dem.csv")
 rm(list = ls())
 
 # 2018-2019 ----
-state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", 
-                 "DE_10", "FL_12", "GA_13", "HI_15", "IA_19", "ID_16", "IL_17", "IN_18",
-                 "KS_20", "KY_21", "LA_22", "MD_24",
-                 "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
-                 "NC_37", "ND_38", "NE_31", "NM_35", "NV_32", 
-                 "OH_39", "OK_40", "OR_41", 
-                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VA_51",
-                 "WA_53", "WV_54", "WI_55", "WY_56"
+state_codes <- c("AL_01", "AS_02", "AZ_04", "AR_05", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "ID_16", "IL_17", "IN_18", "IA_19", 
+                 "KS_20", "KY_21", "LA_22", "MD_24", "MI_26", "MN_27", "MS_28", "MO_29", 
+                 "MT_30", "NE_31", "NV_32", "NM_35", "NC_37", "ND_38", "OH_39", 
+                 "OK_40", "OR_41", "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", 
+                 "VA_51", "WA_53", "WV_54", "WI_55", "WY_56"
 )
 
 # 2018-2018
@@ -2630,6 +2777,23 @@ table(aa$annexed)
 rm(annexed)
 length(unique(aa$plid))
 
+aa_use <- split(aa, f = aa$STATEFP10)
+for (i in 1:length(state_codes)) {
+  state_file <- st_read(paste0("SHP_blk_0010/2018/tl_2018_", substr(state_codes[[i]], 4, 5), "_tabblock10.shp")) 
+  state_file %<>%
+    mutate(area = st_area(.),
+           area = as.numeric(area)) %>%
+    select(GEOID10, area) %>% 
+    st_drop_geometry(.) %>%
+    as.data.frame(.) 
+  
+  aa_use[[i]] %<>%
+    left_join(state_file, by = c("blkid" = "GEOID10"))
+}
+
+aa <- rbindlist(aa_use, fill = T)
+rm(aa_use)
+
 blocks2018 <- read_csv("blocks2018_int.csv")
 table(aa$blkid %in% blocks2018$blkid)
 
@@ -2680,14 +2844,12 @@ write_csv(aa, "analyticalfiles/annexedblocks1819dem.csv")
 rm(list = ls())
 
 # 2019-2020 ----
-state_codes <- c("AL_01", "AS_02", "AR_05", "AZ_04", "CA_06", "CO_08", 
-                 "DE_10", "FL_12", "GA_13", "IA_19", "ID_16", "IL_17", "IN_18",
-                 "KS_20", "KY_21", "LA_22", "MD_24",
-                 "MI_26", "MN_27", "MS_28", "MO_29", "MT_30", 
-                 "NC_37", "ND_38", "NE_31", "NM_35", "NV_32", 
-                 "OH_39", "OK_40", "OR_41", 
-                 "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", "VA_51",
-                 "WA_53", "WV_54", "WI_55", "WY_56"
+state_codes <- c("AL_01", "AS_02", "AZ_04", "AR_05", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "HI_15", "ID_16", "IL_17", "IN_18", "IA_19", 
+                 "KS_20", "KY_21", "LA_22", "MD_24", "MI_26", "MN_27", "MS_28", "MO_29", 
+                 "MT_30", "NE_31", "NV_32", "NM_35", "NC_37", "ND_38", "OH_39", 
+                 "OK_40", "OR_41", "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", 
+                 "VA_51", "WA_53", "WV_54", "WI_55", "WY_56"
 )
 
 # 2019-2019
@@ -2812,6 +2974,24 @@ aa %<>%
 table(aa$annexed)
 rm(annexed)
 length(unique(aa$plid))
+
+aa_use <- split(aa, f = aa$STATEFP10)
+for (i in 1:length(state_codes)) {
+  state_file <- st_read(paste0("SHP_blk_0010/2019/tl_2019_", substr(state_codes[[i]], 4, 5), "_tabblock10.shp")) 
+  state_file %<>%
+    mutate(area = st_area(.),
+           area = as.numeric(area)) %>%
+    select(GEOID10, area) %>% 
+    st_drop_geometry(.) %>%
+    as.data.frame(.) 
+  
+  aa_use[[i]] %<>%
+    left_join(state_file, by = c("blkid" = "GEOID10"))
+}
+
+aa <- rbindlist(aa_use, fill = T)
+rm(aa_use)
+
 blocks2019 <- read_csv("blocks2019_int.csv")
 table(aa$blkid %in% blocks2019$blkid)
 

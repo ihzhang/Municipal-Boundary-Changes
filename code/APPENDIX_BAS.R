@@ -35,18 +35,27 @@ bas0020 <- base::rbind(bas0010, bas_list)
 rm(bas_list, bas0010)
 
 pl_year <- bas0020 %>%
-  filter(between(date, "2000-01-01", "2019-12-31")) %>%
+  filter(dplyr::between(date, as.Date("2007-01-01"), as.Date("2019-12-31"))) %>%
   mutate(period = case_when(
-    between(date, "2000-01-01", "2006-12-31") ~ "2000 to 2007",
-    between(date, "2007-01-01", "2012-12-31") ~ "2007 to 2013",
-    between(date, "2014-01-01", "2019-12-31") ~ "2014 to 2020",
+    date >= "2007-01-01" & date <= "2007-12-31" ~ "2007 to 2008",
+    date >= "2008-01-01" & date <= "2008-12-31" ~ "2008 to 2009",
+    date >= "2009-01-01" & date <= "2009-12-31" ~ "2009 to 2010",
+    date >= "2010-01-01" & date <= "2010-12-31" ~ "2010 to 2011",
+    date >= "2011-01-01" & date <= "2011-12-31" ~ "2011 to 2012",
+    date >= "2012-01-01" & date <= "2012-12-31" ~ "2012 to 2013",
+    date >= "2014-01-01" & date <= "2014-12-31" ~ "2014 to 2015",
+    date >= "2015-01-01" & date <= "2015-12-31" ~ "2015 to 2016",
+    date >= "2016-01-01" & date <= "2016-12-31" ~ "2016 to 2017",
+    date >= "2017-01-01" & date <= "2017-12-31" ~ "2017 to 2018",
+    date >= "2018-01-01" & date <= "2018-12-31" ~ "2018 to 2019",
+    date >= "2019-01-01" & date <= "2019-12-31" ~ "2019 to 2020",
     TRUE ~ NA_character_
   )) %>%
   filter(!is.na(period))
 
 bas_stats <- pl_year %>%
   group_by(period) %>%
-  summarize(n = n(), 
+  dplyr::summarize(n = n(), 
          n_annex = sum(Action == "Annexation")) %>%
   mutate(annexed = (n_annex/n)*100)
 
@@ -55,7 +64,7 @@ write_csv(bas_stats, "analyticalfiles/final/bas_stats.csv")
 pl_year %>%
   filter(Action == "Annexation") %>%
   group_by(plid) %>%
-  summarize(n = n())
+  dplyr::summarize(n = n())
 #8,180 unique plids 
 
 length(unique(pl_year$plid))
@@ -64,7 +73,7 @@ write_csv(bas_stats, "analyticalfiles/final/bas_stats.csv")
 
 pl_year %<>%
   group_by(plid, period) %>%
-  summarize(n = n()) %>%
+  dplyr::summarize(n = n()) %>%
   ungroup()
 
 table(pl_year$period)
