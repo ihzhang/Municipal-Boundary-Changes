@@ -11,6 +11,7 @@ Most files are too large to store on Github.
 
 DATA REPOSITORY: LINK TK. 
 
+You can find all replication code in the folder "code".
 The analysis process needed for this project involved: 
 * CODE_1: Scraping code to bulk download DATA_1
 * CODE_2: Scraping code to bulk download DATA_2
@@ -28,3 +29,5 @@ The analysis process needed for this project involved:
 * CODE_14: Code for statistical analyses/robustness checks based on 1- and 2-year periods
 
 TK 
+
+You can find all results -- in the raw form and in the formatted form -- in the folder called "results".
