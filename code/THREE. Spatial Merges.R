@@ -167,9 +167,8 @@ aa %<>%
 
 annexed <- read_csv("aa_baseline_full_0007.csv") %>%
   filter(!duplicated(blkid)) 
-table(annexed$blkid %in% aa$blkid) #28925 false 
-755991+28925
-#784916
+table(annexed$blkid %in% aa$blkid) 
+
 aa %<>%
   full_join(annexed %>% select(blkid, plid_annexed), by = "blkid") %>%
   mutate(annexed = ifelse(is.na(plid_annexed), 0, 1),
@@ -179,6 +178,45 @@ aa %<>%
 
 table(aa$annexed)
 rm(annexed)
+
+# calculate area of annexed area based on 2007 shapefile 
+state_codes <- c("AL_01", "AS_02", "AZ_04", "AR_05", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "ID_16", "IL_17", "IN_18", "IA_19", 
+                 "KS_20", "KY_21", "LA_22", "MD_24", "MI_26", "MN_27", "MS_28", "MO_29", 
+                 "MT_30", "NE_31", "NV_32", "NM_35", "NC_37", "ND_38", "OH_39", 
+                 "OK_40", "OR_41", "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", 
+                 "VA_51", "WA_53", "WV_54", "WI_55", "WY_56"
+)
+state_codes <- substr(state_codes, 4, 5)
+
+aa %<>%
+  mutate(STATEFP = substr(blkid, 1, 2)) %>%
+  filter(STATEFP %in% state_codes)
+
+state_codes <- c("AL_01", "AS_02", "AZ_04", "AR_05", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "ID_16", "IL_17", "IN_18", "IA_19", 
+                 "KS_20", "KY_21", "LA_22", "MD_24", "MI_26", "MN_27", "MS_28", "MO_29", 
+                 "MT_30", "NE_31", "NV_32", "NM_35", "NC_37", "ND_38", "OH_39", 
+                 "OK_40", "OR_41", "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", 
+                 "VA_51", "WA_53", "WV_54", "WI_55", "WY_56"
+)
+aa_use <- split(aa, f = aa$STATEFP)
+
+for (i in 1:length(state_codes)) {
+  state_file <- st_read(paste0("SHP_blk_0010/2000/", state_codes[[i]], "/tl_2010_", substr(state_codes[[i]], 4, 5), "_tabblock00.shp")) 
+  state_file %<>%
+    mutate(area = st_area(.),
+           area = as.numeric(area)) %>%
+    select(BLKIDFP00, area) %>% 
+    st_drop_geometry(.) %>%
+    as.data.frame(.) 
+  
+  aa_use[[i]] %<>%
+    left_join(state_file, by = c("blkid" = "BLKIDFP00"))
+}
+
+aa <- rbindlist(aa_use, fill = T)
+rm(aa_use)
 
 blocks2000 <- read_csv("blocks2000_var.csv")
 
@@ -404,7 +442,6 @@ aa %<>%
 
 annexed <- read_csv("aa_baseline_full_0713.csv") #33954
 table(annexed$blkid %in% aa$blkid)
-16643 + 594978
 
 aa %<>%
   full_join(annexed %>% select(blkid, plid_annexed), by = "blkid") %>%
@@ -416,6 +453,46 @@ aa %<>%
 table(aa$annexed)
 rm(annexed)
 
+state_codes <- c("AL_01", "AS_02", "AZ_04", "AR_05", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "ID_16", "IL_17", "IN_18", "IA_19", 
+                 "KS_20", "KY_21", "LA_22", "MD_24", "MI_26", "MN_27", "MS_28", "MO_29", 
+                 "MT_30", "NE_31", "NV_32", "NM_35", "NC_37", "ND_38", "OH_39", 
+                 "OK_40", "OR_41", "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", 
+                 "VA_51", "WA_53", "WV_54", "WI_55", "WY_56"
+)
+state_codes <- substr(state_codes, 4, 5)
+
+aa %<>%
+  mutate(STATEFP = substr(blkid, 1, 2)) %>%
+  filter(STATEFP %in% state_codes)
+
+state_codes <- c("AL_01", "AS_02", "AZ_04", "AR_05", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "ID_16", "IL_17", "IN_18", "IA_19", 
+                 "KS_20", "KY_21", "LA_22", "MD_24", "MI_26", "MN_27", "MS_28", "MO_29", 
+                 "MT_30", "NE_31", "NV_32", "NM_35", "NC_37", "ND_38", "OH_39", 
+                 "OK_40", "OR_41", "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", 
+                 "VA_51", "WA_53", "WV_54", "WI_55", "WY_56"
+)
+
+# calculate area of annexed area based on 2007 shapefile 
+aa_use <- split(aa, f = aa$STATEFP)
+
+for (i in 1:length(state_codes)) {
+  state_file <- st_read(paste0("SHP_blk_0010/2007/", state_codes[[i]], "_allblocks.shp")) 
+  state_file %<>%
+    mutate(area = st_area(.),
+           area = as.numeric(area)) %>%
+    select(BLKIDFP, area) %>% 
+    st_drop_geometry(.) %>%
+    as.data.frame(.) 
+  
+  aa_use[[i]] %<>%
+    left_join(state_file, by = c("blkid" = "BLKIDFP"))
+}
+
+aa <- rbindlist(aa_use, fill = T)
+rm(aa_use)
+
 blocks2007 <- read_csv("blocks2007_int.csv") 
 
 aa %<>%
@@ -423,7 +500,7 @@ aa %<>%
   filter(!is.na(WEIGHT) & !is.na(PAREA)) %>%
   select(-blkid) %>%
   rename(blkid = GEOID10) %>%
-  select(plid, annexed, blkid)
+  select(plid, annexed, blkid, area)
 
 table(aa$blkid %in% blocks2007$blkid)
 
@@ -640,15 +717,14 @@ write_csv(blocks2020, "aa_baseline_full_1420.csv")
 rm(list = ls())
 
 # start with all blocks in 2014 and identify those that were annexed 
-aa <- read_csv("blocks2014_buffers.csv")
+aa <- read_csv("2014buffers.csv")
 
 aa %<>%
   rename(plid = bufferplace) %>%
   filter(!duplicated(blkid))
 
-annexed <- read_csv("aa_baseline_full_1420.csv") #53869
+annexed <- read_csv("aa_baseline_full_1420.csv") 
 table(annexed$blkid %in% aa$blkid)
-1963777 + 58381
 
 aa %<>%
   full_join(annexed %>% select(blkid, plid_annexed), by = "blkid") %>%
@@ -660,6 +736,34 @@ aa %<>%
 
 table(aa$annexed)
 rm(annexed)
+
+state_codes <- c("AL_01", "AS_02", "AZ_04", "AR_05", "CA_06", "CO_08", 
+                 "DE_10", "FL_12", "GA_13", "ID_16", "IL_17", "IN_18", "IA_19", 
+                 "KS_20", "KY_21", "LA_22", "MD_24", "MI_26", "MN_27", "MS_28", "MO_29", 
+                 "MT_30", "NE_31", "NV_32", "NM_35", "NC_37", "ND_38", "OH_39", 
+                 "OK_40", "OR_41", "SC_45", "SD_46", "TN_47", "TX_48", "UT_49", 
+                 "VA_51", "WA_53", "WV_54", "WI_55", "WY_56"
+)
+
+aa %<>%
+  filter(STATEFP10 %in% substr(state_codes, 4, 5))
+
+aa_use <- split(aa, f = aa$STATEFP10)
+for (i in 1:length(state_codes)) {
+  state_file <- st_read(paste0("SHP_blk_0010/2014/", state_codes[[i]], "/tl_2014_", substr(state_codes[[i]], 4, 5), "_tabblock10.shp")) 
+  state_file %<>%
+    mutate(area = st_area(.),
+           area = as.numeric(area)) %>%
+    select(GEOID10, area) %>% 
+    st_drop_geometry(.) %>%
+    as.data.frame(.) 
+  
+  aa_use[[i]] %<>%
+    left_join(state_file, by = c("blkid" = "GEOID10"))
+}
+
+aa <- rbindlist(aa_use, fill = T)
+rm(aa_use)
 
 blocks2014 <- read_csv("blocks2014_int.csv")
 table(aa$blkid %in% blocks2014$blkid)

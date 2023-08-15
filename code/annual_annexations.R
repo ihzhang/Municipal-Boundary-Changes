@@ -48,13 +48,6 @@ library("openxlsx")
 library("broom")
 library("sjPlot")
 
-# plids in the DBR panel ----
-panel0020_did <- read_csv("analyticalfiles/panel_prestandard.csv") %>%
-  filter(time %in% c("2007 to 2013", "2014 to 2020")) 
-
-plids <- unique(panel0020_did$plid)
-rm(panel0020_did)
-
 # 2007-2008 ----
 aa0708 <- read_csv("analyticalfiles/annexedblocks0708dem.csv") 
 names(aa0708)
@@ -69,46 +62,22 @@ place_all <- aa0708 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T), 
-                   native_total = sum(native, na.rm = T), 
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap),
-                   nhwhitevap_total = sum(nhwvap),
-                   hvap_total = sum(hispvap),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T),
                    pct_annexed = mean(annexed, na.rm = T),
                    njobs_total = sum(njobs07, na.rm = T),
                    nhincjobs_total = sum(nhincjobs07, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy)
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)
   ) %>%
   ungroup() %>%
-  mutate(pctnhblack_total = (nhblack_total/pop_total)*100,
-         pcth_total = (h_total/pop_total)*100,
-         pctnhwhite_total = (nhwhite_total/pop_total)*100,
-         pctasian_total = (asian_total/pop_total)*100,
-         pctnative_total = (native_total/pop_total)*100,
-         pctother_total = (other_total/pop_total)*100,
-         pctnbmin_total = (nbmin_total/pop_total)*100,
-         pctownerocc_total = (owneroccupied_total/hu_total)*100,
+  mutate(pctnhblack_total = ifelse(pop_total == 0, 0, (nhblack_total/pop_total)*100),
+         pctnhwhite_total = ifelse(pop_total == 0, 0, (nhwhite_total/pop_total)*100),
+         pctnbmin_total = ifelse(pop_total == 0, 0, (nbmin_total/pop_total)*100),
+         pctownerocc_total = ifelse(hu_total == 0, 0, (owneroccupied_total/hu_total)*100),
          pctincopp_total = ifelse(nwork_total == 0, 0, (incopp_total/nwork_total)*100),
-         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100),
-         pctnhblackvap_total = (nhblackvap_total/vap_total)*100,
-         pcthvap_total = (hvap_total/vap_total)*100,
-         pctnhwhitevap_total = (nhwhitevap_total/vap_total)*100,
-         pctasianvap_total = (asianvap_total/vap_total)*100,
-         pctnativevap_total = (nativevap_total/vap_total)*100,
-         pctothervap_total = (othervap_total/vap_total)*100,
-         pctnbminvap_total = (nbminvap_total/vap_total)*100)
+         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100))
 
 place_by_annex <- aa0708 %>%
   mutate(incopp = man + ret) %>%
@@ -118,51 +87,25 @@ place_by_annex <- aa0708 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T),
-                   native_total = sum(native, na.rm = T),
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
                    njobs_total = sum(njobs07, na.rm = T),
                    nhincjobs_total = sum(nhincjobs07, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap, na.rm = T),
-                   nhwhitevap_total = sum(nhwvap, na.rm = T),
-                   hvap_total = sum(hispvap, na.rm = T),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T)) %>%
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)) %>%
   ungroup() %>%
   pivot_wider(
     id_cols = plid,
     names_from = annexed,
-    values_from = c(pop_total:nbminvap_total)
+    values_from = c(pop_total:owneroccupied_total)
   ) %>%
-  mutate(pctnhblack_total_1 = (nhblack_total_1/pop_total_1)*100,
-         pctnhwhite_total_1 = (nhwhite_total_1/pop_total_1)*100,
-         pcth_total_1 = (h_total_1/pop_total_1)*100,
-         pctnhblackvap_total_1 = (nhblackvap_total_1/vap_total_1)*100,
-         pctnhwhitevap_total_1 = (nhwhitevap_total_1/vap_total_1)*100,
-         pcthvap_total_1 = (hvap_total_1/vap_total_1)*100,
-         pctasian_total_1 = (asian_total_1/pop_total_1)*100,
-         pctnative_total_1 = (native_total_1/pop_total_1)*100,
-         pctother_total_1 = (other_total_1/pop_total_1)*100,
-         pctnbmin_total_1 = (nbmin_total_1/pop_total_1)*100,
-         pctasianvap_total_1 = (asianvap_total_1/vap_total_1)*100,
-         pctnativevap_total_1 = (nativevap_total_1/vap_total_1)*100,
-         pctothervap_total_1 = (othervap_total_1/vap_total_1)*100,
-         pctnbminvap_total_1 = (nbminvap_total_1/vap_total_1)*100,
+  mutate(pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhblack_total_1/pop_total_1)*100),
+         pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhwhite_total_1/pop_total_1)*100),
+         pctnbmin_total_1 = ifelse(pop_total_1 == 0, 0, (nbmin_total_1/pop_total_1)*100),
          pctincopp_total_1 = ifelse(nwork_total_1 == 0, 0, (incopp_total_1/nwork_total_1)*100),
          pcthincjobs_total_1 = ifelse(njobs_total_1 == 0, 0, (nhincjobs_total_1/njobs_total_1)*100),
-         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) %>%
-  filter(pop_total_1 > 1, 
-         hu_total_1 > 1)
+         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) 
 
 sapply(place_all, function(x) sum(is.na(x)))  
 
@@ -185,8 +128,8 @@ pl_annex_var_0708 %<>%
   left_join(places_vra, by = "plid") 
 
 # place-level variables
-pl07 <- read_csv("pl2007_cleaned.csv")
-table(pl_annex_var_0708$plid %in% pl07$plid) #28 false
+pl07 <- read_csv("pl0017_interpolated.csv") %>% filter(Year == "2007")
+table(pl_annex_var_0708$plid %in% pl07$plid) 
 
 cdps08 <- read_csv("plids/pl2008.csv") %>% # want to know which places are CDPs--they do not annex
   select(Geo_NAME, plid) %>%
@@ -198,7 +141,7 @@ pl_annex_var_0708 %<>%
   left_join(pl07, by = "plid") %>%
   mutate(post = 0,
          time = "2007 to 2008",
-         pctowneroccupied07p = (owneroccupied07p/hu07p)*100) 
+         pctowneroccupied = (owneroccupied/hu)*100) 
 
 table(pl_annex_var_0708$annexing)
 
@@ -212,23 +155,17 @@ sapply(pl_annex_var_0708, function(x) sum(is.na(x)))
 pl_annex_var_0708 %<>%
   mutate(
     underbound_black = ifelse(
-      (annexing == 1 & pctnhblack_total_1 < pctnhblack07p), 1, 0), 
+      (annexing == 1 & pctnhblack_total_1 < pctnhblack), 1, 0), 
     underbound_nbmin = ifelse(
-      (annexing == 1 & pctnbmin_total_1 < pctnbmin07p), 1, 0)
+      (annexing == 1 & pctnbmin_total_1 < pctnbmin), 1, 0)
   )
 
 pl_annex_var_0708 %<>%
-  filter(pop07p > 0) 
-
-names(pl_annex_var_0708) <- gsub("07p", "_p0", names(pl_annex_var_0708))
-
-table(pl_annex_var_0708$plid %in% plids)
-pl_annex_var_0708 %<>%
-  filter(plid %in% plids)
+  filter(pop > 0) 
 
 pl_annex_var_0708 %<>%
-  mutate(more_white = ifelse(pctnhwhite_total > pctnhwhite_p0, 1, 0)) %>%
-  filter_at(vars(pop_p0, popdensity_p0, pctnhblack_total, pctnbmin_total, more_white, pctowneroccupied_p0, mhmval_p0, hinc_p0, ppov_p0, pctblackpov_p0, pctnbminpov_p0, pctownerocc_total, pcthincjobs_total, pctincopp_total), ~!is.na(.))
+  mutate(more_white = ifelse(pctnhwhite_total > pctnhwhite, 1, 0)) %>%
+  filter_at(vars(pop, popdensity, pctnhblack_total, pctnbmin_total, more_white, pctowneroccupied, mhmval, hinc, ppov, pctblackpov, pctnbminpov, pctownerocc_total, pcthincjobs_total, pctincopp_total), ~!is.na(.))
 
 p0708 <- unique(pl_annex_var_0708$plid)
 pl_annex_vra_0708 <- unique(pl_annex_var_0708$plid[pl_annex_var_0708$vra==1])
@@ -249,46 +186,22 @@ place_all <- aa0809 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T), 
-                   native_total = sum(native, na.rm = T), 
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap),
-                   nhwhitevap_total = sum(nhwvap),
-                   hvap_total = sum(hispvap),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T),
                    pct_annexed = mean(annexed, na.rm = T),
                    njobs_total = sum(njobs08, na.rm = T),
                    nhincjobs_total = sum(nhincjobs08, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy)
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)
   ) %>%
   ungroup() %>%
-  mutate(pctnhblack_total = (nhblack_total/pop_total)*100,
-         pcth_total = (h_total/pop_total)*100,
-         pctnhwhite_total = (nhwhite_total/pop_total)*100,
-         pctasian_total = (asian_total/pop_total)*100,
-         pctnative_total = (native_total/pop_total)*100,
-         pctother_total = (other_total/pop_total)*100,
-         pctnbmin_total = (nbmin_total/pop_total)*100,
-         pctownerocc_total = (owneroccupied_total/hu_total)*100,
+  mutate(pctnhblack_total = ifelse(pop_total == 0, 0, (nhblack_total/pop_total)*100),
+         pctnhwhite_total = ifelse(pop_total == 0, 0, (nhwhite_total/pop_total)*100),
+         pctnbmin_total = ifelse(pop_total == 0, 0, (nbmin_total/pop_total)*100),
+         pctownerocc_total = ifelse(hu_total == 0, 0, (owneroccupied_total/hu_total)*100),
          pctincopp_total = ifelse(nwork_total == 0, 0, (incopp_total/nwork_total)*100),
-         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100),
-         pctnhblackvap_total = (nhblackvap_total/vap_total)*100,
-         pcthvap_total = (hvap_total/vap_total)*100,
-         pctnhwhitevap_total = (nhwhitevap_total/vap_total)*100,
-         pctasianvap_total = (asianvap_total/vap_total)*100,
-         pctnativevap_total = (nativevap_total/vap_total)*100,
-         pctothervap_total = (othervap_total/vap_total)*100,
-         pctnbminvap_total = (nbminvap_total/vap_total)*100)
+         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100))
 
 place_by_annex <- aa0809 %>%
   mutate(incopp = man + ret) %>%
@@ -298,51 +211,25 @@ place_by_annex <- aa0809 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T),
-                   native_total = sum(native, na.rm = T),
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
                    njobs_total = sum(njobs08, na.rm = T),
                    nhincjobs_total = sum(nhincjobs08, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap, na.rm = T),
-                   nhwhitevap_total = sum(nhwvap, na.rm = T),
-                   hvap_total = sum(hispvap, na.rm = T),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T)) %>%
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)) %>%
   ungroup() %>%
   pivot_wider(
     id_cols = plid,
     names_from = annexed,
-    values_from = c(pop_total:nbminvap_total)
+    values_from = c(pop_total:owneroccupied_total)
   ) %>%
-  mutate(pctnhblack_total_1 = (nhblack_total_1/pop_total_1)*100,
-         pctnhwhite_total_1 = (nhwhite_total_1/pop_total_1)*100,
-         pcth_total_1 = (h_total_1/pop_total_1)*100,
-         pctnhblackvap_total_1 = (nhblackvap_total_1/vap_total_1)*100,
-         pctnhwhitevap_total_1 = (nhwhitevap_total_1/vap_total_1)*100,
-         pcthvap_total_1 = (hvap_total_1/vap_total_1)*100,
-         pctasian_total_1 = (asian_total_1/pop_total_1)*100,
-         pctnative_total_1 = (native_total_1/pop_total_1)*100,
-         pctother_total_1 = (other_total_1/pop_total_1)*100,
-         pctnbmin_total_1 = (nbmin_total_1/pop_total_1)*100,
-         pctasianvap_total_1 = (asianvap_total_1/vap_total_1)*100,
-         pctnativevap_total_1 = (nativevap_total_1/vap_total_1)*100,
-         pctothervap_total_1 = (othervap_total_1/vap_total_1)*100,
-         pctnbminvap_total_1 = (nbminvap_total_1/vap_total_1)*100,
+  mutate(pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhblack_total_1/pop_total_1)*100),
+         pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhwhite_total_1/pop_total_1)*100),
+         pctnbmin_total_1 = ifelse(pop_total_1 == 0, 0, (nbmin_total_1/pop_total_1)*100),
          pctincopp_total_1 = ifelse(nwork_total_1 == 0, 0, (incopp_total_1/nwork_total_1)*100),
          pcthincjobs_total_1 = ifelse(njobs_total_1 == 0, 0, (nhincjobs_total_1/njobs_total_1)*100),
-         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) %>%
-  filter(pop_total_1 > 1, 
-         hu_total_1 > 1)
+         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) 
 
 sapply(place_all, function(x) sum(is.na(x)))  
 
@@ -365,8 +252,8 @@ pl_annex_var_0809 %<>%
   left_join(places_vra, by = "plid") 
 
 # place-level variables
-pl08 <- read_csv("pl2008_cleaned.csv")
-table(pl_annex_var_0809$plid %in% pl08$plid) #217 false
+pl08 <- read_csv("pl0017_interpolated.csv") %>% filter(Year == "2008")
+table(pl_annex_var_0809$plid %in% pl08$plid) 
 
 cdps09 <- read_csv("plids/pl2009.csv") %>% # want to know which places are CDPs--they do not annex
   select(Geo_NAME, plid) %>%
@@ -378,7 +265,7 @@ pl_annex_var_0809 %<>%
   left_join(pl08, by = "plid") %>%
   mutate(post = 0,
          time = "2008 to 2009",
-         pctowneroccupied08p = (owneroccupied08p/hu08p)*100) 
+         pctowneroccupied = (owneroccupied/hu)*100) 
 
 table(pl_annex_var_0809$annexing)
 
@@ -392,19 +279,18 @@ sapply(pl_annex_var_0809, function(x) sum(is.na(x)))
 pl_annex_var_0809 %<>%
   mutate(
     underbound_black = ifelse(
-      (annexing == 1 & pctnhblack_total_1 < pctnhblack08p), 1, 0), 
+      (annexing == 1 & pctnhblack_total_1 < pctnhblack), 1, 0), 
     underbound_nbmin = ifelse(
-      (annexing == 1 & pctnbmin_total_1 < pctnbmin08p), 1, 0)
+      (annexing == 1 & pctnbmin_total_1 < pctnbmin), 1, 0)
   )
 
 pl_annex_var_0809 %<>%
-  filter(pop08p > 0) 
+  filter(pop > 0) 
 
-names(pl_annex_var_0809) <- gsub("08p", "_p0", names(pl_annex_var_0809))
-
-table(pl_annex_var_0809$plid %in% plids)
 pl_annex_var_0809 %<>%
-  filter(plid %in% plids)
+  mutate(more_white = ifelse(pctnhwhite_total > pctnhwhite, 1, 0)) %>%
+  filter_at(vars(pop, popdensity, pctnhblack_total, pctnbmin_total, more_white, pctowneroccupied, mhmval, hinc, ppov, pctblackpov, pctnbminpov, pctownerocc_total, pcthincjobs_total, pctincopp_total), ~!is.na(.))
+
 p0809 <- unique(pl_annex_var_0809$plid)
 pl_annex_vra_0809 <- unique(pl_annex_var_0809$plid[pl_annex_var_0809$vra==1])
 
@@ -424,46 +310,22 @@ place_all <- aa0910 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T), 
-                   native_total = sum(native, na.rm = T), 
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap),
-                   nhwhitevap_total = sum(nhwvap),
-                   hvap_total = sum(hispvap),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T),
                    pct_annexed = mean(annexed, na.rm = T),
                    njobs_total = sum(njobs09, na.rm = T),
                    nhincjobs_total = sum(nhincjobs09, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy)
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)
   ) %>%
   ungroup() %>%
-  mutate(pctnhblack_total = (nhblack_total/pop_total)*100,
-         pcth_total = (h_total/pop_total)*100,
-         pctnhwhite_total = (nhwhite_total/pop_total)*100,
-         pctasian_total = (asian_total/pop_total)*100,
-         pctnative_total = (native_total/pop_total)*100,
-         pctother_total = (other_total/pop_total)*100,
-         pctnbmin_total = (nbmin_total/pop_total)*100,
-         pctownerocc_total = (owneroccupied_total/hu_total)*100,
+  mutate(pctnhblack_total = ifelse(pop_total == 0, 0, (nhblack_total/pop_total)*100),
+         pctnhwhite_total = ifelse(pop_total == 0, 0, (nhwhite_total/pop_total)*100),
+         pctnbmin_total = ifelse(pop_total == 0, 0, (nbmin_total/pop_total)*100),
+         pctownerocc_total = ifelse(hu_total == 0, 0, (owneroccupied_total/hu_total)*100),
          pctincopp_total = ifelse(nwork_total == 0, 0, (incopp_total/nwork_total)*100),
-         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100),
-         pctnhblackvap_total = (nhblackvap_total/vap_total)*100,
-         pcthvap_total = (hvap_total/vap_total)*100,
-         pctnhwhitevap_total = (nhwhitevap_total/vap_total)*100,
-         pctasianvap_total = (asianvap_total/vap_total)*100,
-         pctnativevap_total = (nativevap_total/vap_total)*100,
-         pctothervap_total = (othervap_total/vap_total)*100,
-         pctnbminvap_total = (nbminvap_total/vap_total)*100)
+         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100))
 
 place_by_annex <- aa0910 %>%
   mutate(incopp = man + ret) %>%
@@ -473,51 +335,25 @@ place_by_annex <- aa0910 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T),
-                   native_total = sum(native, na.rm = T),
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
                    njobs_total = sum(njobs09, na.rm = T),
                    nhincjobs_total = sum(nhincjobs09, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap, na.rm = T),
-                   nhwhitevap_total = sum(nhwvap, na.rm = T),
-                   hvap_total = sum(hispvap, na.rm = T),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T)) %>%
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)) %>%
   ungroup() %>%
   pivot_wider(
     id_cols = plid,
     names_from = annexed,
-    values_from = c(pop_total:nbminvap_total)
+    values_from = c(pop_total:owneroccupied_total)
   ) %>%
-  mutate(pctnhblack_total_1 = (nhblack_total_1/pop_total_1)*100,
-         pctnhwhite_total_1 = (nhwhite_total_1/pop_total_1)*100,
-         pcth_total_1 = (h_total_1/pop_total_1)*100,
-         pctnhblackvap_total_1 = (nhblackvap_total_1/vap_total_1)*100,
-         pctnhwhitevap_total_1 = (nhwhitevap_total_1/vap_total_1)*100,
-         pcthvap_total_1 = (hvap_total_1/vap_total_1)*100,
-         pctasian_total_1 = (asian_total_1/pop_total_1)*100,
-         pctnative_total_1 = (native_total_1/pop_total_1)*100,
-         pctother_total_1 = (other_total_1/pop_total_1)*100,
-         pctnbmin_total_1 = (nbmin_total_1/pop_total_1)*100,
-         pctasianvap_total_1 = (asianvap_total_1/vap_total_1)*100,
-         pctnativevap_total_1 = (nativevap_total_1/vap_total_1)*100,
-         pctothervap_total_1 = (othervap_total_1/vap_total_1)*100,
-         pctnbminvap_total_1 = (nbminvap_total_1/vap_total_1)*100,
+  mutate(pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhblack_total_1/pop_total_1)*100),
+         pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhwhite_total_1/pop_total_1)*100),
+         pctnbmin_total_1 = ifelse(pop_total_1 == 0, 0, (nbmin_total_1/pop_total_1)*100),
          pctincopp_total_1 = ifelse(nwork_total_1 == 0, 0, (incopp_total_1/nwork_total_1)*100),
          pcthincjobs_total_1 = ifelse(njobs_total_1 == 0, 0, (nhincjobs_total_1/njobs_total_1)*100),
-         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) %>%
-  filter(pop_total_1 > 1, 
-         hu_total_1 > 1)
+         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) 
 
 sapply(place_all, function(x) sum(is.na(x)))  
 
@@ -540,8 +376,8 @@ pl_annex_var_0910 %<>%
   left_join(places_vra, by = "plid") 
 
 # place-level variables
-pl09 <- read_csv("pl2009_cleaned.csv")
-table(pl_annex_var_0910$plid %in% pl09$plid) #217 false
+pl09 <- read_csv("pl0017_interpolated.csv") %>% filter(Year == "2009")
+table(pl_annex_var_0910$plid %in% pl09$plid) 
 
 cdps10 <- read_csv("plids/pl2010.csv") %>% # want to know which places are CDPs--they do not annex
   select(Geo_NAME, plid) %>%
@@ -553,7 +389,7 @@ pl_annex_var_0910 %<>%
   left_join(pl09, by = "plid") %>%
   mutate(post = 0,
          time = "2009 to 2010",
-         pctowneroccupied09p = (owneroccupied09p/hu09p)*100) 
+         pctowneroccupied = (owneroccupied/hu)*100) 
 
 table(pl_annex_var_0910$annexing)
 
@@ -567,19 +403,18 @@ sapply(pl_annex_var_0910, function(x) sum(is.na(x)))
 pl_annex_var_0910 %<>%
   mutate(
     underbound_black = ifelse(
-      (annexing == 1 & pctnhblack_total_1 < pctnhblack09p), 1, 0), 
+      (annexing == 1 & pctnhblack_total_1 < pctnhblack), 1, 0), 
     underbound_nbmin = ifelse(
-      (annexing == 1 & pctnbmin_total_1 < pctnbmin09p), 1, 0)
+      (annexing == 1 & pctnbmin_total_1 < pctnbmin), 1, 0)
   )
 
 pl_annex_var_0910 %<>%
-  filter(pop09p > 0) 
+  filter(pop > 0) 
 
-names(pl_annex_var_0910) <- gsub("09p", "_p0", names(pl_annex_var_0910))
-
-table(pl_annex_var_0910$plid %in% plids)
 pl_annex_var_0910 %<>%
-  filter(plid %in% plids)
+  mutate(more_white = ifelse(pctnhwhite_total > pctnhwhite, 1, 0)) %>%
+  filter_at(vars(pop, popdensity, pctnhblack_total, pctnbmin_total, more_white, pctowneroccupied, mhmval, hinc, ppov, pctblackpov, pctnbminpov, pctownerocc_total, pcthincjobs_total, pctincopp_total), ~!is.na(.))
+
 p0910 <- unique(pl_annex_var_0910$plid)
 pl_annex_vra_0910 <- unique(pl_annex_var_0910$plid[pl_annex_var_0910$vra==1])
 
@@ -599,46 +434,22 @@ place_all <- aa1011 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T), 
-                   native_total = sum(native, na.rm = T), 
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap),
-                   nhwhitevap_total = sum(nhwvap),
-                   hvap_total = sum(hispvap),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T),
                    pct_annexed = mean(annexed, na.rm = T),
                    njobs_total = sum(njobs10, na.rm = T),
                    nhincjobs_total = sum(nhincjobs10, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy)
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)
   ) %>%
   ungroup() %>%
-  mutate(pctnhblack_total = (nhblack_total/pop_total)*100,
-         pcth_total = (h_total/pop_total)*100,
-         pctnhwhite_total = (nhwhite_total/pop_total)*100,
-         pctasian_total = (asian_total/pop_total)*100,
-         pctnative_total = (native_total/pop_total)*100,
-         pctother_total = (other_total/pop_total)*100,
-         pctnbmin_total = (nbmin_total/pop_total)*100,
-         pctownerocc_total = (owneroccupied_total/hu_total)*100,
+  mutate(pctnhblack_total = ifelse(pop_total == 0, 0, (nhblack_total/pop_total)*100),
+         pctnhwhite_total = ifelse(pop_total == 0, 0, (nhwhite_total/pop_total)*100),
+         pctnbmin_total = ifelse(pop_total == 0, 0, (nbmin_total/pop_total)*100),
+         pctownerocc_total = ifelse(hu_total == 0, 0, (owneroccupied_total/hu_total)*100),
          pctincopp_total = ifelse(nwork_total == 0, 0, (incopp_total/nwork_total)*100),
-         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100),
-         pctnhblackvap_total = (nhblackvap_total/vap_total)*100,
-         pcthvap_total = (hvap_total/vap_total)*100,
-         pctnhwhitevap_total = (nhwhitevap_total/vap_total)*100,
-         pctasianvap_total = (asianvap_total/vap_total)*100,
-         pctnativevap_total = (nativevap_total/vap_total)*100,
-         pctothervap_total = (othervap_total/vap_total)*100,
-         pctnbminvap_total = (nbminvap_total/vap_total)*100)
+         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100))
 
 place_by_annex <- aa1011 %>%
   mutate(incopp = man + ret) %>%
@@ -648,51 +459,25 @@ place_by_annex <- aa1011 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T),
-                   native_total = sum(native, na.rm = T),
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
                    njobs_total = sum(njobs10, na.rm = T),
                    nhincjobs_total = sum(nhincjobs10, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap, na.rm = T),
-                   nhwhitevap_total = sum(nhwvap, na.rm = T),
-                   hvap_total = sum(hispvap, na.rm = T),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T)) %>%
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)) %>%
   ungroup() %>%
   pivot_wider(
     id_cols = plid,
     names_from = annexed,
-    values_from = c(pop_total:nbminvap_total)
+    values_from = c(pop_total:owneroccupied_total)
   ) %>%
-  mutate(pctnhblack_total_1 = (nhblack_total_1/pop_total_1)*100,
-         pctnhwhite_total_1 = (nhwhite_total_1/pop_total_1)*100,
-         pcth_total_1 = (h_total_1/pop_total_1)*100,
-         pctnhblackvap_total_1 = (nhblackvap_total_1/vap_total_1)*100,
-         pctnhwhitevap_total_1 = (nhwhitevap_total_1/vap_total_1)*100,
-         pcthvap_total_1 = (hvap_total_1/vap_total_1)*100,
-         pctasian_total_1 = (asian_total_1/pop_total_1)*100,
-         pctnative_total_1 = (native_total_1/pop_total_1)*100,
-         pctother_total_1 = (other_total_1/pop_total_1)*100,
-         pctnbmin_total_1 = (nbmin_total_1/pop_total_1)*100,
-         pctasianvap_total_1 = (asianvap_total_1/vap_total_1)*100,
-         pctnativevap_total_1 = (nativevap_total_1/vap_total_1)*100,
-         pctothervap_total_1 = (othervap_total_1/vap_total_1)*100,
-         pctnbminvap_total_1 = (nbminvap_total_1/vap_total_1)*100,
+  mutate(pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhblack_total_1/pop_total_1)*100),
+         pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhwhite_total_1/pop_total_1)*100),
+         pctnbmin_total_1 = ifelse(pop_total_1 == 0, 0, (nbmin_total_1/pop_total_1)*100),
          pctincopp_total_1 = ifelse(nwork_total_1 == 0, 0, (incopp_total_1/nwork_total_1)*100),
          pcthincjobs_total_1 = ifelse(njobs_total_1 == 0, 0, (nhincjobs_total_1/njobs_total_1)*100),
-         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) %>%
-  filter(pop_total_1 > 1, 
-         hu_total_1 > 1)
+         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) 
 
 sapply(place_all, function(x) sum(is.na(x)))  
 
@@ -715,8 +500,8 @@ pl_annex_var_1011 %<>%
   left_join(places_vra, by = "plid") 
 
 # place-level variables
-pl10 <- read_csv("pl2010_cleaned.csv")
-table(pl_annex_var_1011$plid %in% pl10$plid) #217 false
+pl10 <- read_csv("pl0017_interpolated.csv") %>% filter(Year == "2010")
+table(pl_annex_var_1011$plid %in% pl10$plid) 
 
 cdps11 <- read_csv("plids/pl2011.csv") %>% # want to know which places are CDPs--they do not annex
   select(Geo_NAME, plid) %>%
@@ -728,7 +513,7 @@ pl_annex_var_1011 %<>%
   left_join(pl10, by = "plid") %>%
   mutate(post = 0,
          time = "2010 to 2011",
-         pctowneroccupied10p = (owneroccupied10p/hu10p)*100) 
+         pctowneroccupied = (owneroccupied/hu)*100) 
 
 table(pl_annex_var_1011$annexing)
 
@@ -742,19 +527,18 @@ sapply(pl_annex_var_1011, function(x) sum(is.na(x)))
 pl_annex_var_1011 %<>%
   mutate(
     underbound_black = ifelse(
-      (annexing == 1 & pctnhblack_total_1 < pctnhblack10p), 1, 0),
+      (annexing == 1 & pctnhblack_total_1 < pctnhblack), 1, 0), 
     underbound_nbmin = ifelse(
-      (annexing == 1 & pctnbmin_total_1 < pctnbmin10p), 1, 0)
+      (annexing == 1 & pctnbmin_total_1 < pctnbmin), 1, 0)
   )
 
 pl_annex_var_1011 %<>%
-  filter(pop10p > 0) 
+  filter(pop > 0) 
 
-names(pl_annex_var_1011) <- gsub("10p", "_p0", names(pl_annex_var_1011))
-
-table(pl_annex_var_1011$plid %in% plids)
 pl_annex_var_1011 %<>%
-  filter(plid %in% plids)
+  mutate(more_white = ifelse(pctnhwhite_total > pctnhwhite, 1, 0)) %>%
+  filter_at(vars(pop, popdensity, pctnhblack_total, pctnbmin_total, more_white, pctowneroccupied, mhmval, hinc, ppov, pctblackpov, pctnbminpov, pctownerocc_total, pcthincjobs_total, pctincopp_total), ~!is.na(.))
+
 p1011 <- unique(pl_annex_var_1011$plid)
 pl_annex_vra_1011 <- unique(pl_annex_var_1011$plid[pl_annex_var_1011$vra==1])
 
@@ -774,46 +558,22 @@ place_all <- aa1112 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T), 
-                   native_total = sum(native, na.rm = T), 
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap),
-                   nhwhitevap_total = sum(nhwvap),
-                   hvap_total = sum(hispvap),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T),
                    pct_annexed = mean(annexed, na.rm = T),
                    njobs_total = sum(njobs11, na.rm = T),
                    nhincjobs_total = sum(nhincjobs11, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy)
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)
   ) %>%
   ungroup() %>%
-  mutate(pctnhblack_total = (nhblack_total/pop_total)*100,
-         pcth_total = (h_total/pop_total)*100,
-         pctnhwhite_total = (nhwhite_total/pop_total)*100,
-         pctasian_total = (asian_total/pop_total)*100,
-         pctnative_total = (native_total/pop_total)*100,
-         pctother_total = (other_total/pop_total)*100,
-         pctnbmin_total = (nbmin_total/pop_total)*100,
-         pctownerocc_total = (owneroccupied_total/hu_total)*100,
+  mutate(pctnhblack_total = ifelse(pop_total == 0, 0, (nhblack_total/pop_total)*100),
+         pctnhwhite_total = ifelse(pop_total == 0, 0, (nhwhite_total/pop_total)*100),
+         pctnbmin_total = ifelse(pop_total == 0, 0, (nbmin_total/pop_total)*100),
+         pctownerocc_total = ifelse(hu_total == 0, 0, (owneroccupied_total/hu_total)*100),
          pctincopp_total = ifelse(nwork_total == 0, 0, (incopp_total/nwork_total)*100),
-         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100),
-         pctnhblackvap_total = (nhblackvap_total/vap_total)*100,
-         pcthvap_total = (hvap_total/vap_total)*100,
-         pctnhwhitevap_total = (nhwhitevap_total/vap_total)*100,
-         pctasianvap_total = (asianvap_total/vap_total)*100,
-         pctnativevap_total = (nativevap_total/vap_total)*100,
-         pctothervap_total = (othervap_total/vap_total)*100,
-         pctnbminvap_total = (nbminvap_total/vap_total)*100)
+         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100))
 
 place_by_annex <- aa1112 %>%
   mutate(incopp = man + ret) %>%
@@ -823,51 +583,25 @@ place_by_annex <- aa1112 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T),
-                   native_total = sum(native, na.rm = T),
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
                    njobs_total = sum(njobs11, na.rm = T),
                    nhincjobs_total = sum(nhincjobs11, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap, na.rm = T),
-                   nhwhitevap_total = sum(nhwvap, na.rm = T),
-                   hvap_total = sum(hispvap, na.rm = T),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T)) %>%
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)) %>%
   ungroup() %>%
   pivot_wider(
     id_cols = plid,
     names_from = annexed,
-    values_from = c(pop_total:nbminvap_total)
+    values_from = c(pop_total:owneroccupied_total)
   ) %>%
-  mutate(pctnhblack_total_1 = (nhblack_total_1/pop_total_1)*100,
-         pctnhwhite_total_1 = (nhwhite_total_1/pop_total_1)*100,
-         pcth_total_1 = (h_total_1/pop_total_1)*100,
-         pctnhblackvap_total_1 = (nhblackvap_total_1/vap_total_1)*100,
-         pctnhwhitevap_total_1 = (nhwhitevap_total_1/vap_total_1)*100,
-         pcthvap_total_1 = (hvap_total_1/vap_total_1)*100,
-         pctasian_total_1 = (asian_total_1/pop_total_1)*100,
-         pctnative_total_1 = (native_total_1/pop_total_1)*100,
-         pctother_total_1 = (other_total_1/pop_total_1)*100,
-         pctnbmin_total_1 = (nbmin_total_1/pop_total_1)*100,
-         pctasianvap_total_1 = (asianvap_total_1/vap_total_1)*100,
-         pctnativevap_total_1 = (nativevap_total_1/vap_total_1)*100,
-         pctothervap_total_1 = (othervap_total_1/vap_total_1)*100,
-         pctnbminvap_total_1 = (nbminvap_total_1/vap_total_1)*100,
+  mutate(pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhblack_total_1/pop_total_1)*100),
+         pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhwhite_total_1/pop_total_1)*100),
+         pctnbmin_total_1 = ifelse(pop_total_1 == 0, 0, (nbmin_total_1/pop_total_1)*100),
          pctincopp_total_1 = ifelse(nwork_total_1 == 0, 0, (incopp_total_1/nwork_total_1)*100),
          pcthincjobs_total_1 = ifelse(njobs_total_1 == 0, 0, (nhincjobs_total_1/njobs_total_1)*100),
-         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) %>%
-  filter(pop_total_1 > 1, 
-         hu_total_1 > 1)
+         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) 
 
 sapply(place_all, function(x) sum(is.na(x)))  
 
@@ -890,8 +624,8 @@ pl_annex_var_1112 %<>%
   left_join(places_vra, by = "plid") 
 
 # place-level variables
-pl11 <- read_csv("pl2011_cleaned.csv")
-table(pl_annex_var_1112$plid %in% pl11$plid) #217 false
+pl11 <- read_csv("pl0017_interpolated.csv") %>% filter(Year == "2011")
+table(pl_annex_var_1112$plid %in% pl11$plid) 
 
 cdps12 <- read_csv("plids/pl2012.csv") %>% # want to know which places are CDPs--they do not annex
   select(Geo_NAME, plid) %>%
@@ -903,7 +637,7 @@ pl_annex_var_1112 %<>%
   left_join(pl11, by = "plid") %>%
   mutate(post = 0,
          time = "2011 to 2012",
-         pctowneroccupied11p = (owneroccupied11p/hu11p)*100) 
+         pctowneroccupied = (owneroccupied/hu)*100) 
 
 table(pl_annex_var_1112$annexing)
 
@@ -917,19 +651,18 @@ sapply(pl_annex_var_1112, function(x) sum(is.na(x)))
 pl_annex_var_1112 %<>%
   mutate(
     underbound_black = ifelse(
-      (annexing == 1 & pctnhblack_total_1 < pctnhblack11p), 1, 0), 
+      (annexing == 1 & pctnhblack_total_1 < pctnhblack), 1, 0), 
     underbound_nbmin = ifelse(
-      (annexing == 1 & pctnbmin_total_1 < pctnbmin11p), 1, 0)
+      (annexing == 1 & pctnbmin_total_1 < pctnbmin), 1, 0)
   )
 
 pl_annex_var_1112 %<>%
-  filter(pop11p > 0) 
+  filter(pop > 0) 
 
-names(pl_annex_var_1112) <- gsub("11p", "_p0", names(pl_annex_var_1112))
-
-table(pl_annex_var_1112$plid %in% plids)
 pl_annex_var_1112 %<>%
-  filter(plid %in% plids)
+  mutate(more_white = ifelse(pctnhwhite_total > pctnhwhite, 1, 0)) %>%
+  filter_at(vars(pop, popdensity, pctnhblack_total, pctnbmin_total, more_white, pctowneroccupied, mhmval, hinc, ppov, pctblackpov, pctnbminpov, pctownerocc_total, pcthincjobs_total, pctincopp_total), ~!is.na(.))
+
 p1112 <- unique(pl_annex_var_1112$plid)
 pl_annex_vra_1112 <- unique(pl_annex_var_1112$plid[pl_annex_var_1112$vra==1])
 
@@ -949,46 +682,22 @@ place_all <- aa1213 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T), 
-                   native_total = sum(native, na.rm = T), 
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap),
-                   nhwhitevap_total = sum(nhwvap),
-                   hvap_total = sum(hispvap),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T),
                    pct_annexed = mean(annexed, na.rm = T),
                    njobs_total = sum(njobs12, na.rm = T),
                    nhincjobs_total = sum(nhincjobs12, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy)
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)
   ) %>%
   ungroup() %>%
-  mutate(pctnhblack_total = (nhblack_total/pop_total)*100,
-         pcth_total = (h_total/pop_total)*100,
-         pctnhwhite_total = (nhwhite_total/pop_total)*100,
-         pctasian_total = (asian_total/pop_total)*100,
-         pctnative_total = (native_total/pop_total)*100,
-         pctother_total = (other_total/pop_total)*100,
-         pctnbmin_total = (nbmin_total/pop_total)*100,
-         pctownerocc_total = (owneroccupied_total/hu_total)*100,
+  mutate(pctnhblack_total = ifelse(pop_total == 0, 0, (nhblack_total/pop_total)*100),
+         pctnhwhite_total = ifelse(pop_total == 0, 0, (nhwhite_total/pop_total)*100),
+         pctnbmin_total = ifelse(pop_total == 0, 0, (nbmin_total/pop_total)*100),
+         pctownerocc_total = ifelse(hu_total == 0, 0, (owneroccupied_total/hu_total)*100),
          pctincopp_total = ifelse(nwork_total == 0, 0, (incopp_total/nwork_total)*100),
-         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100),
-         pctnhblackvap_total = (nhblackvap_total/vap_total)*100,
-         pcthvap_total = (hvap_total/vap_total)*100,
-         pctnhwhitevap_total = (nhwhitevap_total/vap_total)*100,
-         pctasianvap_total = (asianvap_total/vap_total)*100,
-         pctnativevap_total = (nativevap_total/vap_total)*100,
-         pctothervap_total = (othervap_total/vap_total)*100,
-         pctnbminvap_total = (nbminvap_total/vap_total)*100)
+         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100))
 
 place_by_annex <- aa1213 %>%
   mutate(incopp = man + ret) %>%
@@ -998,51 +707,25 @@ place_by_annex <- aa1213 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T),
-                   native_total = sum(native, na.rm = T),
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
                    njobs_total = sum(njobs12, na.rm = T),
                    nhincjobs_total = sum(nhincjobs12, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap, na.rm = T),
-                   nhwhitevap_total = sum(nhwvap, na.rm = T),
-                   hvap_total = sum(hispvap, na.rm = T),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T)) %>%
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)) %>%
   ungroup() %>%
   pivot_wider(
     id_cols = plid,
     names_from = annexed,
-    values_from = c(pop_total:nbminvap_total)
+    values_from = c(pop_total:owneroccupied_total)
   ) %>%
-  mutate(pctnhblack_total_1 = (nhblack_total_1/pop_total_1)*100,
-         pctnhwhite_total_1 = (nhwhite_total_1/pop_total_1)*100,
-         pcth_total_1 = (h_total_1/pop_total_1)*100,
-         pctnhblackvap_total_1 = (nhblackvap_total_1/vap_total_1)*100,
-         pctnhwhitevap_total_1 = (nhwhitevap_total_1/vap_total_1)*100,
-         pcthvap_total_1 = (hvap_total_1/vap_total_1)*100,
-         pctasian_total_1 = (asian_total_1/pop_total_1)*100,
-         pctnative_total_1 = (native_total_1/pop_total_1)*100,
-         pctother_total_1 = (other_total_1/pop_total_1)*100,
-         pctnbmin_total_1 = (nbmin_total_1/pop_total_1)*100,
-         pctasianvap_total_1 = (asianvap_total_1/vap_total_1)*100,
-         pctnativevap_total_1 = (nativevap_total_1/vap_total_1)*100,
-         pctothervap_total_1 = (othervap_total_1/vap_total_1)*100,
-         pctnbminvap_total_1 = (nbminvap_total_1/vap_total_1)*100,
+  mutate(pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhblack_total_1/pop_total_1)*100),
+         pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhwhite_total_1/pop_total_1)*100),
+         pctnbmin_total_1 = ifelse(pop_total_1 == 0, 0, (nbmin_total_1/pop_total_1)*100),
          pctincopp_total_1 = ifelse(nwork_total_1 == 0, 0, (incopp_total_1/nwork_total_1)*100),
          pcthincjobs_total_1 = ifelse(njobs_total_1 == 0, 0, (nhincjobs_total_1/njobs_total_1)*100),
-         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) %>%
-  filter(pop_total_1 > 1, 
-         hu_total_1 > 1)
+         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) 
 
 sapply(place_all, function(x) sum(is.na(x)))  
 
@@ -1065,8 +748,8 @@ pl_annex_var_1213 %<>%
   left_join(places_vra, by = "plid") 
 
 # place-level variables
-pl12 <- read_csv("pl2012_cleaned.csv")
-table(pl_annex_var_1213$plid %in% pl12$plid) #217 false
+pl12 <- read_csv("pl0017_interpolated.csv") %>% filter(Year == "2012")
+table(pl_annex_var_1213$plid %in% pl12$plid) 
 
 cdps13 <- read_csv("plids/pl2013.csv") %>% # want to know which places are CDPs--they do not annex
   select(Geo_NAME, plid) %>%
@@ -1078,7 +761,7 @@ pl_annex_var_1213 %<>%
   left_join(pl12, by = "plid") %>%
   mutate(post = 0,
          time = "2012 to 2013",
-         pctowneroccupied12p = (owneroccupied12p/hu12p)*100) 
+         pctowneroccupied = (owneroccupied/hu)*100) 
 
 table(pl_annex_var_1213$annexing)
 
@@ -1092,19 +775,18 @@ sapply(pl_annex_var_1213, function(x) sum(is.na(x)))
 pl_annex_var_1213 %<>%
   mutate(
     underbound_black = ifelse(
-      (annexing == 1 & pctnhblack_total_1 < pctnhblack12p), 1, 0), 
+      (annexing == 1 & pctnhblack_total_1 < pctnhblack), 1, 0), 
     underbound_nbmin = ifelse(
-      (annexing == 1 & pctnbmin_total_1 < pctnbmin12p), 1, 0)
+      (annexing == 1 & pctnbmin_total_1 < pctnbmin), 1, 0)
   )
 
 pl_annex_var_1213 %<>%
-  filter(pop12p > 0) 
+  filter(pop > 0) 
 
-names(pl_annex_var_1213) <- gsub("12p", "_p0", names(pl_annex_var_1213))
-
-table(pl_annex_var_1213$plid %in% plids)
 pl_annex_var_1213 %<>%
-  filter(plid %in% plids)
+  mutate(more_white = ifelse(pctnhwhite_total > pctnhwhite, 1, 0)) %>%
+  filter_at(vars(pop, popdensity, pctnhblack_total, pctnbmin_total, more_white, pctowneroccupied, mhmval, hinc, ppov, pctblackpov, pctnbminpov, pctownerocc_total, pcthincjobs_total, pctincopp_total), ~!is.na(.))
+
 p1213 <- unique(pl_annex_var_1213$plid)
 pl_annex_vra_1213 <- unique(pl_annex_var_1213$plid[pl_annex_var_1213$vra==1])
 
@@ -1124,46 +806,22 @@ place_all <- aa1415 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T), 
-                   native_total = sum(native, na.rm = T), 
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap),
-                   nhwhitevap_total = sum(nhwvap),
-                   hvap_total = sum(hispvap),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T),
                    pct_annexed = mean(annexed, na.rm = T),
                    njobs_total = sum(njobs14, na.rm = T),
                    nhincjobs_total = sum(nhincjobs14, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy)
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)
   ) %>%
   ungroup() %>%
-  mutate(pctnhblack_total = (nhblack_total/pop_total)*100,
-         pcth_total = (h_total/pop_total)*100,
-         pctnhwhite_total = (nhwhite_total/pop_total)*100,
-         pctasian_total = (asian_total/pop_total)*100,
-         pctnative_total = (native_total/pop_total)*100,
-         pctother_total = (other_total/pop_total)*100,
-         pctnbmin_total = (nbmin_total/pop_total)*100,
-         pctownerocc_total = (owneroccupied_total/hu_total)*100,
+  mutate(pctnhblack_total = ifelse(pop_total == 0, 0, (nhblack_total/pop_total)*100),
+         pctnhwhite_total = ifelse(pop_total == 0, 0, (nhwhite_total/pop_total)*100),
+         pctnbmin_total = ifelse(pop_total == 0, 0, (nbmin_total/pop_total)*100),
+         pctownerocc_total = ifelse(hu_total == 0, 0, (owneroccupied_total/hu_total)*100),
          pctincopp_total = ifelse(nwork_total == 0, 0, (incopp_total/nwork_total)*100),
-         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100),
-         pctnhblackvap_total = (nhblackvap_total/vap_total)*100,
-         pcthvap_total = (hvap_total/vap_total)*100,
-         pctnhwhitevap_total = (nhwhitevap_total/vap_total)*100,
-         pctasianvap_total = (asianvap_total/vap_total)*100,
-         pctnativevap_total = (nativevap_total/vap_total)*100,
-         pctothervap_total = (othervap_total/vap_total)*100,
-         pctnbminvap_total = (nbminvap_total/vap_total)*100)
+         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100))
 
 place_by_annex <- aa1415 %>%
   mutate(incopp = man + ret) %>%
@@ -1173,51 +831,25 @@ place_by_annex <- aa1415 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T),
-                   native_total = sum(native, na.rm = T),
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
                    njobs_total = sum(njobs14, na.rm = T),
                    nhincjobs_total = sum(nhincjobs14, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap, na.rm = T),
-                   nhwhitevap_total = sum(nhwvap, na.rm = T),
-                   hvap_total = sum(hispvap, na.rm = T),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T)) %>%
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)) %>%
   ungroup() %>%
   pivot_wider(
     id_cols = plid,
     names_from = annexed,
-    values_from = c(pop_total:nbminvap_total)
+    values_from = c(pop_total:owneroccupied_total)
   ) %>%
-  mutate(pctnhblack_total_1 = (nhblack_total_1/pop_total_1)*100,
-         pctnhwhite_total_1 = (nhwhite_total_1/pop_total_1)*100,
-         pcth_total_1 = (h_total_1/pop_total_1)*100,
-         pctnhblackvap_total_1 = (nhblackvap_total_1/vap_total_1)*100,
-         pctnhwhitevap_total_1 = (nhwhitevap_total_1/vap_total_1)*100,
-         pcthvap_total_1 = (hvap_total_1/vap_total_1)*100,
-         pctasian_total_1 = (asian_total_1/pop_total_1)*100,
-         pctnative_total_1 = (native_total_1/pop_total_1)*100,
-         pctother_total_1 = (other_total_1/pop_total_1)*100,
-         pctnbmin_total_1 = (nbmin_total_1/pop_total_1)*100,
-         pctasianvap_total_1 = (asianvap_total_1/vap_total_1)*100,
-         pctnativevap_total_1 = (nativevap_total_1/vap_total_1)*100,
-         pctothervap_total_1 = (othervap_total_1/vap_total_1)*100,
-         pctnbminvap_total_1 = (nbminvap_total_1/vap_total_1)*100,
+  mutate(pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhblack_total_1/pop_total_1)*100),
+         pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhwhite_total_1/pop_total_1)*100),
+         pctnbmin_total_1 = ifelse(pop_total_1 == 0, 0, (nbmin_total_1/pop_total_1)*100),
          pctincopp_total_1 = ifelse(nwork_total_1 == 0, 0, (incopp_total_1/nwork_total_1)*100),
          pcthincjobs_total_1 = ifelse(njobs_total_1 == 0, 0, (nhincjobs_total_1/njobs_total_1)*100),
-         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) %>%
-  filter(pop_total_1 > 1, 
-         hu_total_1 > 1)
+         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) 
 
 sapply(place_all, function(x) sum(is.na(x)))  
 
@@ -1240,8 +872,8 @@ pl_annex_var_1415 %<>%
   left_join(places_vra, by = "plid") 
 
 # place-level variables
-pl14 <- read_csv("places2014_cleaned.csv")
-table(pl_annex_var_1415$plid %in% pl14$plid) #217 false
+pl14 <- read_csv("pl0017_interpolated.csv") %>% filter(Year == "2014")
+table(pl_annex_var_1415$plid %in% pl14$plid) 
 
 cdps15 <- read_csv("plids/pl2015.csv") %>% # want to know which places are CDPs--they do not annex
   select(Geo_NAME, plid) %>%
@@ -1253,7 +885,7 @@ pl_annex_var_1415 %<>%
   left_join(pl14, by = "plid") %>%
   mutate(post = 1,
          time = "2014 to 2015",
-         pctowneroccupied14p = (owneroccupied14p/hu14p)*100) 
+         pctowneroccupied = (owneroccupied/hu)*100) 
 
 table(pl_annex_var_1415$annexing)
 
@@ -1267,19 +899,18 @@ sapply(pl_annex_var_1415, function(x) sum(is.na(x)))
 pl_annex_var_1415 %<>%
   mutate(
     underbound_black = ifelse(
-      (annexing == 1 & pctnhblack_total_1 < pctnhblack14p), 1, 0), 
+      (annexing == 1 & pctnhblack_total_1 < pctnhblack), 1, 0), 
     underbound_nbmin = ifelse(
-      (annexing == 1 & pctnbmin_total_1 < pctnbmin14p), 1, 0)
+      (annexing == 1 & pctnbmin_total_1 < pctnbmin), 1, 0)
   )
 
 pl_annex_var_1415 %<>%
-  filter(pop14p > 0) 
+  filter(pop > 0) 
 
-names(pl_annex_var_1415) <- gsub("14p", "_p0", names(pl_annex_var_1415))
-
-table(pl_annex_var_1415$plid %in% plids)
 pl_annex_var_1415 %<>%
-  filter(plid %in% plids)
+  mutate(more_white = ifelse(pctnhwhite_total > pctnhwhite, 1, 0)) %>%
+  filter_at(vars(pop, popdensity, pctnhblack_total, pctnbmin_total, more_white, pctowneroccupied, mhmval, hinc, ppov, pctblackpov, pctnbminpov, pctownerocc_total, pcthincjobs_total, pctincopp_total), ~!is.na(.))
+
 p1415 <- unique(pl_annex_var_1415$plid)
 pl_annex_vra_1415 <- unique(pl_annex_var_1415$plid[pl_annex_var_1415$vra==1])
 
@@ -1299,46 +930,22 @@ place_all <- aa1516 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T), 
-                   native_total = sum(native, na.rm = T), 
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap),
-                   nhwhitevap_total = sum(nhwvap),
-                   hvap_total = sum(hispvap),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T),
                    pct_annexed = mean(annexed, na.rm = T),
                    njobs_total = sum(njobs15, na.rm = T),
                    nhincjobs_total = sum(nhincjobs15, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy)
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)
   ) %>%
   ungroup() %>%
-  mutate(pctnhblack_total = (nhblack_total/pop_total)*100,
-         pcth_total = (h_total/pop_total)*100,
-         pctnhwhite_total = (nhwhite_total/pop_total)*100,
-         pctasian_total = (asian_total/pop_total)*100,
-         pctnative_total = (native_total/pop_total)*100,
-         pctother_total = (other_total/pop_total)*100,
-         pctnbmin_total = (nbmin_total/pop_total)*100,
-         pctownerocc_total = (owneroccupied_total/hu_total)*100,
+  mutate(pctnhblack_total = ifelse(pop_total == 0, 0, (nhblack_total/pop_total)*100),
+         pctnhwhite_total = ifelse(pop_total == 0, 0, (nhwhite_total/pop_total)*100),
+         pctnbmin_total = ifelse(pop_total == 0, 0, (nbmin_total/pop_total)*100),
+         pctownerocc_total = ifelse(hu_total == 0, 0, (owneroccupied_total/hu_total)*100),
          pctincopp_total = ifelse(nwork_total == 0, 0, (incopp_total/nwork_total)*100),
-         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100),
-         pctnhblackvap_total = (nhblackvap_total/vap_total)*100,
-         pcthvap_total = (hvap_total/vap_total)*100,
-         pctnhwhitevap_total = (nhwhitevap_total/vap_total)*100,
-         pctasianvap_total = (asianvap_total/vap_total)*100,
-         pctnativevap_total = (nativevap_total/vap_total)*100,
-         pctothervap_total = (othervap_total/vap_total)*100,
-         pctnbminvap_total = (nbminvap_total/vap_total)*100)
+         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100))
 
 place_by_annex <- aa1516 %>%
   mutate(incopp = man + ret) %>%
@@ -1348,51 +955,25 @@ place_by_annex <- aa1516 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T),
-                   native_total = sum(native, na.rm = T),
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
                    njobs_total = sum(njobs15, na.rm = T),
                    nhincjobs_total = sum(nhincjobs15, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap, na.rm = T),
-                   nhwhitevap_total = sum(nhwvap, na.rm = T),
-                   hvap_total = sum(hispvap, na.rm = T),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T)) %>%
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)) %>%
   ungroup() %>%
   pivot_wider(
     id_cols = plid,
     names_from = annexed,
-    values_from = c(pop_total:nbminvap_total)
+    values_from = c(pop_total:owneroccupied_total)
   ) %>%
-  mutate(pctnhblack_total_1 = (nhblack_total_1/pop_total_1)*100,
-         pctnhwhite_total_1 = (nhwhite_total_1/pop_total_1)*100,
-         pcth_total_1 = (h_total_1/pop_total_1)*100,
-         pctnhblackvap_total_1 = (nhblackvap_total_1/vap_total_1)*100,
-         pctnhwhitevap_total_1 = (nhwhitevap_total_1/vap_total_1)*100,
-         pcthvap_total_1 = (hvap_total_1/vap_total_1)*100,
-         pctasian_total_1 = (asian_total_1/pop_total_1)*100,
-         pctnative_total_1 = (native_total_1/pop_total_1)*100,
-         pctother_total_1 = (other_total_1/pop_total_1)*100,
-         pctnbmin_total_1 = (nbmin_total_1/pop_total_1)*100,
-         pctasianvap_total_1 = (asianvap_total_1/vap_total_1)*100,
-         pctnativevap_total_1 = (nativevap_total_1/vap_total_1)*100,
-         pctothervap_total_1 = (othervap_total_1/vap_total_1)*100,
-         pctnbminvap_total_1 = (nbminvap_total_1/vap_total_1)*100,
+  mutate(pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhblack_total_1/pop_total_1)*100),
+         pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhwhite_total_1/pop_total_1)*100),
+         pctnbmin_total_1 = ifelse(pop_total_1 == 0, 0, (nbmin_total_1/pop_total_1)*100),
          pctincopp_total_1 = ifelse(nwork_total_1 == 0, 0, (incopp_total_1/nwork_total_1)*100),
          pcthincjobs_total_1 = ifelse(njobs_total_1 == 0, 0, (nhincjobs_total_1/njobs_total_1)*100),
-         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) %>%
-  filter(pop_total_1 > 1, 
-         hu_total_1 > 1)
+         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) 
 
 sapply(place_all, function(x) sum(is.na(x)))  
 
@@ -1415,8 +996,8 @@ pl_annex_var_1516 %<>%
   left_join(places_vra, by = "plid") 
 
 # place-level variables
-pl15 <- read_csv("pl2015_cleaned.csv")
-table(pl_annex_var_1516$plid %in% pl15$plid) #217 false
+pl15 <- read_csv("pl0017_interpolated.csv") %>% filter(Year == "2015")
+table(pl_annex_var_1516$plid %in% pl15$plid) 
 
 cdps16 <- read_csv("plids/pl2016.csv") %>% # want to know which places are CDPs--they do not annex
   select(Geo_NAME, plid) %>%
@@ -1428,7 +1009,7 @@ pl_annex_var_1516 %<>%
   left_join(pl15, by = "plid") %>%
   mutate(post = 1,
          time = "2015 to 2016",
-         pctowneroccupied15p = (owneroccupied15p/hu15p)*100) 
+         pctowneroccupied = (owneroccupied/hu)*100) 
 
 table(pl_annex_var_1516$annexing)
 
@@ -1442,19 +1023,18 @@ sapply(pl_annex_var_1516, function(x) sum(is.na(x)))
 pl_annex_var_1516 %<>%
   mutate(
     underbound_black = ifelse(
-      (annexing == 1 & pctnhblack_total_1 < pctnhblack15p), 1, 0), 
+      (annexing == 1 & pctnhblack_total_1 < pctnhblack), 1, 0), 
     underbound_nbmin = ifelse(
-      (annexing == 1 & pctnbmin_total_1 < pctnbmin15p), 1, 0)
+      (annexing == 1 & pctnbmin_total_1 < pctnbmin), 1, 0)
   )
 
 pl_annex_var_1516 %<>%
-  filter(pop15p > 0) 
+  filter(pop > 0) 
 
-names(pl_annex_var_1516) <- gsub("15p", "_p0", names(pl_annex_var_1516))
-
-table(pl_annex_var_1516$plid %in% plids)
 pl_annex_var_1516 %<>%
-  filter(plid %in% plids)
+  mutate(more_white = ifelse(pctnhwhite_total > pctnhwhite, 1, 0)) %>%
+  filter_at(vars(pop, popdensity, pctnhblack_total, pctnbmin_total, more_white, pctowneroccupied, mhmval, hinc, ppov, pctblackpov, pctnbminpov, pctownerocc_total, pcthincjobs_total, pctincopp_total), ~!is.na(.))
+
 p1516 <- unique(pl_annex_var_1516$plid)
 pl_annex_vra_1516 <- unique(pl_annex_var_1516$plid[pl_annex_var_1516$vra==1])
 
@@ -1474,46 +1054,22 @@ place_all <- aa1617 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T), 
-                   native_total = sum(native, na.rm = T), 
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap),
-                   nhwhitevap_total = sum(nhwvap),
-                   hvap_total = sum(hispvap),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T),
                    pct_annexed = mean(annexed, na.rm = T),
                    njobs_total = sum(njobs16, na.rm = T),
                    nhincjobs_total = sum(nhincjobs16, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy)
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)
   ) %>%
   ungroup() %>%
-  mutate(pctnhblack_total = (nhblack_total/pop_total)*100,
-         pcth_total = (h_total/pop_total)*100,
-         pctnhwhite_total = (nhwhite_total/pop_total)*100,
-         pctasian_total = (asian_total/pop_total)*100,
-         pctnative_total = (native_total/pop_total)*100,
-         pctother_total = (other_total/pop_total)*100,
-         pctnbmin_total = (nbmin_total/pop_total)*100,
-         pctownerocc_total = (owneroccupied_total/hu_total)*100,
+  mutate(pctnhblack_total = ifelse(pop_total == 0, 0, (nhblack_total/pop_total)*100),
+         pctnhwhite_total = ifelse(pop_total == 0, 0, (nhwhite_total/pop_total)*100),
+         pctnbmin_total = ifelse(pop_total == 0, 0, (nbmin_total/pop_total)*100),
+         pctownerocc_total = ifelse(hu_total == 0, 0, (owneroccupied_total/hu_total)*100),
          pctincopp_total = ifelse(nwork_total == 0, 0, (incopp_total/nwork_total)*100),
-         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100),
-         pctnhblackvap_total = (nhblackvap_total/vap_total)*100,
-         pcthvap_total = (hvap_total/vap_total)*100,
-         pctnhwhitevap_total = (nhwhitevap_total/vap_total)*100,
-         pctasianvap_total = (asianvap_total/vap_total)*100,
-         pctnativevap_total = (nativevap_total/vap_total)*100,
-         pctothervap_total = (othervap_total/vap_total)*100,
-         pctnbminvap_total = (nbminvap_total/vap_total)*100)
+         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100))
 
 place_by_annex <- aa1617 %>%
   mutate(incopp = man + ret) %>%
@@ -1523,51 +1079,25 @@ place_by_annex <- aa1617 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T),
-                   native_total = sum(native, na.rm = T),
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
                    njobs_total = sum(njobs16, na.rm = T),
                    nhincjobs_total = sum(nhincjobs16, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap, na.rm = T),
-                   nhwhitevap_total = sum(nhwvap, na.rm = T),
-                   hvap_total = sum(hispvap, na.rm = T),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T)) %>%
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)) %>%
   ungroup() %>%
   pivot_wider(
     id_cols = plid,
     names_from = annexed,
-    values_from = c(pop_total:nbminvap_total)
+    values_from = c(pop_total:owneroccupied_total)
   ) %>%
-  mutate(pctnhblack_total_1 = (nhblack_total_1/pop_total_1)*100,
-         pctnhwhite_total_1 = (nhwhite_total_1/pop_total_1)*100,
-         pcth_total_1 = (h_total_1/pop_total_1)*100,
-         pctnhblackvap_total_1 = (nhblackvap_total_1/vap_total_1)*100,
-         pctnhwhitevap_total_1 = (nhwhitevap_total_1/vap_total_1)*100,
-         pcthvap_total_1 = (hvap_total_1/vap_total_1)*100,
-         pctasian_total_1 = (asian_total_1/pop_total_1)*100,
-         pctnative_total_1 = (native_total_1/pop_total_1)*100,
-         pctother_total_1 = (other_total_1/pop_total_1)*100,
-         pctnbmin_total_1 = (nbmin_total_1/pop_total_1)*100,
-         pctasianvap_total_1 = (asianvap_total_1/vap_total_1)*100,
-         pctnativevap_total_1 = (nativevap_total_1/vap_total_1)*100,
-         pctothervap_total_1 = (othervap_total_1/vap_total_1)*100,
-         pctnbminvap_total_1 = (nbminvap_total_1/vap_total_1)*100,
+  mutate(pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhblack_total_1/pop_total_1)*100),
+         pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhwhite_total_1/pop_total_1)*100),
+         pctnbmin_total_1 = ifelse(pop_total_1 == 0, 0, (nbmin_total_1/pop_total_1)*100),
          pctincopp_total_1 = ifelse(nwork_total_1 == 0, 0, (incopp_total_1/nwork_total_1)*100),
          pcthincjobs_total_1 = ifelse(njobs_total_1 == 0, 0, (nhincjobs_total_1/njobs_total_1)*100),
-         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) %>%
-  filter(pop_total_1 > 1, 
-         hu_total_1 > 1)
+         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) 
 
 sapply(place_all, function(x) sum(is.na(x)))  
 
@@ -1590,8 +1120,8 @@ pl_annex_var_1617 %<>%
   left_join(places_vra, by = "plid") 
 
 # place-level variables
-pl16 <- read_csv("pl2016_cleaned.csv")
-table(pl_annex_var_1617$plid %in% pl16$plid) #217 false
+pl16 <- read_csv("pl0017_interpolated.csv") %>% filter(Year == "2016")
+table(pl_annex_var_1617$plid %in% pl16$plid) 
 
 cdps17 <- read_csv("plids/pl2017.csv") %>% # want to know which places are CDPs--they do not annex
   select(Geo_NAME, plid) %>%
@@ -1603,7 +1133,7 @@ pl_annex_var_1617 %<>%
   left_join(pl16, by = "plid") %>%
   mutate(post = 1,
          time = "2016 to 2017",
-         pctowneroccupied16p = (owneroccupied16p/hu16p)*100) 
+         pctowneroccupied = (owneroccupied/hu)*100) 
 
 table(pl_annex_var_1617$annexing)
 
@@ -1617,19 +1147,18 @@ sapply(pl_annex_var_1617, function(x) sum(is.na(x)))
 pl_annex_var_1617 %<>%
   mutate(
     underbound_black = ifelse(
-      (annexing == 1 & pctnhblack_total_1 < pctnhblack16p), 1, 0), 
+      (annexing == 1 & pctnhblack_total_1 < pctnhblack), 1, 0), 
     underbound_nbmin = ifelse(
-      (annexing == 1 & pctnbmin_total_1 < pctnbmin16p), 1, 0)
+      (annexing == 1 & pctnbmin_total_1 < pctnbmin), 1, 0)
   )
 
 pl_annex_var_1617 %<>%
-  filter(pop16p > 0) 
+  filter(pop > 0) 
 
-names(pl_annex_var_1617) <- gsub("16p", "_p0", names(pl_annex_var_1617))
-
-table(pl_annex_var_1617$plid %in% plids)
 pl_annex_var_1617 %<>%
-  filter(plid %in% plids)
+  mutate(more_white = ifelse(pctnhwhite_total > pctnhwhite, 1, 0)) %>%
+  filter_at(vars(pop, popdensity, pctnhblack_total, pctnbmin_total, more_white, pctowneroccupied, mhmval, hinc, ppov, pctblackpov, pctnbminpov, pctownerocc_total, pcthincjobs_total, pctincopp_total), ~!is.na(.))
+
 p1617 <- unique(pl_annex_var_1617$plid)
 pl_annex_vra_1617 <- unique(pl_annex_var_1617$plid[pl_annex_var_1617$vra==1])
 
@@ -1649,46 +1178,22 @@ place_all <- aa1718 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T), 
-                   native_total = sum(native, na.rm = T), 
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap),
-                   nhwhitevap_total = sum(nhwvap),
-                   hvap_total = sum(hispvap),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T),
                    pct_annexed = mean(annexed, na.rm = T),
                    njobs_total = sum(njobs17, na.rm = T),
                    nhincjobs_total = sum(nhincjobs17, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy)
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)
   ) %>%
   ungroup() %>%
-  mutate(pctnhblack_total = (nhblack_total/pop_total)*100,
-         pcth_total = (h_total/pop_total)*100,
-         pctnhwhite_total = (nhwhite_total/pop_total)*100,
-         pctasian_total = (asian_total/pop_total)*100,
-         pctnative_total = (native_total/pop_total)*100,
-         pctother_total = (other_total/pop_total)*100,
-         pctnbmin_total = (nbmin_total/pop_total)*100,
-         pctownerocc_total = (owneroccupied_total/hu_total)*100,
+  mutate(pctnhblack_total = ifelse(pop_total == 0, 0, (nhblack_total/pop_total)*100),
+         pctnhwhite_total = ifelse(pop_total == 0, 0, (nhwhite_total/pop_total)*100),
+         pctnbmin_total = ifelse(pop_total == 0, 0, (nbmin_total/pop_total)*100),
+         pctownerocc_total = ifelse(hu_total == 0, 0, (owneroccupied_total/hu_total)*100),
          pctincopp_total = ifelse(nwork_total == 0, 0, (incopp_total/nwork_total)*100),
-         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100),
-         pctnhblackvap_total = (nhblackvap_total/vap_total)*100,
-         pcthvap_total = (hvap_total/vap_total)*100,
-         pctnhwhitevap_total = (nhwhitevap_total/vap_total)*100,
-         pctasianvap_total = (asianvap_total/vap_total)*100,
-         pctnativevap_total = (nativevap_total/vap_total)*100,
-         pctothervap_total = (othervap_total/vap_total)*100,
-         pctnbminvap_total = (nbminvap_total/vap_total)*100)
+         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100))
 
 place_by_annex <- aa1718 %>%
   mutate(incopp = man + ret) %>%
@@ -1698,51 +1203,25 @@ place_by_annex <- aa1718 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T),
-                   native_total = sum(native, na.rm = T),
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
                    njobs_total = sum(njobs17, na.rm = T),
                    nhincjobs_total = sum(nhincjobs17, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap, na.rm = T),
-                   nhwhitevap_total = sum(nhwvap, na.rm = T),
-                   hvap_total = sum(hispvap, na.rm = T),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T)) %>%
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)) %>%
   ungroup() %>%
   pivot_wider(
     id_cols = plid,
     names_from = annexed,
-    values_from = c(pop_total:nbminvap_total)
+    values_from = c(pop_total:owneroccupied_total)
   ) %>%
-  mutate(pctnhblack_total_1 = (nhblack_total_1/pop_total_1)*100,
-         pctnhwhite_total_1 = (nhwhite_total_1/pop_total_1)*100,
-         pcth_total_1 = (h_total_1/pop_total_1)*100,
-         pctnhblackvap_total_1 = (nhblackvap_total_1/vap_total_1)*100,
-         pctnhwhitevap_total_1 = (nhwhitevap_total_1/vap_total_1)*100,
-         pcthvap_total_1 = (hvap_total_1/vap_total_1)*100,
-         pctasian_total_1 = (asian_total_1/pop_total_1)*100,
-         pctnative_total_1 = (native_total_1/pop_total_1)*100,
-         pctother_total_1 = (other_total_1/pop_total_1)*100,
-         pctnbmin_total_1 = (nbmin_total_1/pop_total_1)*100,
-         pctasianvap_total_1 = (asianvap_total_1/vap_total_1)*100,
-         pctnativevap_total_1 = (nativevap_total_1/vap_total_1)*100,
-         pctothervap_total_1 = (othervap_total_1/vap_total_1)*100,
-         pctnbminvap_total_1 = (nbminvap_total_1/vap_total_1)*100,
+  mutate(pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhblack_total_1/pop_total_1)*100),
+         pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhwhite_total_1/pop_total_1)*100),
+         pctnbmin_total_1 = ifelse(pop_total_1 == 0, 0, (nbmin_total_1/pop_total_1)*100),
          pctincopp_total_1 = ifelse(nwork_total_1 == 0, 0, (incopp_total_1/nwork_total_1)*100),
          pcthincjobs_total_1 = ifelse(njobs_total_1 == 0, 0, (nhincjobs_total_1/njobs_total_1)*100),
-         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) %>%
-  filter(pop_total_1 > 1, 
-         hu_total_1 > 1)
+         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) 
 
 sapply(place_all, function(x) sum(is.na(x)))  
 
@@ -1765,8 +1244,8 @@ pl_annex_var_1718 %<>%
   left_join(places_vra, by = "plid") 
 
 # place-level variables
-pl17 <- read_csv("places2017_cleaned.csv")
-table(pl_annex_var_1718$plid %in% pl17$plid) #217 false
+pl17 <- read_csv("pl0017_interpolated.csv") %>% filter(Year == "2017")
+table(pl_annex_var_1718$plid %in% pl17$plid) 
 
 cdps18 <- read_csv("plids/pl2018.csv") %>% # want to know which places are CDPs--they do not annex
   select(Geo_NAME, plid) %>%
@@ -1778,7 +1257,7 @@ pl_annex_var_1718 %<>%
   left_join(pl17, by = "plid") %>%
   mutate(post = 1,
          time = "2017 to 2018",
-         pctowneroccupied17p = (owneroccupied17p/hu17p)*100) 
+         pctowneroccupied = (owneroccupied/hu)*100) 
 
 table(pl_annex_var_1718$annexing)
 
@@ -1792,19 +1271,18 @@ sapply(pl_annex_var_1718, function(x) sum(is.na(x)))
 pl_annex_var_1718 %<>%
   mutate(
     underbound_black = ifelse(
-      (annexing == 1 & pctnhblack_total_1 < pctnhblack17p), 1, 0), 
+      (annexing == 1 & pctnhblack_total_1 < pctnhblack), 1, 0), 
     underbound_nbmin = ifelse(
-      (annexing == 1 & pctnbmin_total_1 < pctnbmin17p), 1, 0)
+      (annexing == 1 & pctnbmin_total_1 < pctnbmin), 1, 0)
   )
 
 pl_annex_var_1718 %<>%
-  filter(pop17p > 0) 
+  filter(pop > 0) 
 
-names(pl_annex_var_1718) <- gsub("17p", "_p0", names(pl_annex_var_1718))
-
-table(pl_annex_var_1718$plid %in% plids)
 pl_annex_var_1718 %<>%
-  filter(plid %in% plids)
+  mutate(more_white = ifelse(pctnhwhite_total > pctnhwhite, 1, 0)) %>%
+  filter_at(vars(pop, popdensity, pctnhblack_total, pctnbmin_total, more_white, pctowneroccupied, mhmval, hinc, ppov, pctblackpov, pctnbminpov, pctownerocc_total, pcthincjobs_total, pctincopp_total), ~!is.na(.))
+
 p1718 <- unique(pl_annex_var_1718$plid)
 pl_annex_vra_1718 <- unique(pl_annex_var_1718$plid[pl_annex_var_1718$vra==1])
 
@@ -1824,46 +1302,22 @@ place_all <- aa1819 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T), 
-                   native_total = sum(native, na.rm = T), 
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap),
-                   nhwhitevap_total = sum(nhwvap),
-                   hvap_total = sum(hispvap),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T),
                    pct_annexed = mean(annexed, na.rm = T),
                    njobs_total = sum(njobs18, na.rm = T),
                    nhincjobs_total = sum(nhincjobs18, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy)
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)
   ) %>%
   ungroup() %>%
-  mutate(pctnhblack_total = (nhblack_total/pop_total)*100,
-         pcth_total = (h_total/pop_total)*100,
-         pctnhwhite_total = (nhwhite_total/pop_total)*100,
-         pctasian_total = (asian_total/pop_total)*100,
-         pctnative_total = (native_total/pop_total)*100,
-         pctother_total = (other_total/pop_total)*100,
-         pctnbmin_total = (nbmin_total/pop_total)*100,
-         pctownerocc_total = (owneroccupied_total/hu_total)*100,
+  mutate(pctnhblack_total = ifelse(pop_total == 0, 0, (nhblack_total/pop_total)*100),
+         pctnhwhite_total = ifelse(pop_total == 0, 0, (nhwhite_total/pop_total)*100),
+         pctnbmin_total = ifelse(pop_total == 0, 0, (nbmin_total/pop_total)*100),
+         pctownerocc_total = ifelse(hu_total == 0, 0, (owneroccupied_total/hu_total)*100),
          pctincopp_total = ifelse(nwork_total == 0, 0, (incopp_total/nwork_total)*100),
-         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100),
-         pctnhblackvap_total = (nhblackvap_total/vap_total)*100,
-         pcthvap_total = (hvap_total/vap_total)*100,
-         pctnhwhitevap_total = (nhwhitevap_total/vap_total)*100,
-         pctasianvap_total = (asianvap_total/vap_total)*100,
-         pctnativevap_total = (nativevap_total/vap_total)*100,
-         pctothervap_total = (othervap_total/vap_total)*100,
-         pctnbminvap_total = (nbminvap_total/vap_total)*100)
+         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100))
 
 place_by_annex <- aa1819 %>%
   mutate(incopp = man + ret) %>%
@@ -1873,51 +1327,25 @@ place_by_annex <- aa1819 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T),
-                   native_total = sum(native, na.rm = T),
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
                    njobs_total = sum(njobs18, na.rm = T),
                    nhincjobs_total = sum(nhincjobs18, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap, na.rm = T),
-                   nhwhitevap_total = sum(nhwvap, na.rm = T),
-                   hvap_total = sum(hispvap, na.rm = T),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T)) %>%
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)) %>%
   ungroup() %>%
   pivot_wider(
     id_cols = plid,
     names_from = annexed,
-    values_from = c(pop_total:nbminvap_total)
+    values_from = c(pop_total:owneroccupied_total)
   ) %>%
-  mutate(pctnhblack_total_1 = (nhblack_total_1/pop_total_1)*100,
-         pctnhwhite_total_1 = (nhwhite_total_1/pop_total_1)*100,
-         pcth_total_1 = (h_total_1/pop_total_1)*100,
-         pctnhblackvap_total_1 = (nhblackvap_total_1/vap_total_1)*100,
-         pctnhwhitevap_total_1 = (nhwhitevap_total_1/vap_total_1)*100,
-         pcthvap_total_1 = (hvap_total_1/vap_total_1)*100,
-         pctasian_total_1 = (asian_total_1/pop_total_1)*100,
-         pctnative_total_1 = (native_total_1/pop_total_1)*100,
-         pctother_total_1 = (other_total_1/pop_total_1)*100,
-         pctnbmin_total_1 = (nbmin_total_1/pop_total_1)*100,
-         pctasianvap_total_1 = (asianvap_total_1/vap_total_1)*100,
-         pctnativevap_total_1 = (nativevap_total_1/vap_total_1)*100,
-         pctothervap_total_1 = (othervap_total_1/vap_total_1)*100,
-         pctnbminvap_total_1 = (nbminvap_total_1/vap_total_1)*100,
+  mutate(pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhblack_total_1/pop_total_1)*100),
+         pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhwhite_total_1/pop_total_1)*100),
+         pctnbmin_total_1 = ifelse(pop_total_1 == 0, 0, (nbmin_total_1/pop_total_1)*100),
          pctincopp_total_1 = ifelse(nwork_total_1 == 0, 0, (incopp_total_1/nwork_total_1)*100),
          pcthincjobs_total_1 = ifelse(njobs_total_1 == 0, 0, (nhincjobs_total_1/njobs_total_1)*100),
-         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) %>%
-  filter(pop_total_1 > 1, 
-         hu_total_1 > 1)
+         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) 
 
 sapply(place_all, function(x) sum(is.na(x)))  
 
@@ -1940,8 +1368,8 @@ pl_annex_var_1819 %<>%
   left_join(places_vra, by = "plid") 
 
 # place-level variables
-pl18 <- read_csv("pl2018_cleaned.csv")
-table(pl_annex_var_1819$plid %in% pl18$plid) #217 false
+pl18 <- read_csv("pl0017_interpolated.csv") %>% filter(Year == "2018")
+table(pl_annex_var_1819$plid %in% pl18$plid) 
 
 cdps19 <- read_csv("plids/pl2019.csv") %>% # want to know which places are CDPs--they do not annex
   select(Geo_NAME, plid) %>%
@@ -1953,7 +1381,7 @@ pl_annex_var_1819 %<>%
   left_join(pl18, by = "plid") %>%
   mutate(post = 1,
          time = "2018 to 2019",
-         pctowneroccupied18p = (owneroccupied18p/hu18p)*100) 
+         pctowneroccupied = (owneroccupied/hu)*100) 
 
 table(pl_annex_var_1819$annexing)
 
@@ -1967,19 +1395,18 @@ sapply(pl_annex_var_1819, function(x) sum(is.na(x)))
 pl_annex_var_1819 %<>%
   mutate(
     underbound_black = ifelse(
-      (annexing == 1 & pctnhblack_total_1 < pctnhblack18p), 1, 0), 
+      (annexing == 1 & pctnhblack_total_1 < pctnhblack), 1, 0), 
     underbound_nbmin = ifelse(
-      (annexing == 1 & pctnbmin_total_1 < pctnbmin18p), 1, 0)
+      (annexing == 1 & pctnbmin_total_1 < pctnbmin), 1, 0)
   )
 
 pl_annex_var_1819 %<>%
-  filter(pop18p > 0) 
+  filter(pop > 0) 
 
-names(pl_annex_var_1819) <- gsub("18p", "_p0", names(pl_annex_var_1819))
-
-table(pl_annex_var_1819$plid %in% plids)
 pl_annex_var_1819 %<>%
-  filter(plid %in% plids)
+  mutate(more_white = ifelse(pctnhwhite_total > pctnhwhite, 1, 0)) %>%
+  filter_at(vars(pop, popdensity, pctnhblack_total, pctnbmin_total, more_white, pctowneroccupied, mhmval, hinc, ppov, pctblackpov, pctnbminpov, pctownerocc_total, pcthincjobs_total, pctincopp_total), ~!is.na(.))
+
 p1819 <- unique(pl_annex_var_1819$plid)
 pl_annex_vra_1819 <- unique(pl_annex_var_1819$plid[pl_annex_var_1819$vra==1])
 
@@ -1999,46 +1426,22 @@ place_all <- aa1920 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T), 
-                   native_total = sum(native, na.rm = T), 
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap),
-                   nhwhitevap_total = sum(nhwvap),
-                   hvap_total = sum(hispvap),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T),
                    pct_annexed = mean(annexed, na.rm = T),
                    njobs_total = sum(njobs19, na.rm = T),
                    nhincjobs_total = sum(nhincjobs19, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy)
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)
   ) %>%
   ungroup() %>%
-  mutate(pctnhblack_total = (nhblack_total/pop_total)*100,
-         pcth_total = (h_total/pop_total)*100,
-         pctnhwhite_total = (nhwhite_total/pop_total)*100,
-         pctasian_total = (asian_total/pop_total)*100,
-         pctnative_total = (native_total/pop_total)*100,
-         pctother_total = (other_total/pop_total)*100,
-         pctnbmin_total = (nbmin_total/pop_total)*100,
-         pctownerocc_total = (owneroccupied_total/hu_total)*100,
+  mutate(pctnhblack_total = ifelse(pop_total == 0, 0, (nhblack_total/pop_total)*100),
+         pctnhwhite_total = ifelse(pop_total == 0, 0, (nhwhite_total/pop_total)*100),
+         pctnbmin_total = ifelse(pop_total == 0, 0, (nbmin_total/pop_total)*100),
+         pctownerocc_total = ifelse(hu_total == 0, 0, (owneroccupied_total/hu_total)*100),
          pctincopp_total = ifelse(nwork_total == 0, 0, (incopp_total/nwork_total)*100),
-         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100),
-         pctnhblackvap_total = (nhblackvap_total/vap_total)*100,
-         pcthvap_total = (hvap_total/vap_total)*100,
-         pctnhwhitevap_total = (nhwhitevap_total/vap_total)*100,
-         pctasianvap_total = (asianvap_total/vap_total)*100,
-         pctnativevap_total = (nativevap_total/vap_total)*100,
-         pctothervap_total = (othervap_total/vap_total)*100,
-         pctnbminvap_total = (nbminvap_total/vap_total)*100)
+         pcthincjobs_total = ifelse(njobs_total == 0, 0, (nhincjobs_total/njobs_total)*100))
 
 place_by_annex <- aa1920 %>%
   mutate(incopp = man + ret) %>%
@@ -2048,51 +1451,25 @@ place_by_annex <- aa1920 %>%
                    area_total = sum(area, na.rm = T),
                    nhblack_total = sum(nhblack, na.rm = T),
                    nhwhite_total = sum(nhwhite, na.rm = T),
-                   h_total = sum(h, na.rm = T),
-                   asian_total = sum(asian, na.rm = T),
-                   native_total = sum(native, na.rm = T),
-                   other_total = sum(other, na.rm = T),
                    nbmin_total = sum(nbmin, na.rm = T),
                    njobs_total = sum(njobs19, na.rm = T),
                    nhincjobs_total = sum(nhincjobs19, na.rm = T),
                    nwork_total = sum(jobs, na.rm = T),
                    incopp_total = sum(incopp, na.rm = T),
                    hu_total = sum(hu, na.rm = T),
-                   owneroccupied_total = sum(owneroccupied, na.rm = T),
-                   vacancy_total = sum(vacancy, na.rm = T),
-                   vap_total = sum(vap, na.rm = T),
-                   nhblackvap_total = sum(nhbvap, na.rm = T),
-                   nhwhitevap_total = sum(nhwvap, na.rm = T),
-                   hvap_total = sum(hispvap, na.rm = T),
-                   nativevap_total = sum(nativevap, na.rm = T),
-                   asianvap_total = sum(asianvap, na.rm = T),
-                   othervap_total = sum(othervap, na.rm = T),
-                   nbminvap_total = sum(nbminvap, na.rm = T)) %>%
+                   owneroccupied_total = sum(owneroccupied, na.rm = T)) %>%
   ungroup() %>%
   pivot_wider(
     id_cols = plid,
     names_from = annexed,
-    values_from = c(pop_total:nbminvap_total)
+    values_from = c(pop_total:owneroccupied_total)
   ) %>%
-  mutate(pctnhblack_total_1 = (nhblack_total_1/pop_total_1)*100,
-         pctnhwhite_total_1 = (nhwhite_total_1/pop_total_1)*100,
-         pcth_total_1 = (h_total_1/pop_total_1)*100,
-         pctnhblackvap_total_1 = (nhblackvap_total_1/vap_total_1)*100,
-         pctnhwhitevap_total_1 = (nhwhitevap_total_1/vap_total_1)*100,
-         pcthvap_total_1 = (hvap_total_1/vap_total_1)*100,
-         pctasian_total_1 = (asian_total_1/pop_total_1)*100,
-         pctnative_total_1 = (native_total_1/pop_total_1)*100,
-         pctother_total_1 = (other_total_1/pop_total_1)*100,
-         pctnbmin_total_1 = (nbmin_total_1/pop_total_1)*100,
-         pctasianvap_total_1 = (asianvap_total_1/vap_total_1)*100,
-         pctnativevap_total_1 = (nativevap_total_1/vap_total_1)*100,
-         pctothervap_total_1 = (othervap_total_1/vap_total_1)*100,
-         pctnbminvap_total_1 = (nbminvap_total_1/vap_total_1)*100,
+  mutate(pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhblack_total_1/pop_total_1)*100),
+         pctnhblack_total_1 = ifelse(pop_total_1 == 0, 0, (nhwhite_total_1/pop_total_1)*100),
+         pctnbmin_total_1 = ifelse(pop_total_1 == 0, 0, (nbmin_total_1/pop_total_1)*100),
          pctincopp_total_1 = ifelse(nwork_total_1 == 0, 0, (incopp_total_1/nwork_total_1)*100),
          pcthincjobs_total_1 = ifelse(njobs_total_1 == 0, 0, (nhincjobs_total_1/njobs_total_1)*100),
-         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) %>%
-  filter(pop_total_1 > 1, 
-         hu_total_1 > 1)
+         pctownerocc_total_1 = (owneroccupied_total_1/hu_total_1)*100) 
 
 sapply(place_all, function(x) sum(is.na(x)))  
 
@@ -2115,8 +1492,8 @@ pl_annex_var_1920 %<>%
   left_join(places_vra, by = "plid") 
 
 # place-level variables
-pl19 <- read_csv("pl2019_cleaned.csv")
-table(pl_annex_var_1920$plid %in% pl19$plid) #217 false
+pl19 <- read_csv("pl0017_interpolated.csv") %>% filter(Year == "2019")
+table(pl_annex_var_1920$plid %in% pl19$plid) 
 
 cdps20 <- read_csv("plids/pl2020.csv") %>% # want to know which places are CDPs--they do not annex
   select(Geo_NAME, plid) %>%
@@ -2128,7 +1505,7 @@ pl_annex_var_1920 %<>%
   left_join(pl19, by = "plid") %>%
   mutate(post = 1,
          time = "2019 to 2020",
-         pctowneroccupied19p = (owneroccupied19p/hu19p)*100) 
+         pctowneroccupied = (owneroccupied/hu)*100) 
 
 table(pl_annex_var_1920$annexing)
 
@@ -2142,19 +1519,18 @@ sapply(pl_annex_var_1920, function(x) sum(is.na(x)))
 pl_annex_var_1920 %<>%
   mutate(
     underbound_black = ifelse(
-      (annexing == 1 & pctnhblack_total_1 < pctnhblack19p), 1, 0), 
+      (annexing == 1 & pctnhblack_total_1 < pctnhblack), 1, 0), 
     underbound_nbmin = ifelse(
-      (annexing == 1 & pctnbmin_total_1 < pctnbmin19p), 1, 0)
+      (annexing == 1 & pctnbmin_total_1 < pctnbmin), 1, 0)
   )
 
 pl_annex_var_1920 %<>%
-  filter(pop19p > 0) 
+  filter(pop > 0) 
 
-names(pl_annex_var_1920) <- gsub("19p", "_p0", names(pl_annex_var_1920))
-
-table(pl_annex_var_1920$plid %in% plids)
 pl_annex_var_1920 %<>%
-  filter(plid %in% plids)
+  mutate(more_white = ifelse(pctnhwhite_total > pctnhwhite, 1, 0)) %>%
+  filter_at(vars(pop, popdensity, pctnhblack_total, pctnbmin_total, more_white, pctowneroccupied, mhmval, hinc, ppov, pctblackpov, pctnbminpov, pctownerocc_total, pcthincjobs_total, pctincopp_total), ~!is.na(.))
+
 p1920 <- unique(pl_annex_var_1920$plid)
 pl_annex_vra_1920 <- unique(pl_annex_var_1920$plid[pl_annex_var_1920$vra==1])
 
