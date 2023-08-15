@@ -1,5 +1,7 @@
 Municipal Boundary Changes Code 
 
+# THE REPOSITORY IS ACTIVELY UNDER CONSTRUCTION AND IS INCOMPLETE.
+
 This is the publicly available repository for the Municipal Boundary Changes project. This repo contains a lot of code. Collecting underlying data needed for this project involved: 
 
 * DATA_1. Downloading block- and place-level shapefiles for 13 years for 40 states 
