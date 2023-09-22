@@ -32,4 +32,10 @@ The analysis process needed for this project involved:
 
 * state laws database: contains code and compiled state laws governing annexations -- not used in paper. 
 
-You can find all results -- in the raw form and in the formatted form -- in the folder called "results".
+You can find all results -- in the raw form and in the formatted form -- in the folder called "results". There are sub-folders labeled according to the time interval: 
+* t0020: this the 6-year period used in the core analysis
+* one_year: this is the 1-year period used in supplementary analysis 
+* two_year: this is the 2-year period used in supplementary analysis 
+* supplementary: these contains outputs from robustness/sensitivity analyses mentioned in the paper 
+* maps: these contain the outputs from CODE_11
+* analysis.RData is an RData file saving files from CODE_9, which I often used as a way to store outputs when putting down/picking up various aspects of the analysis. 
