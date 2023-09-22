@@ -16,19 +16,19 @@ DATA REPOSITORY: LINK TK.
 You can find all replication code in the folder "code".
 The analysis process needed for this project involved: 
 * CODE_1: Scraping code to bulk download DATA_1
-* CODE_2: Scraping code to bulk download DATA_2
+* CODE_2: Scraping code to bulk download DATA_2 and clean it
 * CODE_3: Cleaning DATA_3 after manual download from Social Explorer and NHGIS; some linear interpolation of block-level data was performed on an HPC located at Stanford called Sherlock. 
+* SHERLOCK_interpolate_blocks: Generate interpolated block-level data for intercensal years --> conducted on Sherlock 
 * CODE_4: Cleaning DATA_4 
 * CODE_5: Code that generates the block-to-place crosswalk for intercensal years at the baseline and end year (e.g., 2007 blocks on 2007 places; 2007 blocks on 2008 places; 2007 blocks on 2013 places) --> mostly performed on Sherlock
 * CODE_6: Code that generates buffers defining annexable blocks to places --> mostly performed on Sherlock
-* CODE_7: Code that identifies annexations (6-year periods) via analysis of outputs from CODE_5 and CODE_6
+* CODE_7: Code that identifies annexations (6-year periods & 1-year periods) via analysis of outputs from CODE_5 and CODE_6
 * CODE_8: Code that transforms blocks-level data (output from CODE_7) into place-level data with relevant demographic information (6-year periods) (output from CODE_3) and preps data for panel form; also uses output from CODE_4
 * CODE_9: Code for statistical analyses presented in the paper via output from CODE_8
 * CODE_10: Code for descriptive statistics presented in the paper using output from CODE_8
 * CODE_11: Code for maps presented in the paper using output from CODE_7
-* CODE_12: Code that identifies annexations (1-year periods)
-* CODE_13: Code that transforms blocks-level data into place-level data with relevant demographic information (1-year) periods
-* CODE_14: Code for statistical analyses/robustness checks based on 1- and 2-year periods
+* CODE_12: Code that transforms blocks-level data into place-level data with relevant demographic information (1-year) periods
+* CODE_13: Code for statistical analyses/robustness checks based on 1- and 2-year periods
 
 TK 
 
