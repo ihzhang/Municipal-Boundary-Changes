@@ -30,6 +30,6 @@ The analysis process needed for this project involved:
 * CODE_12: Code that transforms blocks-level data into place-level data with relevant demographic information (1-year) periods
 * CODE_13: Code for statistical analyses/robustness checks based on 1- and 2-year periods
 
-TK 
+* state laws database: contains code and compiled state laws governing annexations -- not used in paper. 
 
 You can find all results -- in the raw form and in the formatted form -- in the folder called "results".
