@@ -1,17 +1,13 @@
 Municipal Boundary Changes Code 
 
-# THE REPOSITORY IS ACTIVELY UNDER CONSTRUCTION AND IS INCOMPLETE.
-
-This is the publicly available repository for the Municipal Boundary Changes project. This repo contains a lot of code. Collecting underlying data needed for this project involved: 
+This is the publicly available repository for my forthcoming paper in the _Du Bois Review_, "THE LIMITS OF PRECLEARANCE: _Municipal Annexations Before and After Shelby County v. Holder._" This repo contains a lot of code. Collecting underlying data needed for this project involved: 
 
 * DATA_1. Downloading block- and place-level shapefiles for 13 years for 40 states 
 * DATA_2. Downloading RAC and WAC (LEHD-LODES data) for 13 years for 40 states 
 * DATA_3. Downloading block (2000, 2010, and 2020 Census), place-level demographic data (13 sets of 5-Year ACS data), and 2020-to-2010 and 2000-to-2010 block-to-block crosswalk files from the NGHIS. 
 * DATA_4. Downloading Census Boundary and Annexation Survey Data (2000-2010 in one file), then annually from 2011-2021, the most recent year available. 
 
-Most files are too large to store on Github. 
-
-DATA REPOSITORY: LINK TK. 
+Most files are too large to store on Github and therefore are on a Google Drive link instead. Because these files are very large, I am still actively transferring these files, which takes a long time. Therefore, the link to the data repository is TK.  
 
 You can find all replication code in the folder "code".
 The analysis process needed for this project involved: 
