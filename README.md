@@ -1,6 +1,6 @@
 Municipal Boundary Changes Code 
 
-This is the publicly available repository for my forthcoming paper in the _Du Bois Review_, "THE LIMITS OF PRECLEARANCE: _Municipal Annexations Before and After Shelby County v. Holder._" This repo contains a lot of code. Collecting underlying data needed for this project involved: 
+This is the publicly available repository for my forthcoming paper in the _Du Bois Review_, "THE LIMITS OF PRECLEARANCE: _Municipal Annexations Before and After Shelby County v. Holder._" This repo contains a lot of code. **Please cite the paper if using any code/data from this repository.** Collecting underlying data needed for this project involved: 
 
 * DATA_1. Downloading block- and place-level shapefiles for 13 years for 40 states 
 * DATA_2. Downloading RAC and WAC (LEHD-LODES data) for 13 years for 40 states 
@@ -27,6 +27,8 @@ The analysis process needed for this project involved:
 * CODE_13: Code for statistical analyses/robustness checks based on 1- and 2-year periods
 
 * state laws database: contains code and compiled state laws governing annexations -- not used in paper. 
+
+# Please do not attempt to sift through code/data in folders marked "archive" without reaching out to me. These files are not useful for replication but document that many iterations of code generation. 
 
 You can find all results -- in the raw form and in the formatted form -- in the folder called "results". There are sub-folders labeled according to the time interval: 
 * t0020: this the 6-year period used in the core analysis
