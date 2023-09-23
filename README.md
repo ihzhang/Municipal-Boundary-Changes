@@ -7,9 +7,24 @@ This is the publicly available repository for my forthcoming paper in the _Du Bo
 * DATA_3. Downloading block (2000, 2010, and 2020 Census), place-level demographic data (13 sets of 5-Year ACS data), and 2020-to-2010 and 2000-to-2010 block-to-block crosswalk files from the NGHIS. 
 * DATA_4. Downloading Census Boundary and Annexation Survey Data (2000-2010 in one file), then annually from 2011-2021, the most recent year available. 
 
-Most files are too large to store on Github and therefore are on a Google Drive link instead. Everything is at this link: https://drive.google.com/drive/folders/1Rk4K8ukEiER4gSTwzacWsp61jxNeLYP3?usp=sharing. Block-level shapefiles are at this link: https://drive.google.com/drive/folders/1lSv4SmHQ73NkqEBPNIr5UUa-_UDxc85Z?usp=sharing. Please be advised that the block-level shapefiles are very large. It may in fact be more efficient to download them from the source using the code outlined in CODE_1. 
+Most files are too large to store on Github and therefore are on a Google Drive link instead. Everything is at this link: https://drive.google.com/drive/folders/1Rk4K8ukEiER4gSTwzacWsp61jxNeLYP3?usp=sharing.
 
-You can find all replication code in the folder "code".
+In this folder you will find: 
+* annexations_blocklevel: contains the output from CODE_7
+* BAS: DATA_4
+* block_ids: contains the .csv version of block IDS from block-level shapefiles, downloaded using CODE_1, part of DATA_1 
+* block_to_block_cw: crosswalks downloaded from NHGIS to convert 2000 and 2020 blocks to 2010 block boundaries
+* block_to_place_cw_final: contains the output from CODE_5
+* buffers_final: contains the output from CODE_6 
+* dem_data_clean: blocks contains the output from SHERLOCK_interpolate_blocks for using DATA_3; places contains the output from CODE_3 on DATA_3
+* dem_data_raw: raw version of DATA_3
+* lodes: raw and cleaned versions of DATA_2
+* shapefiles: place-level shapefiles, downloaded from CODE_1, part of DATA_1
+
+Block-level shapefiles are at this link: https://drive.google.com/drive/folders/1lSv4SmHQ73NkqEBPNIr5UUa-_UDxc85Z?usp=sharing. Please be advised that the block-level shapefiles are very large. It may in fact be more efficient to download them from the source using the code outlined in CODE_1. 
+
+You can find all replication code in the folder "code". Please note that the directory names will have changed from the code that correspond to the folder structure in this data_repository. If you run into issues, please reach out. 
+
 The analysis process needed for this project involved: 
 * CODE_1: Scraping code to bulk download DATA_1
 * CODE_2: Scraping code to bulk download DATA_2 and clean it
@@ -28,7 +43,7 @@ The analysis process needed for this project involved:
 
 * state laws database: contains code and compiled state laws governing annexations -- not used in paper. 
 
-# Please do not attempt to sift through code/data in folders marked "archive" without reaching out to me. These files are not useful for replication but document that many iterations of code generation. 
+# Please do not attempt to sift through code/data/notes in folders marked "archive" without reaching out to me. These files are not useful for replication but document many iterations of code and data generation. 
 
 You can find all results -- in the raw form and in the formatted form -- in the folder called "results". There are sub-folders labeled according to the time interval: 
 * t0020: this the 6-year period used in the core analysis
