@@ -2,10 +2,14 @@ Municipal Boundary Changes Code
 
 This is the publicly available repository for my forthcoming paper in the _Du Bois Review_, "THE LIMITS OF PRECLEARANCE: _Municipal Annexations Before and After Shelby County v. Holder._" This repo contains a lot of code. **Please cite the paper if using any code/data from this repository.** Collecting underlying data needed for this project involved: 
 
+# DATA 
+
 * DATA_1. Downloading block- and place-level shapefiles for 13 years for 40 states 
 * DATA_2. Downloading RAC and WAC (LEHD-LODES data) for 13 years for 40 states 
 * DATA_3. Downloading block (2000, 2010, and 2020 Census), place-level demographic data (13 sets of 5-Year ACS data), and 2020-to-2010 and 2000-to-2010 block-to-block crosswalk files from the NGHIS. 
 * DATA_4. Downloading Census Boundary and Annexation Survey Data (2000-2010 in one file), then annually from 2011-2021, the most recent year available. 
+
+## data-repo Google Drive 
 
 Most files are too large to store on Github and therefore are on a Google Drive link instead. Everything is at this link: https://drive.google.com/drive/folders/1Rk4K8ukEiER4gSTwzacWsp61jxNeLYP3?usp=sharing.
 
@@ -23,8 +27,10 @@ In this folder you will find:
 
 Block-level shapefiles are at this link: https://drive.google.com/drive/folders/1lSv4SmHQ73NkqEBPNIr5UUa-_UDxc85Z?usp=sharing. Please be advised that the block-level shapefiles are very large. It may in fact be more efficient to download them from the source using the code outlined in CODE_1. 
 
+# CODE 
 You can find all replication code in the folder "code". Please note that the directory names will have changed from the code that correspond to the folder structure in this data_repository. If you run into issues, please reach out. 
 
+## Code filenames index
 The analysis process needed for this project involved: 
 * CODE_1: Scraping code to bulk download DATA_1
 * CODE_2: Scraping code to bulk download DATA_2 and clean it
@@ -43,9 +49,14 @@ The analysis process needed for this project involved:
 
 * state laws database: contains code and compiled state laws governing annexations -- not used in paper. 
 
-# Please do not attempt to sift through code/data/notes in folders marked "archive" without reaching out to me. These files are not useful for replication but document many iterations of code and data generation. 
+### Please do not attempt to sift through code/data/notes in folders marked "archive" without reaching out to me. These files are not useful for replication but document many iterations of code and data generation. 
 
-You can find all results -- in the raw form and in the formatted form -- in the folder called "results". There are sub-folders labeled according to the time interval: 
+# Results 
+
+You can find all results -- in the raw form and in the formatted form -- in the folder called "results". 
+
+## Folder structure/index 
+There are sub-folders labeled according to the time interval: 
 * t0020: this the 6-year period used in the core analysis
 * one_year: this is the 1-year period used in supplementary analysis 
 * two_year: this is the 2-year period used in supplementary analysis 
