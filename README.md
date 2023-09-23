@@ -17,7 +17,7 @@ In this folder you will find:
 * annexations_blocklevel: contains the output from CODE_7
 * BAS: DATA_4
 * block_ids: contains the .csv version of block IDS from block-level shapefiles, downloaded using CODE_1, part of DATA_1 
-* block_to_block_cw: crosswalks downloaded from NHGIS to convert 2000 and 2020 blocks to 2010 block boundaries
+* block_to_block_cw: crosswalks downloaded from NHGIS to convert 2000 and 2020 blocks to 2010 block boundaries; part of DATA_3
 * block_to_place_cw_final: contains the output from CODE_5
 * buffers_final: contains the output from CODE_6 
 * dem_data_clean: blocks contains the output from SHERLOCK_interpolate_blocks for using DATA_3; places contains the output from CODE_3 on DATA_3
