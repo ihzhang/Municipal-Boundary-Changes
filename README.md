@@ -7,7 +7,7 @@ This is the publicly available repository for my forthcoming paper in the _Du Bo
 * DATA_3. Downloading block (2000, 2010, and 2020 Census), place-level demographic data (13 sets of 5-Year ACS data), and 2020-to-2010 and 2000-to-2010 block-to-block crosswalk files from the NGHIS. 
 * DATA_4. Downloading Census Boundary and Annexation Survey Data (2000-2010 in one file), then annually from 2011-2021, the most recent year available. 
 
-Most files are too large to store on Github and therefore are on a Google Drive link instead. Because these files are very large, I am still actively transferring these files, which takes a long time. Therefore, the link to the data repository is TK.  
+Most files are too large to store on Github and therefore are on a Google Drive link instead. Everything is at this link: https://drive.google.com/drive/folders/1Rk4K8ukEiER4gSTwzacWsp61jxNeLYP3?usp=sharing. Block-level shapefiles are at this link: https://drive.google.com/drive/folders/1lSv4SmHQ73NkqEBPNIr5UUa-_UDxc85Z?usp=sharing. Please be advised that the block-level shapefiles are very large. It may in fact be more efficient to download them from the source using the code outlined in CODE_1. 
 
 You can find all replication code in the folder "code".
 The analysis process needed for this project involved: 
