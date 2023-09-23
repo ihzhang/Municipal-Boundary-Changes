@@ -22,10 +22,8 @@ In this folder you will find:
 * buffers_final: contains the output from CODE_6 
 * dem_data_clean: blocks contains the output from SHERLOCK_interpolate_blocks for using DATA_3; places contains the output from CODE_3 on DATA_3
 * dem_data_raw: raw version of DATA_3
-* lodes: raw and cleaned versions of DATA_2
-* shapefiles: place-level shapefiles, downloaded from CODE_1, part of DATA_1
-
-Block-level shapefiles are at this link: https://drive.google.com/drive/folders/1lSv4SmHQ73NkqEBPNIr5UUa-_UDxc85Z?usp=sharing. Please be advised that the block-level shapefiles are very large. It may in fact be more efficient to download them from the source using the code outlined in CODE_1. 
+* lodes: raw and cleaned versions of DATA_2; actually available at this link: https://drive.google.com/drive/folders/1qErzxikdsnOGJv6OlAgeWQVdovwfKG9y?usp=sharing. 
+* shapefiles: place-level shapefiles, downloaded from CODE_1, part of DATA_1. Block-level shapefiles are at this link: https://drive.google.com/drive/folders/1lSv4SmHQ73NkqEBPNIr5UUa-_UDxc85Z?usp=sharing. Please be advised that the block-level shapefiles are very large. It may in fact be more efficient to download them from the source using the code outlined in CODE_1. 
 
 # CODE 
 You can find all replication code in the folder "code". Please note that the directory names will have changed from the code that correspond to the folder structure in this data repository. If you run into issues or questions on how to navigate that, please reach out. 
