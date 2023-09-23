@@ -51,7 +51,7 @@ The analysis process needed for this project involved:
 
 ### Please do not attempt to sift through code/data/notes in folders marked "archive" without reaching out to me. These files are not useful for replication but document many iterations of code and data generation. 
 
-# Results 
+# RESULTS
 
 You can find all results -- in the raw form and in the formatted form -- in the folder called "results". 
 
