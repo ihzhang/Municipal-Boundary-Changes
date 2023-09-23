@@ -28,10 +28,10 @@ In this folder you will find:
 Block-level shapefiles are at this link: https://drive.google.com/drive/folders/1lSv4SmHQ73NkqEBPNIr5UUa-_UDxc85Z?usp=sharing. Please be advised that the block-level shapefiles are very large. It may in fact be more efficient to download them from the source using the code outlined in CODE_1. 
 
 # CODE 
-You can find all replication code in the folder "code". Please note that the directory names will have changed from the code that correspond to the folder structure in this data_repository. If you run into issues, please reach out. 
+You can find all replication code in the folder "code". Please note that the directory names will have changed from the code that correspond to the folder structure in this data repository. If you run into issues or questions on how to navigate that, please reach out. 
 
 ## Code filenames index
-The analysis process needed for this project involved: 
+The analysis process needed for this project involved the following code, numbered in sequence that correspond to the steps of the project: 
 * CODE_1: Scraping code to bulk download DATA_1
 * CODE_2: Scraping code to bulk download DATA_2 and clean it
 * CODE_3: Cleaning DATA_3 after manual download from Social Explorer and NHGIS; some linear interpolation of block-level data was performed on an HPC located at Stanford called Sherlock. 
