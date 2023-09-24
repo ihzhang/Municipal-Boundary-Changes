@@ -41,7 +41,7 @@ The analysis process needed for this project involved the following code, number
 * CODE_8: Code that transforms blocks-level data (output from CODE_7) into place-level data with relevant demographic information (6-year periods) (output from CODE_3) and preps data for panel form; also uses output from CODE_4
 * CODE_9: Code for statistical analyses presented in the paper via output from CODE_8
 * CODE_10: Code for descriptive statistics presented in the paper using output from CODE_8
-* CODE_11: Code for maps presented in the paper using output from CODE_7
+* CODE_11: Code for maps presented in the paper using output from CODE_7 and CODE_8
 * CODE_12: Code that transforms blocks-level data into place-level data with relevant demographic information (1-year) periods
 * CODE_13: Code for statistical analyses/robustness checks based on 1- and 2-year periods
 
