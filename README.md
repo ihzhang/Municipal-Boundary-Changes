@@ -1,6 +1,6 @@
-Municipal Boundary Changes Replication Package. 
+Municipal Boundary Changes Replication Package & Repository 
 
-This is the publicly available repository for my forthcoming paper in the _Du Bois Review_, "THE LIMITS OF PRECLEARANCE: _Municipal Annexations Before and After Shelby County v. Holder._" by Iris H. Zhang. This repo contains all the data & code for complete replication of the paper. **Please cite the paper if using any code/data from this repository.** My contact: ihzhang@stanford.edu. 
+Thank you for your interest. Welcome to the publicly available repository for my forthcoming paper in the _Du Bois Review_, "THE LIMITS OF PRECLEARANCE: _Municipal Annexations Before and After Shelby County v. Holder._" by Iris H. Zhang. This repo contains all the data & code for complete replication of the paper. **Please cite the paper if using any code/data from this repository.** My contact: ihzhang@stanford.edu. 
 
 # DATA 
 Collecting underlying data needed for this project involved: 
