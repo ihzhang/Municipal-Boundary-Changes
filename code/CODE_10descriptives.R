@@ -1,6 +1,6 @@
 rm(list = ls())
 
-load(paste0("THREE_July.RData"))
+load(paste0("results/analysis.RData"))
 
 curdir <- paste0(dirname(rstudioapi::getSourceEditorContext()$path), "/")
 savedir <- paste0(curdir, "/../results/")
@@ -195,7 +195,7 @@ gg = ggplot(pta, aes(y=annexing,x=time, group = vra)) +
   theme_bw() + 
   #theme(axis.text.x = element_text(angle = 45, vjust = 0.5)) +
   ylab("% of Municipalities") + 
-  xlab("Annual Period") + 
+  xlab("Period") + 
   labs(linetype = "VRA Coverage")
 gg
 

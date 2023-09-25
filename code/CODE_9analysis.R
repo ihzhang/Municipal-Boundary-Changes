@@ -1,481 +1,261 @@
+# -------------------------------------------------------------------------
+# Created by: Iris Zhang                     
+# Date created: 2021             
+# Last revised: 6/30/2022             
+# Project: MBC         
+# Subproject: Analysis
+# Re: Run analysis using BAS-validated version of annexing places        
+# -------------------------------------------------------------------------
+
 rm(list = ls())
-library(haven)
-library(tidyverse)
-library(lme4)
-library(lattice)
-library(lmerTest)
-library(sjPlot)
-library(stargazer)
-
-setwd("~/Google Drive/Stanford/QE2")
-aa <- read_csv("annexedblocks0010dem_pl00_newsample_unincorp.csv")
-names(aa)
-
-
-length(unique(aa$plid)) #1792
-table(aa$annexed) #22,548 vs. 57640
-
-aa <- aa %>%
-  filter(!is.na(pop00b) & !is.na(pctnhwhite00b) & !is.na(dependencyratio00b) & !is.na(pctnhblack00b) & 
-          !is.na(pctowneroccupied) & !is.na(pcth00b) & !is.na(nhblack00b) & !is.na(h00b) & !is.na(nhwhite00b) &
-          !is.na(min00b) & !is.na(nhwhite00p) & !is.na(nhblack00p) & !is.na(h00p) & !is.na(popgrowth) & 
-         !is.na(pctmin00b) & !is.na(pctnhwhite00p) & !is.na(pcth00p) & !is.na(pctnhblack00p) & !is.na(pctmin00p) & 
-          !is.na(blackpov00p) & !is.na(popdensitypl00) & !is.na(hinc00p) & !is.na(recimmgrowth) & 
-           is.finite(recimmgrowth) & !is.na(nhwhitegrowth) & is.finite(nhwhitegrowth) & !is.na(hpov00p) & !is.na(minpov00p) & 
-         !is.na(nhwhitepov00p) & !is.na(hispvap00p) & is.finite(hispvap00p) & !is.na(nhwvap00p) & is.finite(nhwvap00p) & 
-           !is.na(minorityvap00p) & is.finite(minorityvap00p) & !is.na(hispvap00b) & is.finite(hispvap00b) & 
-           !is.na(nhwvap00b) & is.finite(nhwvap00b) & !is.na(minorityvap00b) & is.finite(minorityvap00b) & 
-           !is.na(nhbvap00b) & is.finite(nhbvap00b) & is.finite(mingrowth) & is.finite(hgrowth) & is.finite(nhblackgrowth)) 
-summary(aa)
-
-aa <- aa %>%
-  group_by(plid) %>%
-  mutate(n_annexed = sum(annexed==1),
-         n = n()) %>%
-  filter(n_annexed < n)
-
-# descriptives ####
-# blocks--annexed vs. not annexed 
-
-vars <- c("pop00b", "nhblack00b", "nhwhite00b", "h00b", "min00b",
-          "pctnhblack00b", "pctnhwhite00b", "pcth00b", "pctmin00b",
-          "dependencyratio00b", "pctowneroccupied",
-          "hispvap00b", "nhwvap00b", "nhbvap00b", "minorityvap00b"
-)
-
-annexedblocks <- as.data.frame(aa %>% 
-                                 group_by(annexed) %>%
-                                 summarize_at(vars, 
-                                              list(~mean(., na.rm = T), ~median(., na.rm = T), ~sd(., na.rm = T))) %>% 
-                                 t())
-
-write.csv(annexedblocks, "blocks_descriptives.csv", row.names = T)
-
-# variable controls ####
-vars <- c("pop00b", "dependencyratio00b", "pctowneroccupied",
-          "h00b", "nhwhite00b", "min00b", "nhblack00b", 
-          "pctnhblack00b", "pctnhwhite00b", "pcth00b", "pctmin00b",
-          "hu", "hispvap00b", "nhwvap00b", "nhbvap00b", "minorityvap00b")
-
-sample <- as.data.frame(aa %>% 
-                        summarize_at(vars, 
-                        list(~mean(., na.rm = T), ~median(., na.rm = T), ~sd(., na.rm = T))) %>% 
-                        t())
-sample
-write.csv(sample, "sample_descriptives_block.csv", row.name = T)
-
-plids <- unique(aa$plid)
-pl9000 <- read_csv("pl9000_var.csv")
-
-pl9000 <- pl9000 %>%
-  filter(plid2 %in% plids)
-length(unique(pl9000$plid2))
-
-vars <- c("nhblack00p", "nhwhite00p", "h00p", "min00p",
-          "pctnhblack00p", "pctnhwhite00p", "pcth00p", "pctmin00p",
-          "hinc00p", "popgrowth", "incomegrowth", "pop00p",
-          "hispvap00p", "nhwvap00p", "nhbvap00p", "minorityvap00p",
-          "recimmgrowth", "blackpov00p", "hpov00p", "minpov00p", "nhwhitepov00p")
-
-sample <- as.data.frame(pl9000 %>% 
-                          summarize_at(vars, 
-                                       list(~mean(., na.rm = T), ~median(., na.rm = T), ~sd(., na.rm = T))) %>% 
-                          t())
-sample
-write.csv(sample, "sample_descriptives_places.csv", row.name = T)
-
-aa <- aa %>%
-  mutate(logpop00p = log(pop00p))
-
-# Center 
-varsc <- c("pop00b", "pctnhwhite00b", "dependencyratio00b", 
-           "pctnhblack00b", "pctowneroccupied", "pcth00b", 
-           "nhblack00b", "h00b", "nhwhite00b", "min00b",
-           "logpop00p", "nhwhite00p", "nhblack00p", "h00p", "popgrowth",
-           "pctmin00b", "pctnhwhite00p", "pcth00p", "pctnhblack00p", "pctmin00p", 
-           "blackpov00p", "popdensitypl00", "hinc00p",
-           "recimmgrowth", "nhwhitegrowth", "hpov00p", "minpov00p", "nhwhitepov00p",
-           "hispvap00p", "nhwvap00p", "minorityvap00p", "hispvap00b", "nhwvap00b", "minorityvap00b", "nhbvap00b")
-
-varsc <- setNames(varsc, str_c(varsc, "_c"))
-
-aa <- aa %>%
-  ungroup() %>%
-  mutate_at(varsc, ~base::scale(.))
-
-summary(aa)
-names(aa)
-
-# hypotheses proceed like this ####
-# 1a. probability of being annexed ~ black/white 
-# 1b. probability of being annexed ~ Hisp/white
-# 1c. probability of being annexed ~ Min/white 
-# 2. place-pct white in 2010 ~ annexed 
-
-# 1a. probability of being annexed ~ black/white ####
-#null model: intercept-only model
-m0 <- glm(annexed ~ 1, data = aa, family = "binomial")
-summary(m0)
-
-#m1: random intercept 
-m1 <- glmer(annexed ~ (1 | plid), data = aa, family = "binomial")
-tab_model(m1) #28% variation between places (level 2/group)
-
-(2* logLik(m1)) - (2* logLik(m0))
-# m1 performs better
-
-#m2: model with level 1 predictors: testing effects of race with class controls
-m2 <- glmer(annexed ~ nhbvap00b_c + dependencyratio00b_c + pctowneroccupied_c + (1 | plid), data = aa, family = "binomial")
-anova(m2, m1)
-
-# m2 performs better 
-tab_model(m2)
-
-#m3: model with level 2 predictors 
-m3 <- glmer(annexed ~ nhbvap00b_c + dependencyratio00b_c + pctowneroccupied_c + 
-            popdensitypl00_c + nhwvap00p_c + blackpov00p_c + nhwhitegrowth_c + recimmgrowth_c + (1 | plid), data = aa, family = "binomial")
-anova(m3, m2)
-tab_model(m3)
-#m3 is better
-
-#m4: model with random slopes, level 1 variables only, so m2 with random slopes 
-m4 <- glmer(annexed ~ nhbvap00b_c + dependencyratio00b_c + pctowneroccupied_c + (1 + nhbvap00b_c | plid), data = aa, family = "binomial")
-anova(m4, m2) # m4 better
-anova(m4, m3) # no difference
-tab_model(m2, m4)
-
-# to compare models with cross-level interaction to without, let's do a version of level 2 var that is just white and imm, and then an interaction
-m3c_nhb <- glmer(annexed ~ popdensitypl00_c + log(pop00p) + popgrowth_c + hinc00p_c + blackpov00p_c +
-                   recimmgrowth_c*nhbvap00b_c + nhwvap00p_c*nhbvap00b_c + 
-                   pctowneroccupied_c + dependencyratio00b_c + 
-               (1 | plid), data = aa, family = "binomial")
-tab_model(m3c_nhb)
-anova(m3c_nhb, m4)
-anova(m3c_nhb, m2)
-
-# my models ####
-#nhb ####
-m3c_nhb <- glmer(annexed ~ popdensitypl00_c + logpop00p_c + popgrowth_c + hinc00p_c + blackpov00p_c +
-                   nhbvap00b_c*recimmgrowth_c + nhbvap00b_c*nhwhitegrowth_c +
-                   pctowneroccupied_c + dependencyratio00b_c +
-                   (1 | plid), data = aa, family = "binomial")
-tab_model(m3c_nhb)
-nhbimm <- plot_model(m3c_nhb, type = "int")[[1]]
-nhbnhw <- plot_model(m3c_nhb, type = "int")[[2]]
+# Script Description ------------------------------------------------------
+# Manually identified annexations appear to be unreliable, especially for cross-boundary years, 
+# Inputs:
 # 
-# m3c_nhb3 <- glmer(annexed ~ popdensitypl00_c + logpop00p_c + popgrowth_c + hinc00p_c + blackpov00p_c +
-#                    hpov00p_c + nhwhitepov00p_c + nhbvap00b_c*recimmgrowth_c + hispvap00b_c*recimmgrowth_c + 
-#                     nhwvap00b_c*recimmgrowth_c + nhbvap00b_c*pctnhwhite00p_c + hispvap00b_c*pctnhwhite00p_c + 
-#                     nhwvap00b_c*pctnhwhite00p_c + pctowneroccupied_c + dependencyratio00b_c + 
-#                    (1 | plid), data = aa, family = "binomial")
-# tab_model(m3c_nhb3)
-# p1 <- plot_model(m3c_nhb3, type = "int")[[1]]
-# p2 <- plot_model(m3c_nhb3, type = "int")[[2]] 
-# p3 <- plot_model(m3c_nhb3, type = "int")[[3]]
-# p4 <- plot_model(m3c_nhb3, type = "int")[[4]] 
-# p5 <- plot_model(m3c_nhb3, type = "int")[[5]]
-# p6 <- plot_model(m3c_nhb3, type = "int")[[6]] 
+
+# Outputs:
 # 
-# p1
-# p2
-# p3
-# p4
-# p5
-# p6
 
-m3c_nhb2 <- glmer(annexed ~ popdensitypl00_c + logpop00p_c + popgrowth_c + hinc00p_c + blackpov00p_c +
-                   pctnhblack00b_c*recimmgrowth_c + pctnhblack00b_c*nhwhitegrowth_c + 
-                   pctowneroccupied_c + dependencyratio00b_c + 
-                   (1 | plid), data = aa, family = "binomial")
-nhbimm2 <- plot_model(m3c_nhb2, type = "int")[[1]]
-nhbnhw2 <- plot_model(m3c_nhb2, type = "int")[[2]] # hold 
+# Updates log: 
+# #6/30: add 2019 
 
-#h ####
-m3c_h <-glmer(annexed ~ popdensitypl00_c + logpop00p_c + popgrowth_c + hinc00p_c + hpov00p_c +
-                hispvap00b_c*recimmgrowth_c + hispvap00b_c*nhwhitegrowth_c + 
-                pctowneroccupied_c + dependencyratio00b_c + 
-                (1 | plid), data = aa, family = "binomial")
-tab_model(m3c_h)
-hispimm <- plot_model(m3c_h, type = "int")[[1]]
-hispnhw <- plot_model(m3c_h, type = "int")[[2]] 
+# Setup -------------------------------------------------------------------
 
-m3c_h2 <-glmer(annexed ~ popdensitypl00_c + logpop00p_c + popgrowth_c + hinc00p_c + hpov00p_c +
-                pcth00b_c*recimmgrowth_c + pcth00b_c*nhwhitegrowth_c + 
-                pctowneroccupied_c + dependencyratio00b_c + 
-                (1 | plid), data = aa, family = "binomial")
-hispimm2 <- plot_model(m3c_h2, type = "int")[[1]]
-hispnhw2 <- plot_model(m3c_h2, type = "int")[[2]] 
-
-#min ####
-m3c_min <- glmer(annexed ~ popdensitypl00_c + logpop00p_c + popgrowth_c + hinc00p_c + minpov00p_c +
-                   minorityvap00b_c*recimmgrowth_c + minorityvap00b_c*nhwhitegrowth_c + 
-                   pctowneroccupied_c + dependencyratio00b_c + 
-                   (1 | plid), data = aa, family = "binomial")
-tab_model(m3c_min)
-minimm <- plot_model(m3c_min, type = "int")[[1]]
-minnhw <- plot_model(m3c_min, type = "int")[[2]]
-
-m3c_min2 <- glmer(annexed ~ popdensitypl00_c + logpop00p_c + popgrowth_c + hinc00p_c + minpov00p_c +
-                   pctmin00b_c*recimmgrowth_c + pctmin00b_c*nhwhitegrowth_c + 
-                   pctowneroccupied_c + dependencyratio00b_c + 
-                   (1 | plid), data = aa, family = "binomial")
-minimm2 <- plot_model(m3c_min2, type = "int")[[1]]
-minnhw2 <- plot_model(m3c_min2, type = "int")[[2]]
-
-#nhwhite ####
-m3c_nhw <- glmer(annexed ~ popdensitypl00_c + logpop00p_c + popgrowth_c + hinc00p_c + nhwhitepov00p_c +
-                   nhwvap00b_c*recimmgrowth_c + nhwvap00b_c*nhwhitegrowth_c + 
-                   pctowneroccupied_c + dependencyratio00b_c + 
-                   (1 | plid), data = aa, family = "binomial")
-tab_model(m3c_nhw)
-
-nhwimm <- plot_model(m3c_nhw, type = "int")[[1]]
-nhwnhw <- plot_model(m3c_nhw, type = "int")[[2]]
-
-m3c_nhw2 <- glmer(annexed ~ popdensitypl00_c + logpop00p_c + popgrowth_c + hinc00p_c + nhwhitepov00p_c +
-                   pctnhwhite00b_c*recimmgrowth_c + pctnhwhite00b_c*nhwhitegrowth_c + 
-                   pctowneroccupied_c + dependencyratio00b_c + 
-                   (1 | plid), data = aa, family = "binomial")
-nhwimm2 <- plot_model(m3c_nhw2, type = "int")[[1]]
-nhwnhw2 <- plot_model(m3c_nhw2, type = "int")[[2]]
-
-tab_model(m3c_nhb, m3c_h, m3c_min, m3c_nhw)
-tab_model(m3c_nhb2, m3c_h2, m3c_min2, m3c_nhw2)
+# Packages: 
 
 
-# lichter replication ####
-# same states 
-aa <- aa %>%
-  mutate(STATEA = substr(plid, 1, 2))
+# Directories: 
+setwd("~/Google Drive/My Drive/Stanford/QE2")
 
-aa$STATEA <- relevel(as.factor(aa$STATEA), ref = "51")
-lichter_nhb <- glm(annexed ~ pctnhwhite00p + popdensitypl00 + log(pop00p) + popgrowth + hinc00p + blackpov00p +
-                     pctowneroccupied + pctnhblack00b + dependencyratio00b + as.factor(STATEA), 
-                   data = aa %>% filter(STATEA=="51" | STATEA=="01" | STATEA=="05" | STATEA=="13" | STATEA=="22" | STATEA=="28" | STATEA=="37" | STATEA=="45"), 
-                   family = "binomial")
-summary(lichter_nhb)
+# homedir <- The smallest directory that contains all input/output folders.
+# workdir <- The smallest directory that contains all necessary inputs.
+# savedir <- The smallest directory that contains all output folders.
+# setwd(paste0(homedir, workdir))
 
+# Import data: 
 
-lichter_nhb_full <- glm(annexed ~ pctnhwhite00p + popdensitypl00 + log(pop00p) + popgrowth + hinc00p + blackpov00p +
-                          pctowneroccupied + pctnhblack00b + dependencyratio00b + as.factor(STATEA), 
-                        data = aa,
-                        family = "binomial")
-summary(lichter_nhb_full)
+# Parameters:
 
-stargazer(lichter_nhb, lichter_nhb_full,
-          type = "html",
-          out = "lichter_nhb_comp.htm")
+# Main Script -------------------------------------------------------------
 
-lichter_h <- glm(annexed ~ pctnhwhite00p + popdensitypl00 + log(pop00p) + popgrowth + hinc00p + hpov00p +
-                   pctowneroccupied + pcth00b + dependencyratio00b + as.factor(STATEA), 
-                 data = aa %>% filter(STATEA=="51" | STATEA=="01" | STATEA=="05" | STATEA=="13" | STATEA=="22" | STATEA=="28" | STATEA=="37" | STATEA=="45"), 
-                 family = "binomial")
-summary(lichter_h)
+# get environment ready 
+library("stringr")
+library("tidyverse")
+library("dplyr")
+library("stargazer")
+library("fixest")
+library("readr")
+library("data.table")
+library("magrittr")
+library("openxlsx")
+library("broom")
+library("sjPlot")
 
-lichter_h_full <- glm(annexed ~ pctnhwhite00p + popdensitypl00 + log(pop00p) + popgrowth + hinc00p + hpov00p +
-                        pctowneroccupied + pcth00b + dependencyratio00b + as.factor(STATEA), 
-                      data = aa,
-                      family = "binomial")
-summary(lichter_h_full)
+load(paste0("THREE_July.RData"))
 
+curdir <- paste0(dirname(rstudioapi::getSourceEditorContext()$path), "/")
+savedir <- paste0(curdir, "/../results/")
 
-lichter_min <- glm(annexed ~ pctnhwhite00p + popdensitypl00 + log(pop00p) + popgrowth + hinc00p + minpov00p +
-                     pctowneroccupied + pctmin00b + dependencyratio00b + as.factor(STATEA), 
-                   data = aa %>% filter(STATEA=="51" | STATEA=="01" | STATEA=="05" | STATEA=="13" | STATEA=="22" | STATEA=="28" | STATEA=="37" | STATEA=="45"), 
-                   family = "binomial")
-summary(lichter_min)
+# make panel data!!!!! ####
+# take out ne, alaska, and hawaii
+#vraplids <- read_csv("analyticalfiles/vra_places.csv")
+NE <- c("09", "15", "23", "25", "33", "34", "36", "42", "44", "50")
+bas <- read_csv("analyticalfiles/bas_years_0020.csv")
 
-lichter_min_full <- glm(annexed ~ pctnhwhite00p + popdensitypl00 + log(pop00p) + popgrowth + hinc00p + minpov00p +
-                          pctowneroccupied + pctmin00b + dependencyratio00b + as.factor(STATEA), 
-                        data = aa,
-                        family = "binomial")
-summary(lichter_min_full)
+pl_annex_var_0007 %<>%
+  mutate(STATE = substr(plid, 1, 2)) %>%
+  filter(!(STATE %in% NE)) 
 
-lichter_nhw <- glm(annexed ~ pctnhwhite00p + popdensitypl00 + log(pop00p) + popgrowth + hinc00p + nhwhitepov00p +
-                     pctowneroccupied + pctnhwhite00b + dependencyratio00b + as.factor(STATEA), 
-                   data = aa %>% filter(STATEA=="51" | STATEA=="01" | STATEA=="05" | STATEA=="13" | STATEA=="22" | STATEA=="28" | STATEA=="37" | STATEA=="45"), 
-                   family = "binomial")
-summary(lichter_nhw)
+pl_annex_var_0007 %<>%
+  mutate(annexing_bas = ifelse(plid %in% bas$plid[bas$period=="2000 to 2007"], 1, 0),
+         annexing_use = ifelse(annexing == 1 & annexing_bas == 1, 1, 0))
+table(pl_annex_var_0007$annexing, pl_annex_var_0007$annexing_use)
+2496/(2496 + 177)
 
-lichter_nhw_full <- glm(annexed ~ pctnhwhite00p + popdensitypl00 + log(pop00p) + popgrowth + hinc00p + nhwhitepov00p +
-                          pctowneroccupied + pctnhwhite00b + dependencyratio00b + as.factor(STATEA), 
-                        data = aa, 
-                        family = "binomial")
-summary(lichter_nhw_full)
+pl_annex_var_0713 %<>%
+  mutate(STATE = substr(plid, 1, 2)) %>%
+  filter(!(STATE %in% NE)) 
 
-stargazer(lichter_h, lichter_h_full,
-          type = "html",
-          out = "lichter_h_comp.htm")
+pl_annex_var_0713 %<>%
+  mutate(annexing_bas = ifelse(plid %in% bas$plid[bas$period=="2007 to 2013"], 1, 0),
+         annexing_use = ifelse(annexing == 1 & annexing_bas == 1, 1, 0))
+table(pl_annex_var_0713$annexing, pl_annex_var_0713$annexing_use)
+2505/(2505+869)
 
-stargazer(lichter_min, lichter_min_full,
-          type = "html",
-          out = "lichter_min_comp.htm")
+pl_annex_var_1420 %<>%
+  mutate(STATE = substr(plid, 1, 2)) %>%
+  filter(!(STATE %in% NE)) 
 
-stargazer(lichter_nhw, lichter_nhw_full,
-          type = "html",
-          out = "lichter_nhw_comp.htm")
+pl_annex_var_1420 %<>%
+  mutate(annexing_bas = ifelse(plid %in% bas$plid[bas$period=="2014 to 2020"], 1, 0),
+         annexing_use = ifelse(annexing == 1 & annexing_bas == 1, 1, 0))
+table(pl_annex_var_1420$annexing, pl_annex_var_1420$annexing_use)
+362/(362+1242)
 
-# change plot appearances ####
-# recent immigrant, vap
-immb <- nhbimm$data 
-immb$Race <- "Non-Hispanic Black"
+panel_annual <- rbind(pl_annex_var_0007, pl_annex_var_0713, pl_annex_var_1420)
+panel0020_did <- panel_annual
+rm(panel_annual)
+names(panel0020_did) <- gsub("ppov", "pctpov", names(panel0020_did))
+panel0020_did %<>%
+  mutate(post = ifelse(time %in% "2014 to 2020", 1, 0), 
+         STATE = substr(plid, 1, 2))
 
-immh <- hispimm$data 
-immh$Race <- "Hispanic"
+panel0020_did %<>%
+  mutate_at(vars(c(pop, popdensity, pctnhblack_total, pctnbmin_total, pctowneroccupied, mhmval, hinc, pctpov, pctblackpov, pctnbminpov, pctownerocc_total, pcthincjobs_total, pctincopp_total)), 
+            ~((.-mean(., na.rm = T))/sd(., na.rm = T))) 
 
-immm <- minimm$data 
-immm$Race <- "Non-white"
+# models ####
+annex <- feols(annexing ~ as.factor(vra)*as.factor(post) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid + STATE, fixef.rm = "none")
+summary(annex)
 
-immw <- nhwimm$data 
-immw$Race <- "Non-Hispanic white"
+annex_twop <- feols(annexing ~ as.factor(vra)*as.factor(post) + pop + popdensity + pctnhblack + pctnbmin + pctblackpov + pctnbminpov + pctowneroccupied + mhmval + hinc + pctpov + as.factor(more_white) + pctnhblack_total + pctnbmin_total + pctownerocc_total + pcthincjobs_total + pctincopp_total | plid + time, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid + STATE, fixef.rm = "none")
+summary(annex_twop)
 
-imm <- base::rbind(immb, immh, immm, immw) %>%
-  mutate(group = as.numeric(as.character(group)),
-         Group = ifelse(group < 0, "Minimum", "Maximum"))
-rm(immb, immh, immm, immw)
+ann_tid <- tidy(annex)
+for (model_stat in names(glance(annex))) {
+  ann_tid[[model_stat]] <- glance(annex)[[model_stat]]
+}
 
-imm$Race <- factor(imm$Race, levels = c("Non-Hispanic Black",
-                                        "Hispanic",
-                                        "Non-white",
-                                        "Non-Hispanic white"))
+ann_2_tid <- tidy(annex_twop)
+for (model_stat in names(glance(annex_twop))) {
+  ann_2_tid[[model_stat]] <- glance(annex_twop)[[model_stat]]
+}
 
-immplot <- ggplot(imm,
-       aes(x, predicted, linetype = Group)) +
-  geom_line() +
-  labs(linetype = "Place Recent Immigrant 
-Population Growth Rate (scaled)") +
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.3) +
-  facet_wrap(~Race, scales = "free") +
-  scale_color_grey() +
-  ylab("Predicted probability of being Annexed") +
-  xlab("Block % of Specified Race, VAP (scaled)") +
-  theme_bw() 
+annex_list <- list(ann_tid, ann_2_tid)
 
-immplot  
-ggsave("immplot_vap.png",
-       plot = immplot,
-       width = 9.5,
-       height = 4.5)
+openxlsx::write.xlsx(annex_list, paste0(savedir, "t0020/annex_reg_annual.xlsx"))
 
-# NHW, vap
-nhwb <- nhbnhw$data 
-nhwb$Race <- "Non-Hispanic Black"
+# make coefficient plot ----
+base_reg <- read_xlsx(path = paste0(savedir, "t0020/annex_reg_annual.xlsx"), sheet = 1) %>%
+  select(est = estimate, se = std.error, term = term) %>%
+  mutate(
+    ci = 1.96*se,
+    model = "Baseline",
+    type = "Annexations, General"
+  )
 
-nhwh <- hispnhw$data 
-nhwh$Race <- "Hispanic"
+cov_reg <- read_xlsx(path = paste0(savedir, "t0020/annex_reg_annual.xlsx"), sheet = 2) %>%
+  select(est = estimate, se = std.error, term = term) %>%
+  mutate(
+    ci = 1.96*se,
+    model = "With Covariates",
+    type = "Annexations, General"
+  )
 
-nhwm <- minnhw$data 
-nhwm$Race <- "Non-white"
+# binary comparison of racial composition ----
+nhb <- feols(underbound_black ~ as.factor(post)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid + STATE)
+summary(nhb)
 
-nhww <- nhwnhw$data 
-nhww$Race <- "Non-Hispanic white"
+nhb_cov <- feols(underbound_black ~ as.factor(post)*as.factor(vra) + pctnhblack + pctnhblack_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid + STATE)
+summary(nhb_cov) 
 
-nhw <- base::rbind(nhwb, nhwh, nhwm, nhww) %>%
-  mutate(group = as.numeric(as.character(group)),
-         Group = ifelse(group < 0, "Minimum", "Maximum"))
-rm(nhwb, nhwh, nhwm, nhww)
+nbmin <- feols(underbound_nbmin ~ as.factor(post)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid + STATE)
+summary(nbmin)
 
-nhw$Race <- factor(nhw$Race, levels = c("Non-Hispanic Black",
-                                        "Hispanic",
-                                        "Non-white",
-                                        "Non-Hispanic white"))
+nbmin_cov <- feols(underbound_nbmin ~ as.factor(post)*as.factor(vra) + pctnbmin + pctnbmin_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid + STATE)
+summary(nbmin_cov) 
 
-nhwplot <- ggplot(nhw,
-                  aes(x, predicted, linetype = Group)) +
-  geom_line() +
-  labs(linetype = "Place Non-Hispanic 
-white growth rate, VAP (scaled)") +
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.3) +
-  facet_wrap(~Race, scales = "free") +
-  scale_color_grey() +
-  ylab("Predicted probability of being Annexed") +
-  xlab("Block % of Specified Race, VAP (scaled)") +
-  theme_bw() 
+nhb_tid <- tidy(nhb)
+for (model_stat in names(glance(nhb))) {
+  nhb_tid[[model_stat]] <- glance(nhb)[[model_stat]]
+}
 
-nhwplot  
-ggsave("nhwplot_vap.png",
-       plot = nhwplot,
-       width = 9.5,
-       height = 4.5)
+nhb_cov_tid <- tidy(nhb_cov)
+for (model_stat in names(glance(nhb_cov))) {
+  nhb_cov_tid[[model_stat]] <- glance(nhb_cov)[[model_stat]]
+}
 
-# recent immigrant, total
-immb2 <- nhbimm2$data 
-immb2$Race <- "Non-Hispanic Black"
+nbmin_tid <- tidy(nbmin)
+for (model_stat in names(glance(nbmin))) {
+  nbmin_tid[[model_stat]] <- glance(nbmin)[[model_stat]]
+}
 
-immh2 <- hispimm2$data 
-immh2$Race <- "Hispanic"
+nbmin_cov_tid <- tidy(nbmin_cov)
+for (model_stat in names(glance(nbmin_cov))) {
+  nbmin_cov_tid[[model_stat]] <- glance(nbmin_cov)[[model_stat]]
+}
 
-immm2 <- minimm2$data 
-immm2$Race <- "Non-white"
+annex_list <- list(nhb_tid, nhb_cov_tid, 
+                   nbmin_tid, nbmin_cov_tid)
 
-immw2 <- nhwimm2$data 
-immw2$Race <- "Non-Hispanic white"
+openxlsx::write.xlsx(annex_list, paste0(savedir, "t0020/outcome_reg_annual.xlsx"))
 
-imm2 <- base::rbind(immb2, immh2, immm2, immw2) %>%
-  mutate(group = as.numeric(as.character(group)),
-         Group = ifelse(group < 0, "Minimum", "Maximum"))
-rm(immb2, immh2, immm2, immw2)
+# coef plot for underbound ----
+base_nhb <- read_xlsx(path = paste0(savedir, "t0020/outcome_reg_annual.xlsx"), sheet = 1) %>%
+  select(est = estimate, se = std.error, term = term) %>%
+  mutate(
+    ci = 1.96*se,
+    model = "Baseline",
+    type = "Annexations, Black-Diluting"
+  )
 
-imm2$Race <- factor(imm2$Race, levels = c("Non-Hispanic Black",
-                                        "Hispanic",
-                                        "Non-white",
-                                        "Non-Hispanic white"))
+cov_nhb <- read_xlsx(path = paste0(savedir, "t0020/outcome_reg_annual.xlsx"), sheet = 2) %>%
+  select(est = estimate, se = std.error, term = term) %>%
+  mutate(
+    ci = 1.96*se,
+    model = "With Covariates",
+    type = "Annexations, Black-Diluting"
+  )
 
-immplot2 <- ggplot(imm2,
-                  aes(x, predicted, linetype = Group)) +
-  geom_line() +
-  labs(linetype = "Place Recent Immigrant 
-Population Growth Rate (scaled)") +
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.3) +
-  facet_wrap(~Race, scales = "free") +
-  scale_color_grey() +
-  ylab("Predicted probability of being Annexed") +
-  xlab("Block % of Specified Race (scaled)") +
-  theme_bw() 
+base_nbm <- read_xlsx(path = paste0(savedir, "t0020/outcome_reg_annual.xlsx"), sheet = 3) %>%
+  select(est = estimate, se = std.error, term = term) %>%
+  mutate(
+    ci = 1.96*se,
+    model = "Baseline",
+    type = "Annexations, Non-Black \nMinority-Diluting"
+  )
 
-immplot2  
-ggsave("immplot_total.png",
-       plot = immplot2,
-       width = 9.5,
-       height = 4.5)
+cov_nbm <- read_xlsx(path = paste0(savedir, "t0020/outcome_reg_annual.xlsx"), sheet = 4) %>%
+  select(est = estimate, se = std.error, term = term) %>%
+  mutate(
+    ci = 1.96*se,
+    model = "With Covariates",
+    type = "Annexations, Non-Black \nMinority-Diluting"
+  )
 
-#nhw, total
-nhwb2 <- nhbnhw2$data 
-nhwb2$Race <- "Non-Hispanic Black"
+df <- base::rbind(base_reg, cov_reg, base_nhb, cov_nhb, base_nbm, cov_nbm) %>%
+  mutate(type = factor(type, levels = c("Annexations, General", "Annexations, Black-Diluting", "Annexations, Non-Black \nMinority-Diluting")))
 
-nhwh2 <- hispnhw2$data 
-nhwh2$Race <- "Hispanic"
+plot = ggplot(df,
+              aes(x = type, y = est, shape = model, color = type)) +
+  scale_color_grey() + 
+  geom_point(position=position_dodge(width=0.5), size = 2) + 
+  geom_errorbar(aes(x = type, ymin = est - ci, ymax = est + ci), 
+                width = 0.2, position=position_dodge(width=0.5)) + 
+  geom_hline(yintercept = 0, linetype = "dashed", size = 0.2) +
+  ylab("Coefficients, 95% CIs") +
+  xlab(NULL) +
+  theme_bw() + 
+  guides(color = FALSE) +
+  theme(
+    #axis.text.x=element_blank(),
+    axis.ticks.x = element_blank(),
+    legend.title = element_blank(),
+    legend.position = "bottom") 
+plot
+ggsave(filename = paste0(savedir, "t0020/coeffs.pdf"),
+       plot = plot, 
+       dpi = 300)
 
-nhwm2 <- minnhw2$data 
-nhwm2$Race <- "Non-white"
+# BAS ----
+annex <- feols(annexing_use ~ as.factor(vra)*as.factor(post) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid + STATE, fixef.rm = "none")
+summary(annex)
 
-nhww2 <- nhwnhw2$data 
-nhww2$Race <- "Non-Hispanic white"
+annex_twop <- feols(annexing_use ~ as.factor(vra)*as.factor(post) + pop + popdensity + pctnhblack + pctnbmin + pctblackpov + pctnbminpov + pctowneroccupied + mhmval + hinc + pctpov + as.factor(more_white) + pctnhblack_total + pctnbmin_total + pctownerocc_total + pcthincjobs_total + pctincopp_total | plid + time, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid + STATE, fixef.rm = "none")
+summary(annex_twop)
 
-nhw2 <- base::rbind(nhwb2, nhwh2, nhwm2, nhww2) %>%
-  mutate(group = as.numeric(as.character(group)),
-         Group = ifelse(group < 0, "Minimum", "Maximum"))
-rm(nhwb2, nhwh2, nhwm2, nhww2)
+panel0020_did %<>%
+  mutate(underbound_black_use = ifelse(underbound_black == 1 & annexing_use == 1, 1, 0),
+         underbound_nbmin_use = ifelse(underbound_nbmin == 1 & annexing_use == 1, 1, 0))
 
-nhw2$Race <- factor(nhw2$Race, levels = c("Non-Hispanic Black",
-                                        "Hispanic",
-                                        "Non-white",
-                                        "Non-Hispanic white"))
+nhb <- feols(underbound_black_use ~ as.factor(post)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid + STATE)
+summary(nhb)
 
-nhwplot2 <- ggplot(nhw2,
-                  aes(x, predicted, linetype = Group)) +
-  geom_line() +
-  labs(linetype = "Place Non-Hispanic 
-white growth rate (scaled)") +
-  geom_ribbon(aes(ymin = conf.low, ymax = conf.high), alpha = 0.3) +
-  facet_wrap(~Race, scales = "free") +
-  scale_color_grey() +
-  ylab("Predicted probability of being Annexed") +
-  xlab("Block % of Specified Race (scaled)") +
-  theme_bw() 
+nhb_cov <- feols(underbound_black_use ~ as.factor(post)*as.factor(vra) + pctnhblack + pctnhblack_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid + STATE)
+summary(nhb_cov) 
 
-nhwplot2  
-ggsave("nhwplot_total.png",
-       plot = nhwplot2,
-       width = 9.5,
-       height = 4.5)
+nbmin <- feols(underbound_nbmin_use ~ as.factor(post)*as.factor(vra) | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid + STATE)
+summary(nbmin)
+
+nbmin_cov <- feols(underbound_nbmin_use ~ as.factor(post)*as.factor(vra) + pctnbmin + pctnbmin_total | plid, data = panel0020_did %>% filter(time %in% c("2007 to 2013", "2014 to 2020")), cluster = ~plid + STATE)
+summary(nbmin_cov) 

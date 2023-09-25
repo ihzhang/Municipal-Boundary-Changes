@@ -15,6 +15,7 @@ Most files are too large to store on Github and therefore are on a Google Drive 
 
 In this folder you will find: 
 * annexations_blocklevel: contains the output from CODE_7
+* annexations_demographics: contains the outputs from CODE_8 (6-year and 1-year periods); forms the input for CODE_9
 * BAS: DATA_4
 * block_ids: contains the .csv version of block IDS from block-level shapefiles, downloaded using CODE_1, part of DATA_1 
 * block_to_block_cw: crosswalks downloaded from NHGIS to convert 2000 and 2020 blocks to 2010 block boundaries; part of DATA_3
